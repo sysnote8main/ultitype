@@ -7,6 +7,7 @@ import {
   getRank,
   getRankProgression,
   getRankRequiredScore,
+  isDirectKeyCorrect,
   isImeSubmissionMatch,
   isProductionUnlocked,
   modes,
@@ -46,12 +47,37 @@ describe("calculateMetrics", () => {
 });
 
 describe("rank", () => {
-  test("treats scores under 500 as unranked and 500 through 589 as G0", () => {
-    expect(getRank(0).label).toBe("-");
-    expect(getRank(499).label).toBe("-");
+  test("treats scores under 500 as NR and 500 through 589 as G0", () => {
+    expect(getRank(0).label).toBe("NR");
+    expect(getRank(499).label).toBe("NR");
     expect(getRank(500).label).toBe("G0");
     expect(getRank(589).label).toBe("G0");
     expect(getRank(590).label).toBe("G1");
+    expect(getRank(679).label).toBe("G1");
+    expect(getRank(680).label).toBe("G2");
+  });
+
+  test("maps master rank bands from M0 through M59 and then numbered UM ranks", () => {
+    expect(getRank(500 + 56 * 90).label).toBe("M0");
+    expect(getRank(500 + 75 * 90).label).toBe("M19");
+    expect(getRank(500 + 76 * 90).label).toBe("M20");
+    expect(getRank(500 + 95 * 90).label).toBe("M39");
+    expect(getRank(500 + 96 * 90).label).toBe("M40");
+    expect(getRank(500 + 115 * 90).label).toBe("M59");
+    expect(getRank(500 + 116 * 90).label).toBe("UM0");
+    expect(getRank(500 + 117 * 90).label).toBe("UM1");
+  });
+
+  test("uses the SPEC color names for the updated rank progression", () => {
+    const progression = getRankProgression();
+
+    expect(progression.find((rank) => rank.label === "M0")?.colorName).toBe("紫");
+    expect(progression.find((rank) => rank.label === "M19")?.colorName).toBe("紫");
+    expect(progression.find((rank) => rank.label === "M20")?.colorName).toBe("黒紫");
+    expect(progression.find((rank) => rank.label === "M39")?.colorName).toBe("黒紫");
+    expect(progression.find((rank) => rank.label === "M40")?.colorName).toBe("黒");
+    expect(progression.find((rank) => rank.label === "M59")?.colorName).toBe("黒");
+    expect(progression.at(-1)).toMatchObject({ label: "UM0", colorName: "虹" });
   });
 
   test("unlocks production at A0", () => {
@@ -69,7 +95,7 @@ describe("rank", () => {
 
     expect(progression[0]).toMatchObject({ label: "G0", requiredScore: 500 });
     expect(progression.find((rank) => rank.label === "A0")?.requiredScore).toBe(4280);
-    expect(progression.at(-1)).toMatchObject({ label: "UM" });
+    expect(progression.at(-1)).toMatchObject({ label: "UM0" });
   });
 });
 
@@ -394,6 +420,46 @@ describe("applyDirectKey", () => {
     expect(miss.state.characterAttempts).toBe(2);
     expect(correct.state.input).toBe("");
     expect(correct.state.completedPrompts).toBe(1);
+  });
+});
+
+describe("isDirectKeyCorrect", () => {
+  test("accepts only the first correct direct key for session start", () => {
+    const state = {
+      input: "",
+      scoredInputLength: 0,
+      mistakeDebt: 0,
+      characterAttempts: 0,
+      correctCharacters: 0,
+      mistakes: 0,
+      completedPrompts: 0,
+    };
+
+    expect(isDirectKeyCorrect({ state, key: "x", target: "ab" })).toBe(false);
+    expect(isDirectKeyCorrect({ state, key: "Backspace", target: "ab" })).toBe(false);
+    expect(isDirectKeyCorrect({ state, key: "a", target: "ab" })).toBe(true);
+  });
+
+  test("uses romaji acceptance rules when checking the first correct key", () => {
+    const target = createRomajiInputTarget("shi", {
+      preset: "hepburn",
+      selections: {
+        shi: { accepted: ["shi", "si"], preferred: "shi" },
+      },
+      allowSplitYoon: true,
+    });
+    const state = {
+      input: "",
+      scoredInputLength: 0,
+      mistakeDebt: 0,
+      characterAttempts: 0,
+      correctCharacters: 0,
+      mistakes: 0,
+      completedPrompts: 0,
+    };
+
+    expect(isDirectKeyCorrect({ state, key: "s", target })).toBe(true);
+    expect(isDirectKeyCorrect({ state, key: "x", target })).toBe(false);
   });
 });
 

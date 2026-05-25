@@ -2,11 +2,14 @@ export type RankBadgeShape = "none" | "round" | "square";
 
 export type RankBadgeSpec = {
   borderColor: string | null;
+  borderGloss: boolean;
   fillColor: string;
   foregroundColor: string;
   glossy: boolean;
+  rainbow: boolean;
   shape: RankBadgeShape;
   text: string;
+  textStrokeColor: string | null;
 };
 
 const rankColors = {
@@ -17,53 +20,61 @@ const rankColors = {
   C: "#3485ff",
   B: "#ff9f43",
   A: "#ff4d4f",
-  S: "#f2b84b",
-  M: "#c792ff",
-  GM: "#7b3ff2",
-  HM: "#3f225e",
-  XM: "#111111",
+  S: "#c99018",
+  M: "#7b3ff2",
+  M20: "#3f225e",
+  M40: "#111111",
   UM: "#e646ff",
 } as const;
 
-const glossyPrefixes = new Set(["S", "M", "GM", "HM", "XM", "UM"]);
+const glossyPrefixes = new Set<keyof typeof rankColors>(["S", "M", "M20", "M40", "UM"]);
 const glossAngleDegrees = -22;
 
 export function getRankBadgeSpec(rank: string): RankBadgeSpec {
   const text = rank.trim().toUpperCase() || "-";
 
-  if (text === "-") {
+  if (text === "-" || text === "NR") {
     return {
       borderColor: null,
+      borderGloss: false,
       fillColor: rankColors.G,
       foregroundColor: "#ffffff",
       glossy: false,
-      shape: "none",
-      text,
+      rainbow: false,
+      shape: "round",
+      text: "NR",
+      textStrokeColor: null,
     };
   }
 
-  const prefix = getRankPrefix(text);
+  const prefix = getRankColorKey(text);
   const color = rankColors[prefix] ?? rankColors.G;
-  const higherMaster = prefix === "GM" || prefix === "HM" || prefix === "XM" || prefix === "UM";
+  const master = prefix === "M" || prefix === "M20" || prefix === "M40" || prefix === "UM";
 
-  if (higherMaster) {
+  if (master) {
     return {
       borderColor: null,
+      borderGloss: false,
       fillColor: color,
-      foregroundColor: "#ffffff",
+      foregroundColor: prefix === "UM" ? "#111111" : "#ffffff",
       glossy: glossyPrefixes.has(prefix),
+      rainbow: prefix === "UM",
       shape: "square",
       text,
+      textStrokeColor: prefix === "UM" ? "#ffffff" : null,
     };
   }
 
   return {
     borderColor: color,
+    borderGloss: prefix === "S",
     fillColor: "#ffffff",
     foregroundColor: "#2a2a2a",
     glossy: glossyPrefixes.has(prefix),
+    rainbow: false,
     shape: "round",
     text,
+    textStrokeColor: null,
   };
 }
 
@@ -76,11 +87,6 @@ export function drawRankBadge(
   const spec = getRankBadgeSpec(rank);
   context.clearRect(0, 0, width, height);
 
-  if (spec.shape === "none") {
-    drawNoRank(context, spec, width, height);
-    return;
-  }
-
   const borderWidth = spec.borderColor ? getRankBadgeBorderWidth(height) : 0;
   const inset = Math.max(borderWidth / 2 + 1, Math.min(width, height) * 0.08);
   const x = inset;
@@ -90,7 +96,9 @@ export function drawRankBadge(
   const radius = spec.shape === "round" ? badgeHeight / 2 : 0;
 
   drawBadgePath(context, x, y, badgeWidth, badgeHeight, radius);
-  context.fillStyle = spec.fillColor;
+  context.fillStyle = spec.rainbow
+    ? createRainbowGradient(context, x, y, badgeWidth, badgeHeight)
+    : spec.fillColor;
   context.fill();
 
   if (spec.glossy) {
@@ -102,55 +110,33 @@ export function drawRankBadge(
     context.strokeStyle = spec.borderColor;
     drawBadgePath(context, x, y, badgeWidth, badgeHeight, radius);
     context.stroke();
+
+    if (spec.borderGloss) {
+      drawBorderGloss(context, x, y, badgeWidth, badgeHeight, radius, borderWidth);
+    }
   }
 
   drawRankText(context, spec, width, height);
 }
 
-function getRankPrefix(rank: string): keyof typeof rankColors {
-  if (rank === "UM") {
+function getRankColorKey(rank: string): keyof typeof rankColors {
+  if (rank.startsWith("UM")) {
     return "UM";
   }
 
-  if (rank.startsWith("GM")) {
-    return "GM";
-  }
-
-  if (rank.startsWith("HM")) {
-    return "HM";
-  }
-
-  if (rank.startsWith("XM")) {
-    return "XM";
+  if (rank.startsWith("M")) {
+    const number = Number.parseInt(rank.slice(1), 10);
+    if (number >= 40) {
+      return "M40";
+    }
+    if (number >= 20) {
+      return "M20";
+    }
+    return "M";
   }
 
   const prefix = rank[0] as keyof typeof rankColors;
   return prefix in rankColors ? prefix : "G";
-}
-
-function drawNoRank(
-  context: CanvasRenderingContext2D,
-  spec: RankBadgeSpec,
-  width: number,
-  height: number,
-) {
-  const radius = Math.min(width, height) * 0.42;
-  const centerX = width / 2;
-  const centerY = height / 2;
-
-  context.beginPath();
-  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-  context.fillStyle = spec.fillColor;
-  context.fill();
-
-  context.beginPath();
-  context.moveTo(centerX - radius * 0.46, centerY);
-  context.lineTo(centerX + radius * 0.46, centerY);
-  context.lineCap = "round";
-  context.lineWidth = Math.max(4, radius * 0.22);
-  context.strokeStyle = spec.foregroundColor;
-  context.stroke();
-  context.lineCap = "butt";
 }
 
 function drawBadgePath(
@@ -180,6 +166,24 @@ function drawBadgePath(
   context.closePath();
 }
 
+function createRainbowGradient(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const gradient = context.createLinearGradient(x, y + height, x + width, y);
+  gradient.addColorStop(0, "#ff3b30");
+  gradient.addColorStop(0.18, "#ff9f0a");
+  gradient.addColorStop(0.34, "#ffd60a");
+  gradient.addColorStop(0.5, "#34c759");
+  gradient.addColorStop(0.66, "#32ade6");
+  gradient.addColorStop(0.82, "#5856d6");
+  gradient.addColorStop(1, "#bf5af2");
+  return gradient;
+}
+
 function drawGloss(
   context: CanvasRenderingContext2D,
   x: number,
@@ -197,20 +201,21 @@ function drawGloss(
   const centerX = x + width / 2;
   const centerY = y + height / 2;
   const bandWidth = width * 1.85;
-  const bandHeight = height * 0.46;
+  const bandHeight = height * 0.58;
 
   context.save();
   context.translate(centerX, centerY);
   context.rotate(angle);
+  context.filter = `blur(${getRankBadgeGlossBlur(height)}px)`;
 
   const diagonalGloss = context.createLinearGradient(0, -bandHeight / 2, 0, bandHeight / 2);
   diagonalGloss.addColorStop(0, "rgba(255, 255, 255, 0)");
-  diagonalGloss.addColorStop(0.32, "rgba(255, 255, 255, 0.16)");
-  diagonalGloss.addColorStop(0.5, "rgba(255, 255, 255, 0.68)");
-  diagonalGloss.addColorStop(0.68, "rgba(255, 255, 255, 0.16)");
+  diagonalGloss.addColorStop(0.28, "rgba(255, 255, 255, 0.12)");
+  diagonalGloss.addColorStop(0.5, "rgba(255, 255, 255, 0.5)");
+  diagonalGloss.addColorStop(0.72, "rgba(255, 255, 255, 0.12)");
   diagonalGloss.addColorStop(1, "rgba(255, 255, 255, 0)");
   context.fillStyle = diagonalGloss;
-  context.fillRect(-bandWidth / 2, -height * 0.46, bandWidth, bandHeight);
+  context.fillRect(-bandWidth / 2, -height * 0.52, bandWidth, bandHeight);
   context.restore();
 
   const colorGloss = context.createLinearGradient(x, y + height, x + width, y);
@@ -226,6 +231,32 @@ function drawGloss(
   context.restore();
 }
 
+function drawBorderGloss(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  borderWidth: number,
+) {
+  context.save();
+  context.filter = `blur(${getRankBadgeGlossBlur(height) * 0.75}px)`;
+
+  const borderGloss = context.createLinearGradient(x, y + height, x + width, y);
+  borderGloss.addColorStop(0, "rgba(255, 255, 255, 0)");
+  borderGloss.addColorStop(0.36, "rgba(255, 244, 178, 0.08)");
+  borderGloss.addColorStop(0.5, "rgba(255, 255, 255, 0.78)");
+  borderGloss.addColorStop(0.64, "rgba(255, 244, 178, 0.08)");
+  borderGloss.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+  context.lineWidth = borderWidth * 0.9;
+  context.strokeStyle = borderGloss;
+  drawBadgePath(context, x, y, width, height, radius);
+  context.stroke();
+  context.restore();
+}
+
 function drawRankText(
   context: CanvasRenderingContext2D,
   spec: RankBadgeSpec,
@@ -237,7 +268,17 @@ function drawRankText(
   context.font = getRankBadgeTextFont(fontSize);
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(spec.text, width / 2, height / 2 + fontSize * 0.035);
+  const textX = width / 2;
+  const textY = height / 2 + fontSize * 0.035;
+
+  if (spec.textStrokeColor) {
+    context.lineJoin = "round";
+    context.lineWidth = getRankBadgeTextStrokeWidth(fontSize);
+    context.strokeStyle = spec.textStrokeColor;
+    context.strokeText(spec.text, textX, textY);
+  }
+
+  context.fillText(spec.text, textX, textY);
 }
 
 export function getRankBadgeBorderWidth(height: number) {
@@ -248,6 +289,14 @@ export function getRankBadgeTextFont(fontSize: number) {
   return `700 ${fontSize}px "Quantico", "Trispace", Arial, sans-serif`;
 }
 
+export function getRankBadgeTextStrokeWidth(fontSize: number) {
+  return Math.max(3, fontSize * 0.16);
+}
+
 export function getRankBadgeGlossAngleDegrees() {
   return glossAngleDegrees;
+}
+
+export function getRankBadgeGlossBlur(height: number) {
+  return Math.max(3, height * 0.11);
 }

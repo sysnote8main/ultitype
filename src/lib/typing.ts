@@ -182,6 +182,8 @@ export type DirectKeyInput = {
   lockMistakes: boolean;
 };
 
+export type DirectKeyCorrectnessInput = Omit<DirectKeyInput, "lockMistakes">;
+
 export type DirectKeyResult = {
   state: DirectTypingState;
   scoredKeystrokes: number;
@@ -426,6 +428,26 @@ export function getRomajiGuideDisplay(target: RomajiInputTarget, input: string) 
       return progress.selectedOptions[part.tokenIndex] ?? part.text;
     })
     .join("");
+}
+
+export function isDirectKeyCorrect({
+  state,
+  key,
+  target,
+}: DirectKeyCorrectnessInput) {
+  if (key.length !== 1) {
+    return false;
+  }
+
+  const nextInput = state.input + key;
+  const match =
+    typeof target === "string"
+      ? {
+          accepted: key === (target[state.input.length] ?? ""),
+        }
+      : getRomajiInputProgress(target, nextInput);
+
+  return match.accepted;
 }
 
 export function applyDirectKey({
@@ -706,7 +728,7 @@ export type RankProgressionItem = Rank & {
 };
 
 const noRank: Rank = {
-  label: "-",
+  label: "NR",
   colorName: "なし",
   level: -1,
 };
@@ -720,15 +742,14 @@ const rankBands = [
   { prefix: "B", count: 7, colorName: "橙" },
   { prefix: "A", count: 7, colorName: "赤" },
   { prefix: "S", count: 7, colorName: "金" },
-  { prefix: "M", count: 10, colorName: "薄紫" },
-  { prefix: "GM", count: 10, colorName: "紫" },
-  { prefix: "HM", count: 10, colorName: "黒紫" },
-  { prefix: "XM", count: 10, colorName: "黒" },
+  { prefix: "M", count: 20, colorName: "紫", start: 0 },
+  { prefix: "M", count: 20, colorName: "黒紫", start: 20 },
+  { prefix: "M", count: 20, colorName: "黒", start: 40 },
 ] as const;
 
 const ranks: Rank[] = rankBands.flatMap((band) =>
   Array.from({ length: band.count }, (_, index) => ({
-    label: `${band.prefix}${index}`,
+    label: `${band.prefix}${("start" in band ? band.start : 0) + index}`,
     colorName: band.colorName,
     level: 0,
   })),
@@ -738,12 +759,6 @@ ranks.forEach((rank, index) => {
   rank.level = index;
 });
 
-const ultimateRank: Rank = {
-  label: "UM",
-  colorName: "虹",
-  level: ranks.length,
-};
-
 export const a0RankLevel = ranks.find((rank) => rank.label === "A0")?.level ?? 42;
 
 export function getRankRequiredScore(level: number): number {
@@ -751,7 +766,7 @@ export function getRankRequiredScore(level: number): number {
 }
 
 export function getRankProgression(): RankProgressionItem[] {
-  return [...ranks, ultimateRank].map((rank) => ({
+  return [...ranks, createUltimateRank(0)].map((rank) => ({
     ...rank,
     requiredScore: getRankRequiredScore(rank.level),
   }));
@@ -763,7 +778,15 @@ export function getRank(score: number): Rank {
   }
 
   const level = Math.floor((score - 500) / 90);
-  return ranks[level] ?? ultimateRank;
+  return ranks[level] ?? createUltimateRank(level - ranks.length);
+}
+
+function createUltimateRank(index: number): Rank {
+  return {
+    label: `UM${Math.max(0, index)}`,
+    colorName: "虹",
+    level: ranks.length + Math.max(0, index),
+  };
 }
 
 export function isProductionUnlocked(bestPracticeScore: number): boolean {
