@@ -5,10 +5,14 @@ import {
   getRank,
   getRankProgression,
   modes,
-  type Rank,
   type RankProgressionItem,
 } from "@/src/lib/typing";
 import { initialStoredState, storageKey } from "../_lib/constants";
+import {
+  formatRankGuideScore,
+  getRankGuideStatusLabel,
+  splitRankGuideColumns,
+} from "../_lib/rank-guide";
 import type { StoredState } from "../_lib/types";
 import { RankBadgeCanvas } from "./RankBadgeCanvas";
 
@@ -22,6 +26,7 @@ export function RankGuide() {
   const bestScore = Math.max(stored.bestPracticeScore, stored.bestProductionScore);
   const currentRank = getRank(bestScore);
   const progression = useMemo(() => getRankProgression(), []);
+  const columns = useMemo(() => splitRankGuideColumns(progression), [progression]);
 
   return (
     <section className="rank-guide" aria-label="ランク到達状況">
@@ -68,25 +73,57 @@ export function RankGuide() {
         </div>
         <div>
           <span>最高スコア</span>
-          <strong>{formatScore(bestScore)}</strong>
+          <strong>{formatRankGuideScore(bestScore)}</strong>
         </div>
         <div>
           <span>次の目標</span>
-          <strong>{getNextTargetLabel(currentRank, bestScore, progression)}</strong>
+          <strong>
+            {getNextTargetLabel(currentRank.level, currentRank.label, bestScore, progression)}
+          </strong>
         </div>
       </div>
 
+      <div className="rank-guide-columns">
+        <RankGuideColumn
+          bestScore={bestScore}
+          currentRankLevel={currentRank.level}
+          ranks={columns.standard}
+          title="G0～S6"
+        />
+        <RankGuideColumn
+          bestScore={bestScore}
+          currentRankLevel={currentRank.level}
+          ranks={columns.master}
+          title="M0～"
+        />
+      </div>
+    </section>
+  );
+}
+
+function RankGuideColumn({
+  bestScore,
+  currentRankLevel,
+  ranks,
+  title,
+}: {
+  bestScore: number;
+  currentRankLevel: number;
+  ranks: RankProgressionItem[];
+  title: string;
+}) {
+  return (
+    <section className="rank-guide-column" aria-label={`${title} ランク`}>
+      <h2>{title}</h2>
       <div className="rank-guide-table-head" aria-hidden="true">
         <span>ランク帯</span>
-        <span>必要スコア</span>
+        <span>基準スコア</span>
         <span>到達状況</span>
-        <span>達成に必要なスコア</span>
       </div>
       <ol className="rank-guide-list">
-        {progression.map((rank) => {
-          const reached = bestScore >= rank.requiredScore;
-          const current = currentRank.level === rank.level;
-          const remainingScore = Math.max(0, Math.ceil(rank.requiredScore - bestScore));
+        {ranks.map((rank) => {
+          const reached = currentRankLevel >= rank.level;
+          const current = currentRankLevel === rank.level;
 
           return (
             <li
@@ -102,12 +139,11 @@ export function RankGuide() {
                 />
                 <small>{rank.colorName}</small>
               </span>
-              <span className="rank-guide-score">{formatScore(rank.requiredScore)}</span>
-              <span className="rank-guide-state">
-                {current ? "到達中" : reached ? "到達済み" : "未到達"}
+              <span className="rank-guide-score">
+                {formatRankGuideScore(rank.requiredScore)}
               </span>
-              <span className="rank-guide-needed">
-                {remainingScore === 0 ? "-" : formatScore(remainingScore)}
+              <span className="rank-guide-state">
+                {reached ? "達成" : getRankGuideStatusLabel(rank.requiredScore, bestScore)}
               </span>
             </li>
           );
@@ -134,18 +170,15 @@ function readStoredState(): StoredState {
 }
 
 function getNextTargetLabel(
-  currentRank: Rank,
+  currentRankLevel: number,
+  currentRankLabel: string,
   currentScore: number,
   progression: RankProgressionItem[],
 ) {
-  const next = progression.find((rank) => rank.requiredScore > currentScore);
+  const next = progression.find((rank) => rank.level > currentRankLevel);
   if (!next) {
-    return currentRank.label;
+    return currentRankLabel;
   }
 
-  return `${next.label} あと ${formatScore(next.requiredScore - currentScore)}`;
-}
-
-function formatScore(score: number) {
-  return Math.round(score).toLocaleString();
+  return `${next.label} あと ${formatRankGuideScore(next.requiredScore - currentScore)}`;
 }

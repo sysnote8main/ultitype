@@ -15,7 +15,9 @@ export default function RanksPage() {
             <span>Rank Guide</span>
           </div>
           <h1>ランクガイド</h1>
-          <p>500点から G0 が始まり、必要スコアはランクごとに90点ずつ上がります。</p>
+          <p>
+            500点未満はランクなし、500点から G0 が始まり、基準スコアはランクごとに90点ずつ上がります。
+          </p>
         </div>
       </header>
       <RankGuide />

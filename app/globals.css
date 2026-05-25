@@ -156,6 +156,22 @@ h2 span {
   font-weight: 700;
 }
 
+.session-rank-value {
+  position: relative;
+  display: inline-block;
+  min-width: 3.3ch;
+  color: var(--text);
+  font-size: inherit;
+  font-weight: 900;
+  line-height: inherit;
+}
+
+.session-rank-value.concealed {
+  color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .rank-strip {
   display: flex;
   gap: 8px;
@@ -425,11 +441,32 @@ h2 span {
   margin-top: 12px;
 }
 
+.rank-guide-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.rank-guide-column {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rank-guide-column h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
 .rank-guide-table-head,
 .rank-guide-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 140px 140px 170px;
-  gap: 10px;
+  grid-template-columns: minmax(112px, 1fr) 104px 108px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -479,14 +516,12 @@ h2 span {
 }
 
 .rank-guide-score,
-.rank-guide-state,
-.rank-guide-needed {
+.rank-guide-state {
   font-size: 14px;
   font-weight: 900;
 }
 
-.rank-guide-score,
-.rank-guide-needed {
+.rank-guide-score {
   color: var(--text);
   text-align: right;
 }
@@ -500,8 +535,7 @@ h2 span {
   color: var(--accent-2);
 }
 
-.rank-guide-row.current .rank-guide-state,
-.rank-guide-row.current .rank-guide-needed {
+.rank-guide-row.current .rank-guide-state {
   color: var(--gold);
 }
 
@@ -1159,16 +1193,16 @@ h2 span {
 
 .correction-debt {
   display: flex;
-  min-height: 46px;
+  min-height: 60px;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin: -6px 0 14px;
+  margin: 16px 0 0;
   border: 1px solid rgba(255, 103, 95, 0.52);
   background:
     linear-gradient(90deg, rgba(255, 103, 95, 0.16), transparent),
     var(--surface-deep);
-  padding: 8px 12px;
+  padding: 12px 14px;
   color: var(--warn);
 }
 
@@ -1178,7 +1212,7 @@ h2 span {
   background: var(--surface);
   padding: 5px 9px;
   color: var(--text);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
@@ -1186,7 +1220,7 @@ h2 span {
 
 .debt-count {
   flex: 0 0 auto;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -1196,19 +1230,19 @@ h2 span {
   flex: 1;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 8px;
 }
 
 .debt-dots span {
-  width: 12px;
-  height: 12px;
+  width: 20px;
+  height: 20px;
   flex: 0 0 auto;
   background: currentColor;
 }
 
 .debt-dots em {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 900;
 }
@@ -1489,7 +1523,8 @@ dd {
   }
 
   .score-guide,
-  .practice-score-modes {
+  .practice-score-modes,
+  .rank-guide-columns {
     grid-template-columns: 1fr;
   }
 
@@ -1501,14 +1536,9 @@ dd {
     grid-template-columns: minmax(88px, 1fr) 94px;
   }
 
-  .rank-guide-state,
-  .rank-guide-needed {
+  .rank-guide-state {
+    grid-column: 1 / -1;
     text-align: left;
-  }
-
-  .rank-guide-needed::before {
-    color: var(--muted);
-    content: "必要: ";
   }
 
   .meter-row,
