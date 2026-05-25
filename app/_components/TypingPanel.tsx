@@ -23,6 +23,7 @@ import {
   type RomajiInputTarget,
   type TypingMode,
 } from "@/src/lib/typing";
+import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
 import type { ChallengeLanguage, FinishReason, RuntimeStats } from "../_lib/types";
 
 type BlockableTextEvent =
@@ -39,6 +40,7 @@ type TypingPanelProps = {
   currentGuide: string;
   currentRomajiTarget: RomajiInputTarget | null;
   currentRank: Rank;
+  elapsedSeconds: number | null;
   finishReason: FinishReason | null;
   imeError: string;
   input: string;
@@ -67,6 +69,7 @@ export function TypingPanel({
   currentGuide,
   currentRomajiTarget,
   currentRank,
+  elapsedSeconds,
   finishReason,
   imeError,
   input,
@@ -86,6 +89,11 @@ export function TypingPanel({
   onPreventDirectTextInput,
   onResetSession,
 }: TypingPanelProps) {
+  const visibleRank = getVisibleSessionRank({
+    elapsedSeconds,
+    rankLabel: currentRank.label,
+  });
+
   return (
     <section
       className={`practice-panel ${acceptsTextInput ? "ime-panel" : "direct-panel"}`}
@@ -108,7 +116,12 @@ export function TypingPanel({
         <div>
           <p className="mode-label">{mode.label}</p>
           <h2>
-            {currentRank.label}
+            <span
+              aria-label={visibleRank.isConcealed ? "Rank hidden for the first 30 seconds" : undefined}
+              className={`session-rank-value ${visibleRank.isConcealed ? "concealed" : ""}`}
+            >
+              {visibleRank.label}
+            </span>
             <span>{Math.round(metrics.score).toLocaleString()} pts</span>
           </h2>
         </div>
@@ -147,8 +160,6 @@ export function TypingPanel({
         </div>
       ) : (
         <>
-          <CorrectionDebtIndicator debt={correctionDebt} />
-
           <div className="target-view" aria-label="current challenge">
             {mode.requiresIme ? (
               <p>{currentDisplay}</p>
@@ -161,6 +172,8 @@ export function TypingPanel({
               />
             )}
           </div>
+
+          <CorrectionDebtIndicator debt={correctionDebt} />
 
           {acceptsTextInput ? (
             <textarea

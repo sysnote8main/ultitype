@@ -20,6 +20,7 @@ import {
   countImeCorrectCharacters,
   createRomajiInputTarget,
   getRank,
+  isDirectKeyCorrect,
   isImeSubmissionMatch,
   isProductionUnlocked,
   modes,
@@ -32,6 +33,7 @@ import {
   initialStoredState,
   storageKey,
 } from "./constants";
+import { shouldPersistStoredState } from "./stored-state";
 import {
   estimateImeKeystrokes,
   getDirectChallenges,
@@ -63,6 +65,7 @@ export function useTypingSession() {
   const [isFinished, setIsFinished] = useState(false);
   const [finishReason, setFinishReason] = useState<FinishReason | null>(null);
   const [imeError, setImeError] = useState("");
+  const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const skipNextPersistRef = useRef(false);
 
@@ -142,6 +145,7 @@ export function useTypingSession() {
   useEffect(() => {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) {
+      setHasLoadedStoredState(true);
       return;
     }
 
@@ -158,16 +162,25 @@ export function useTypingSession() {
     } catch {
       window.localStorage.removeItem(storageKey);
     }
+
+    setHasLoadedStoredState(true);
   }, []);
 
   useEffect(() => {
-    if (skipNextPersistRef.current) {
-      skipNextPersistRef.current = false;
+    if (
+      !shouldPersistStoredState({
+        hasLoadedStoredState,
+        skipNextPersist: skipNextPersistRef.current,
+      })
+    ) {
+      if (skipNextPersistRef.current) {
+        skipNextPersistRef.current = false;
+      }
       return;
     }
 
     window.localStorage.setItem(storageKey, JSON.stringify(stored));
-  }, [stored]);
+  }, [hasLoadedStoredState, stored]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = stored.settings.theme;
@@ -383,20 +396,33 @@ export function useTypingSession() {
 
     event.preventDefault();
 
+    const directState = {
+      input,
+      scoredInputLength: stats.scoredInputLength,
+      mistakeDebt: stats.mistakeDebt,
+      characterAttempts: stats.characterAttempts,
+      correctCharacters: stats.correctCharacters,
+      mistakes: stats.mistakes,
+      completedPrompts: stats.completedPrompts,
+    };
+
+    if (
+      !startedAt &&
+      !isDirectKeyCorrect({
+        state: directState,
+        key: event.key,
+        target: currentInputTarget,
+      })
+    ) {
+      return;
+    }
+
     if (!startedAt) {
       beginSession();
     }
 
     const result = applyDirectKey({
-      state: {
-        input,
-        scoredInputLength: stats.scoredInputLength,
-        mistakeDebt: stats.mistakeDebt,
-        characterAttempts: stats.characterAttempts,
-        correctCharacters: stats.correctCharacters,
-        mistakes: stats.mistakes,
-        completedPrompts: stats.completedPrompts,
-      },
+      state: directState,
       key: event.key,
       target: currentInputTarget,
       lockMistakes: mode.lockMistakes,
@@ -427,10 +453,7 @@ export function useTypingSession() {
       return;
     }
 
-    if (!ignoredKeys.has(event.key)) {
-      if (!startedAt) {
-        beginSession();
-      }
+    if (!ignoredKeys.has(event.key) && startedAt) {
       recordKey(0, 1);
     }
 
@@ -439,6 +462,11 @@ export function useTypingSession() {
     }
 
     event.preventDefault();
+
+    if (!startedAt) {
+      return;
+    }
+
     const matches = isImeSubmissionMatch(input, currentDisplay);
 
     if (!matches) {
@@ -464,6 +492,11 @@ export function useTypingSession() {
   function handleImeInput(nextInput: string) {
     if (!acceptsTextInput) {
       return;
+    }
+
+    if (!startedAt && nextInput.length > 0) {
+      beginSession();
+      recordKey(0, 1);
     }
 
     setInput(nextInput);
@@ -499,6 +532,7 @@ export function useTypingSession() {
       challengeLanguage,
       correctionDebt,
       currentDisplay,
+      elapsedSeconds: startedAt ? elapsedSeconds : null,
       currentGuide:
         currentGuide ?? (typeof currentInputTarget === "string" ? currentInputTarget : currentInputTarget.guide),
       currentRomajiTarget,
