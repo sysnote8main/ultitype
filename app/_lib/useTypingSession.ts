@@ -16,8 +16,9 @@ import {
   type ModeId,
   applyDirectKey,
   calculateMetrics,
-  countCorrectAtSamePositions,
+  countCorrectDirectCharacters,
   countImeCorrectCharacters,
+  createRomajiInputTarget,
   getRank,
   isImeSubmissionMatch,
   isProductionUnlocked,
@@ -63,6 +64,7 @@ export function useTypingSession() {
   const [finishReason, setFinishReason] = useState<FinishReason | null>(null);
   const [imeError, setImeError] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const skipNextPersistRef = useRef(false);
 
   const mode = modes.find((item) => item.id === modeId) ?? modes[0];
   const acceptsTextInput = shouldAcceptTextInput(mode);
@@ -80,18 +82,30 @@ export function useTypingSession() {
     } satisfies DirectChallenge);
   const imeChallenges = challengeLanguage === "ja" ? longChallenges : englishLongChallenges;
   const currentImeChallenge = imeChallenges[challengeIndex % imeChallenges.length] ?? "";
+  const currentDirectGuideSource = currentDirectChallenge.guide ?? currentDirectChallenge.input;
+  const currentVisibleDirectGuide =
+    challengeLanguage === "ja" &&
+    !mode.requiresIme &&
+    !stored.settings.showRomajiWordSpaces
+      ? removeRomajiVisualSpaces(currentDirectGuideSource)
+      : currentDirectGuideSource;
+  const currentRomajiTarget =
+    challengeLanguage === "ja" && !mode.requiresIme
+      ? createRomajiInputTarget(currentVisibleDirectGuide, {
+          preset: stored.settings.romajiInputPreset,
+          selections: stored.settings.romajiInputSelections,
+          allowSplitYoon: stored.settings.allowSplitYoon,
+        })
+      : null;
   const currentDisplay = mode.requiresIme
     ? currentImeChallenge
     : currentDirectChallenge.display;
   const currentInputTarget = mode.requiresIme
     ? currentImeChallenge
-    : currentDirectChallenge.input;
+    : (currentRomajiTarget ?? currentDirectChallenge.input);
   const currentGuide =
-    challengeLanguage === "ja" &&
-    !mode.requiresIme &&
-    !stored.settings.showRomajiWordSpaces &&
-    currentDirectChallenge.guide
-      ? removeRomajiVisualSpaces(currentDirectChallenge.guide)
+    challengeLanguage === "ja" && !mode.requiresIme
+      ? currentRomajiTarget?.guide
       : currentDirectChallenge.guide;
   const bestPracticeRank = getRank(stored.bestPracticeScore);
   const bestProductionRank = getRank(stored.bestProductionScore);
@@ -114,7 +128,7 @@ export function useTypingSession() {
   const currentRank = getRank(metrics.score);
   const currentCorrect = mode.requiresIme
     ? countImeCorrectCharacters(input, currentDisplay)
-    : countCorrectAtSamePositions(input, currentInputTarget);
+    : countCorrectDirectCharacters(input, currentInputTarget);
   const currentAccuracy =
     mode.requiresIme && currentDisplay.length > 0
       ? currentCorrect / currentDisplay.length
@@ -147,6 +161,11 @@ export function useTypingSession() {
   }, []);
 
   useEffect(() => {
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      return;
+    }
+
     window.localStorage.setItem(storageKey, JSON.stringify(stored));
   }, [stored]);
 
@@ -312,6 +331,27 @@ export function useTypingSession() {
     }));
   }
 
+  function clearLocalData() {
+    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith("ultitype:")) {
+        window.localStorage.removeItem(key);
+      }
+    }
+
+    skipNextPersistRef.current = true;
+    setStored({
+      ...initialStoredState,
+      sessions: [],
+      settings: { ...initialSettings },
+    });
+    setModeId("practice-accuracy");
+    setChallengeLanguage("ja");
+    setProductionDuration(300);
+    resetSession();
+    setScreen("settings");
+  }
+
   function recordKey(metricKeystrokes = 1, physicalKeystrokes = 1) {
     const timestamp = Date.now();
 
@@ -350,6 +390,7 @@ export function useTypingSession() {
     const result = applyDirectKey({
       state: {
         input,
+        scoredInputLength: stats.scoredInputLength,
         mistakeDebt: stats.mistakeDebt,
         characterAttempts: stats.characterAttempts,
         correctCharacters: stats.correctCharacters,
@@ -361,9 +402,10 @@ export function useTypingSession() {
       lockMistakes: mode.lockMistakes,
     });
 
-    recordKey();
+    recordKey(result.scoredKeystrokes);
     setStats((previous) => ({
       ...previous,
+      scoredInputLength: result.state.scoredInputLength,
       characterAttempts: result.state.characterAttempts,
       correctCharacters: result.state.correctCharacters,
       mistakes: result.state.mistakes,
@@ -409,6 +451,7 @@ export function useTypingSession() {
     setStats((previous) => ({
       ...previous,
       keystrokes: previous.keystrokes + estimatedKeystrokes,
+      scoredInputLength: 0,
       characterAttempts: previous.characterAttempts + currentDisplay.length,
       correctCharacters: previous.correctCharacters + currentDisplay.length,
       completedPrompts: previous.completedPrompts + 1,
@@ -456,7 +499,9 @@ export function useTypingSession() {
       challengeLanguage,
       correctionDebt,
       currentDisplay,
-      currentGuide: currentGuide ?? currentInputTarget,
+      currentGuide:
+        currentGuide ?? (typeof currentInputTarget === "string" ? currentInputTarget : currentInputTarget.guide),
+      currentRomajiTarget,
       currentRank,
       finishReason,
       imeError,
@@ -482,6 +527,7 @@ export function useTypingSession() {
     metrics,
     stats,
     changeChallengeLanguage,
+    clearLocalData,
     openSettings,
     selectMode,
     setProductionDuration,

@@ -1,4 +1,9 @@
-import type { ModeId } from "@/src/lib/typing";
+import type {
+  ModeId,
+  RomajiInputPreset,
+  RomajiVariantId,
+  RomajiVariantSelection,
+} from "@/src/lib/typing";
 
 export type ChallengeLanguage = "ja" | "en";
 export type Theme = "dark" | "light";
@@ -9,6 +14,9 @@ export type DirectKeyEvent = Pick<globalThis.KeyboardEvent, "key" | "preventDefa
 
 export type AppSettings = {
   showRomajiWordSpaces: boolean;
+  romajiInputPreset: RomajiInputPreset;
+  romajiInputSelections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
+  allowSplitYoon: boolean;
   idleRetireSeconds: number;
   theme: Theme;
 };
@@ -32,6 +40,7 @@ export type StoredState = {
 
 export type RuntimeStats = {
   keystrokes: number;
+  scoredInputLength: number;
   physicalKeystrokes: number;
   characterAttempts: number;
   correctCharacters: number;

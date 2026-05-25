@@ -15,7 +15,14 @@ import type {
   ReactNode,
   RefObject,
 } from "react";
-import { formatTimer, type Metrics, type Rank, type TypingMode } from "@/src/lib/typing";
+import {
+  formatTimer,
+  getRomajiInputProgress,
+  type Metrics,
+  type Rank,
+  type RomajiInputTarget,
+  type TypingMode,
+} from "@/src/lib/typing";
 import type { ChallengeLanguage, FinishReason, RuntimeStats } from "../_lib/types";
 
 type BlockableTextEvent =
@@ -30,6 +37,7 @@ type TypingPanelProps = {
   correctionDebt: number;
   currentDisplay: string;
   currentGuide: string;
+  currentRomajiTarget: RomajiInputTarget | null;
   currentRank: Rank;
   finishReason: FinishReason | null;
   imeError: string;
@@ -57,6 +65,7 @@ export function TypingPanel({
   correctionDebt,
   currentDisplay,
   currentGuide,
+  currentRomajiTarget,
   currentRank,
   finishReason,
   imeError,
@@ -144,7 +153,12 @@ export function TypingPanel({
             {mode.requiresIme ? (
               <p>{currentDisplay}</p>
             ) : (
-              <DirectChallengeView display={currentDisplay} guide={currentGuide} input={input} />
+              <DirectChallengeView
+                display={currentDisplay}
+                guide={currentGuide}
+                input={input}
+                romajiTarget={currentRomajiTarget}
+              />
             )}
           </div>
 
@@ -232,10 +246,12 @@ function DirectChallengeView({
   display,
   guide,
   input,
+  romajiTarget,
 }: {
   display: string;
   guide: string;
   input: string;
+  romajiTarget: RomajiInputTarget | null;
 }) {
   const hasSeparateDisplay = display !== guide;
 
@@ -246,10 +262,41 @@ function DirectChallengeView({
         className="input-target"
         aria-label={hasSeparateDisplay ? "romaji input target" : "input target"}
       >
-        {renderGuideCharacters(guide, input)}
+        {romajiTarget ? renderRomajiGuideCharacters(romajiTarget, input) : renderGuideCharacters(guide, input)}
       </p>
     </>
   );
+}
+
+function renderRomajiGuideCharacters(target: RomajiInputTarget, input: string) {
+  const progress = getRomajiInputProgress(target, input);
+
+  return target.parts.map((part, partIndex) => {
+    if (part.kind === "visual") {
+      return (
+        <span className="visual-space" key={`space-${partIndex}`} aria-hidden="true">
+          {part.text}
+        </span>
+      );
+    }
+
+    const className =
+      part.tokenIndex < progress.completedTokens
+        ? "char correct"
+        : part.tokenIndex === progress.completedTokens
+          ? "char current"
+          : "char";
+    const text =
+      progress.currentTokenIndex === part.tokenIndex && progress.currentOption
+        ? progress.currentOption
+        : (progress.selectedOptions[part.tokenIndex] ?? part.text);
+
+    return Array.from(text).map((character, characterIndex) => (
+      <span className={className} key={`${part.tokenIndex}-${character}-${characterIndex}`}>
+        {character}
+      </span>
+    ));
+  });
 }
 
 function renderGuideCharacters(guide: string, input: string) {

@@ -103,6 +103,7 @@ export type Metrics = {
 
 export type DirectTypingState = {
   input: string;
+  scoredInputLength: number;
   mistakeDebt: number;
   characterAttempts: number;
   correctCharacters: number;
@@ -110,14 +111,329 @@ export type DirectTypingState = {
   completedPrompts: number;
 };
 
+export type RomajiInputPreset = "custom" | "shortest" | "hepburn";
+
+export type RomajiVariantId =
+  | "syllabicN"
+  | "syllabicNBeforeVowel"
+  | "syllabicNBeforeNaRow"
+  | "shi"
+  | "chi"
+  | "tsu"
+  | "fu"
+  | "ji"
+  | "sha"
+  | "shu"
+  | "sho"
+  | "cha"
+  | "chu"
+  | "cho"
+  | "ja"
+  | "ju"
+  | "jo";
+
+export type RomajiVariantSelection = {
+  accepted: string[];
+  preferred: string;
+};
+
+export type RomajiInputConfig = {
+  preset: RomajiInputPreset;
+  selections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
+  allowSplitYoon?: boolean;
+};
+
+export type RomajiVariantOption = {
+  id: RomajiVariantId;
+  label: string;
+  alternatives: string[];
+  shortest: string;
+  hepburn: string;
+};
+
+type RomajiInputToken = {
+  accepted: string[];
+  preferred: string;
+  variantId?: RomajiVariantId;
+};
+
+export type RomajiGuidePart =
+  | {
+      kind: "visual";
+      text: string;
+    }
+  | {
+      kind: "input";
+      text: string;
+      tokenIndex: number;
+      variantId?: RomajiVariantId;
+    };
+
+export type RomajiInputTarget = {
+  guide: string;
+  parts: RomajiGuidePart[];
+  tokens: RomajiInputToken[];
+};
+
 export type DirectKeyInput = {
   state: DirectTypingState;
   key: string;
-  target: string;
+  target: string | RomajiInputTarget;
   lockMistakes: boolean;
 };
 
-export function applyDirectKey({ state, key, target, lockMistakes }: DirectKeyInput) {
+export type DirectKeyResult = {
+  state: DirectTypingState;
+  scoredKeystrokes: number;
+};
+
+export const romajiVariantOptions: RomajiVariantOption[] = [
+  {
+    id: "syllabicN",
+    label: "ん",
+    alternatives: ["n", "nn"],
+    shortest: "n",
+    hepburn: "n",
+  },
+  {
+    id: "syllabicNBeforeVowel",
+    label: "ん（母音・や行の前）",
+    alternatives: ["n", "nn"],
+    shortest: "n",
+    hepburn: "nn",
+  },
+  {
+    id: "syllabicNBeforeNaRow",
+    label: "ん（な行の前）",
+    alternatives: ["nn"],
+    shortest: "nn",
+    hepburn: "nn",
+  },
+  { id: "shi", label: "し", alternatives: ["shi", "si", "ci"], shortest: "si", hepburn: "shi" },
+  { id: "chi", label: "ち", alternatives: ["chi", "ti"], shortest: "ti", hepburn: "chi" },
+  { id: "tsu", label: "つ", alternatives: ["tsu", "tu"], shortest: "tu", hepburn: "tsu" },
+  { id: "fu", label: "ふ", alternatives: ["fu", "hu"], shortest: "hu", hepburn: "fu" },
+  { id: "ji", label: "じ", alternatives: ["ji", "zi"], shortest: "zi", hepburn: "ji" },
+  { id: "sha", label: "しゃ", alternatives: ["sha", "sya"], shortest: "sya", hepburn: "sha" },
+  { id: "shu", label: "しゅ", alternatives: ["shu", "syu"], shortest: "syu", hepburn: "shu" },
+  { id: "sho", label: "しょ", alternatives: ["sho", "syo"], shortest: "syo", hepburn: "sho" },
+  { id: "cha", label: "ちゃ", alternatives: ["cha", "tya"], shortest: "tya", hepburn: "cha" },
+  { id: "chu", label: "ちゅ", alternatives: ["chu", "tyu"], shortest: "tyu", hepburn: "chu" },
+  { id: "cho", label: "ちょ", alternatives: ["cho", "tyo"], shortest: "tyo", hepburn: "cho" },
+  { id: "ja", label: "じゃ", alternatives: ["ja", "zya"], shortest: "zya", hepburn: "ja" },
+  { id: "ju", label: "じゅ", alternatives: ["ju", "zyu"], shortest: "zyu", hepburn: "ju" },
+  { id: "jo", label: "じょ", alternatives: ["jo", "zyo"], shortest: "zyo", hepburn: "jo" },
+];
+
+const romajiVariantPatterns = romajiVariantOptions
+  .filter(
+    (option) =>
+      option.id !== "syllabicN" &&
+      option.id !== "syllabicNBeforeVowel" &&
+      option.id !== "syllabicNBeforeNaRow",
+  )
+  .flatMap((option) =>
+    option.alternatives.map((pattern) => ({
+      pattern,
+      option,
+    })),
+  )
+  .sort((left, right) => right.pattern.length - left.pattern.length);
+
+const splitYoonPatterns = [
+  { pattern: "kya", splitPrefix: "ki" },
+  { pattern: "kyu", splitPrefix: "ki" },
+  { pattern: "kyo", splitPrefix: "ki" },
+  { pattern: "gya", splitPrefix: "gi" },
+  { pattern: "gyu", splitPrefix: "gi" },
+  { pattern: "gyo", splitPrefix: "gi" },
+  { pattern: "nya", splitPrefix: "ni" },
+  { pattern: "nyu", splitPrefix: "ni" },
+  { pattern: "nyo", splitPrefix: "ni" },
+  { pattern: "hya", splitPrefix: "hi" },
+  { pattern: "hyu", splitPrefix: "hi" },
+  { pattern: "hyo", splitPrefix: "hi" },
+  { pattern: "bya", splitPrefix: "bi" },
+  { pattern: "byu", splitPrefix: "bi" },
+  { pattern: "byo", splitPrefix: "bi" },
+  { pattern: "pya", splitPrefix: "pi" },
+  { pattern: "pyu", splitPrefix: "pi" },
+  { pattern: "pyo", splitPrefix: "pi" },
+  { pattern: "mya", splitPrefix: "mi" },
+  { pattern: "myu", splitPrefix: "mi" },
+  { pattern: "myo", splitPrefix: "mi" },
+  { pattern: "rya", splitPrefix: "ri" },
+  { pattern: "ryu", splitPrefix: "ri" },
+  { pattern: "ryo", splitPrefix: "ri" },
+].map(({ pattern, splitPrefix }) => ({
+  pattern,
+  splitAlternatives: [`${splitPrefix}l${pattern.at(-1)}`, `${splitPrefix}x${pattern.at(-1)}`],
+}));
+
+export function createRomajiInputTarget(guide: string, config: RomajiInputConfig) {
+  const parts: RomajiGuidePart[] = [];
+  const tokens: RomajiInputToken[] = [];
+  const source = guide.toLowerCase();
+  let index = 0;
+
+  while (index < source.length) {
+    const character = source[index] ?? "";
+
+    if (/\s/.test(character)) {
+      parts.push({ kind: "visual", text: character });
+      index += 1;
+      continue;
+    }
+
+    const syllabicN = readSyllabicN(source, index, config);
+    if (syllabicN) {
+      pushRomajiToken(parts, tokens, syllabicN);
+      index += syllabicN.consumed;
+      continue;
+    }
+
+    const splitYoon = readSplitYoon(source, index, config);
+    if (splitYoon) {
+      pushRomajiToken(parts, tokens, splitYoon);
+      index += splitYoon.consumed;
+      continue;
+    }
+
+    const variant = readVariant(source, index, config);
+    if (variant) {
+      pushRomajiToken(parts, tokens, variant);
+      index += variant.consumed;
+      continue;
+    }
+
+    pushRomajiToken(parts, tokens, {
+      accepted: [character],
+      consumed: 1,
+      preferred: character,
+    });
+    index += 1;
+  }
+
+  return {
+    guide: parts.map((part) => part.text).join(""),
+    parts,
+    tokens,
+  } satisfies RomajiInputTarget;
+}
+
+export function getRomajiInputProgress(target: RomajiInputTarget, input: string) {
+  type ActiveState = {
+    tokenIndex: number;
+    option: string | null;
+    offset: number;
+    selectedOptions: string[];
+  };
+
+  let states: ActiveState[] = [{ tokenIndex: 0, option: null, offset: 0, selectedOptions: [] }];
+
+  for (const character of input) {
+    const nextStates: ActiveState[] = [];
+
+    for (const state of states) {
+      if (state.option) {
+        if (state.option[state.offset] === character) {
+          const nextOffset = state.offset + 1;
+          const selectedOptions =
+            nextOffset >= state.option.length
+              ? selectRomajiOption(state.selectedOptions, state.tokenIndex, state.option)
+              : state.selectedOptions;
+          nextStates.push(
+            nextOffset >= state.option.length
+              ? {
+                  tokenIndex: state.tokenIndex + 1,
+                  option: null,
+                  offset: 0,
+                  selectedOptions,
+                }
+              : { ...state, offset: nextOffset, selectedOptions },
+          );
+        }
+        continue;
+      }
+
+      const token = target.tokens[state.tokenIndex];
+      if (!token) {
+        continue;
+      }
+
+      for (const option of token.accepted) {
+        if (option[0] !== character) {
+          continue;
+        }
+
+        nextStates.push(
+          option.length === 1
+            ? {
+                tokenIndex: state.tokenIndex + 1,
+                option: null,
+                offset: 0,
+                selectedOptions: selectRomajiOption(
+                  state.selectedOptions,
+                  state.tokenIndex,
+                  option,
+                ),
+              }
+            : { tokenIndex: state.tokenIndex, option, offset: 1, selectedOptions: state.selectedOptions },
+        );
+      }
+    }
+
+    states = dedupeRomajiStates(nextStates);
+    if (states.length === 0) {
+      return {
+        accepted: false,
+        completed: false,
+        completedTokens: 0,
+        selectedOptions: [],
+        currentOption: null,
+        currentTokenIndex: 0,
+      };
+    }
+  }
+
+  const bestState = selectBestRomajiState(states);
+
+  return {
+    accepted: true,
+    completed: states.some(
+      (state) => state.option === null && state.tokenIndex >= target.tokens.length,
+    ),
+    completedTokens: bestState.tokenIndex,
+    selectedOptions: bestState.selectedOptions,
+    currentOption: bestState.option,
+    currentTokenIndex: bestState.tokenIndex,
+  };
+}
+
+export function getRomajiGuideDisplay(target: RomajiInputTarget, input: string) {
+  const progress = getRomajiInputProgress(target, input);
+
+  return target.parts
+    .map((part) => {
+      if (part.kind === "visual") {
+        return part.text;
+      }
+
+      if (progress.currentTokenIndex === part.tokenIndex && progress.currentOption) {
+        return progress.currentOption;
+      }
+
+      return progress.selectedOptions[part.tokenIndex] ?? part.text;
+    })
+    .join("");
+}
+
+export function applyDirectKey({
+  state,
+  key,
+  target,
+  lockMistakes,
+}: DirectKeyInput): DirectKeyResult {
   if (key === "Backspace") {
     if (lockMistakes && state.mistakeDebt > 0) {
       return {
@@ -125,6 +441,7 @@ export function applyDirectKey({ state, key, target, lockMistakes }: DirectKeyIn
           ...state,
           mistakeDebt: state.mistakeDebt - 1,
         },
+        scoredKeystrokes: 0,
       };
     }
 
@@ -133,11 +450,12 @@ export function applyDirectKey({ state, key, target, lockMistakes }: DirectKeyIn
         ...state,
         input: state.input.slice(0, -1),
       },
+      scoredKeystrokes: 0,
     };
   }
 
   if (key.length !== 1) {
-    return { state };
+    return { state, scoredKeystrokes: 0 };
   }
 
   if (lockMistakes && state.mistakeDebt > 0) {
@@ -148,11 +466,19 @@ export function applyDirectKey({ state, key, target, lockMistakes }: DirectKeyIn
         characterAttempts: state.characterAttempts + 1,
         mistakes: state.mistakes + 1,
       },
+      scoredKeystrokes: 0,
     };
   }
 
-  const expected = target[state.input.length] ?? "";
-  const isCorrect = key === expected;
+  const nextInput = state.input + key;
+  const match =
+    typeof target === "string"
+      ? {
+          accepted: key === (target[state.input.length] ?? ""),
+          completed: nextInput.length >= target.length,
+        }
+      : getRomajiInputProgress(target, nextInput);
+  const isCorrect = match.accepted;
 
   if (!isCorrect) {
     return {
@@ -162,21 +488,187 @@ export function applyDirectKey({ state, key, target, lockMistakes }: DirectKeyIn
         characterAttempts: state.characterAttempts + 1,
         mistakes: state.mistakes + 1,
       },
+      scoredKeystrokes: 0,
     };
   }
 
-  const nextInput = state.input + key;
-  const completed = nextInput.length >= target.length;
+  const completed = match.completed;
+  const scoredKeystrokes = nextInput.length > state.scoredInputLength ? 1 : 0;
 
   return {
     state: {
       ...state,
       input: completed ? "" : nextInput,
+      scoredInputLength: completed
+        ? 0
+        : Math.max(state.scoredInputLength, nextInput.length),
       characterAttempts: state.characterAttempts + 1,
       correctCharacters: state.correctCharacters + 1,
       completedPrompts: completed ? state.completedPrompts + 1 : state.completedPrompts,
     },
+    scoredKeystrokes,
   };
+}
+
+type ReadRomajiTokenResult = RomajiInputToken & {
+  consumed: number;
+};
+
+function readSyllabicN(
+  source: string,
+  index: number,
+  config: RomajiInputConfig,
+): ReadRomajiTokenResult | null {
+  if (source[index] !== "n") {
+    return null;
+  }
+
+  if (source[index + 1] === "'") {
+    const variantId = source[index + 2] === "n" ? "syllabicNBeforeNaRow" : "syllabicNBeforeVowel";
+
+    return {
+      ...resolveRomajiSelection(
+        romajiVariantOptions.find((option) => option.id === variantId)!,
+        config,
+      ),
+      consumed: 2,
+    };
+  }
+
+  if (!isSyllabicNContext(source, index)) {
+    return null;
+  }
+
+  return {
+    ...resolveRomajiSelection(
+      romajiVariantOptions.find((option) => option.id === "syllabicN")!,
+      config,
+    ),
+    consumed: 1,
+  };
+}
+
+function readVariant(
+  source: string,
+  index: number,
+  config: RomajiInputConfig,
+): ReadRomajiTokenResult | null {
+  const match = romajiVariantPatterns.find(({ pattern }) => source.startsWith(pattern, index));
+  if (!match) {
+    return null;
+  }
+
+  return {
+    ...resolveRomajiSelection(match.option, config),
+    consumed: match.pattern.length,
+  };
+}
+
+function readSplitYoon(
+  source: string,
+  index: number,
+  config: RomajiInputConfig,
+): ReadRomajiTokenResult | null {
+  const match = splitYoonPatterns.find(({ pattern }) => source.startsWith(pattern, index));
+  if (!match) {
+    return null;
+  }
+
+  return {
+    accepted:
+      config.allowSplitYoon === false
+        ? [match.pattern]
+        : [match.pattern, ...match.splitAlternatives],
+    consumed: match.pattern.length,
+    preferred: match.pattern,
+  };
+}
+
+function resolveRomajiSelection(
+  option: RomajiVariantOption,
+  config: RomajiInputConfig,
+): RomajiInputToken {
+  const presetPreferred = config.preset === "shortest" ? option.shortest : option.hepburn;
+  const selection = config.preset === "custom" ? config.selections[option.id] : undefined;
+  const validAccepted = new Set(option.alternatives);
+  const accepted = (selection?.accepted.length ? selection.accepted : option.alternatives).filter(
+    (candidate) => validAccepted.has(candidate),
+  );
+  const preferred = validAccepted.has(selection?.preferred ?? "")
+    ? (selection?.preferred ?? presetPreferred)
+    : presetPreferred;
+  const acceptedWithPreferred = accepted.includes(preferred)
+    ? accepted
+    : [...accepted, preferred].filter((candidate) => validAccepted.has(candidate));
+
+  return {
+    accepted: acceptedWithPreferred.length > 0 ? acceptedWithPreferred : option.alternatives,
+    preferred: acceptedWithPreferred.includes(preferred)
+      ? preferred
+      : (acceptedWithPreferred[0] ?? option.alternatives[0] ?? ""),
+    variantId: option.id,
+  };
+}
+
+function pushRomajiToken(
+  parts: RomajiGuidePart[],
+  tokens: RomajiInputToken[],
+  token: ReadRomajiTokenResult,
+) {
+  const tokenIndex = tokens.length;
+  tokens.push({
+    accepted: token.accepted,
+    preferred: token.preferred,
+    variantId: token.variantId,
+  });
+  parts.push({
+    kind: "input",
+    text: token.preferred,
+    tokenIndex,
+    variantId: token.variantId,
+  });
+}
+
+function isSyllabicNContext(source: string, index: number) {
+  const next = source[index + 1] ?? "";
+  return next === "" || !/[a-z]/.test(next) || !["a", "i", "u", "e", "o", "y"].includes(next);
+}
+
+function selectRomajiOption(options: string[], tokenIndex: number, option: string) {
+  const next = [...options];
+  next[tokenIndex] = option;
+  return next;
+}
+
+function selectBestRomajiState<
+  T extends { tokenIndex: number; option: string | null; offset: number },
+>(states: T[]) {
+  return states.reduce((best, state) => {
+    if (state.tokenIndex !== best.tokenIndex) {
+      return state.tokenIndex > best.tokenIndex ? state : best;
+    }
+
+    return state.offset > best.offset ? state : best;
+  }, states[0]!);
+}
+
+function dedupeRomajiStates<
+  T extends {
+    tokenIndex: number;
+    option: string | null;
+    offset: number;
+    selectedOptions: string[];
+  },
+>(states: T[]) {
+  const seen = new Set<string>();
+  return states.filter((state) => {
+    const key = `${state.tokenIndex}:${state.option ?? ""}:${state.offset}:${state.selectedOptions.join("\u0000")}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 export function calculateMetrics(input: MetricsInput): Metrics {
@@ -207,6 +699,16 @@ export type Rank = {
   label: string;
   colorName: string;
   level: number;
+};
+
+export type RankProgressionItem = Rank & {
+  requiredScore: number;
+};
+
+const noRank: Rank = {
+  label: "-",
+  colorName: "なし",
+  level: -1,
 };
 
 const rankBands = [
@@ -244,12 +746,23 @@ const ultimateRank: Rank = {
 
 export const a0RankLevel = ranks.find((rank) => rank.label === "A0")?.level ?? 42;
 
+export function getRankRequiredScore(level: number): number {
+  return 500 + Math.max(0, level) * 90;
+}
+
+export function getRankProgression(): RankProgressionItem[] {
+  return [...ranks, ultimateRank].map((rank) => ({
+    ...rank,
+    requiredScore: getRankRequiredScore(rank.level),
+  }));
+}
+
 export function getRank(score: number): Rank {
-  if (score <= 500) {
-    return ranks[0];
+  if (score < 500) {
+    return noRank;
   }
 
-  const level = Math.floor((score - 500) / 90) + 1;
+  const level = Math.floor((score - 500) / 90);
   return ranks[level] ?? ultimateRank;
 }
 
@@ -282,6 +795,17 @@ export function countCorrectAtSamePositions(input: string, target: string): numb
   }
 
   return correct;
+}
+
+export function countCorrectDirectCharacters(
+  input: string,
+  target: string | RomajiInputTarget,
+): number {
+  if (typeof target === "string") {
+    return countCorrectAtSamePositions(input, target);
+  }
+
+  return getRomajiInputProgress(target, input).accepted ? input.length : 0;
 }
 
 export function countImeCorrectCharacters(input: string, target: string): number {

@@ -27,6 +27,7 @@ export default function Home() {
         <SettingsScreen
           onBack={session.showModeSelect}
           onChange={session.updateSettings}
+          onClearLocalData={session.clearLocalData}
           settings={session.settings}
         />
       ) : session.screen === "mode-select" ? (

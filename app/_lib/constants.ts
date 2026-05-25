@@ -35,6 +35,7 @@ export const ignoredKeys = new Set([
 
 export const initialStats: RuntimeStats = {
   keystrokes: 0,
+  scoredInputLength: 0,
   physicalKeystrokes: 0,
   characterAttempts: 0,
   correctCharacters: 0,
@@ -48,6 +49,9 @@ export const initialStats: RuntimeStats = {
 
 export const initialSettings: AppSettings = {
   showRomajiWordSpaces: true,
+  romajiInputPreset: "hepburn",
+  romajiInputSelections: {},
+  allowSplitYoon: true,
   idleRetireSeconds: 0,
   theme: "dark",
 };
