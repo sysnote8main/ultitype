@@ -1,6 +1,7 @@
 import { Activity, Trophy } from "lucide-react";
 import { modes, type Metrics } from "@/src/lib/typing";
 import type { RuntimeStats, StoredSession } from "../_lib/types";
+import { RankBadgeCanvas } from "./RankBadgeCanvas";
 
 type LowerStatsProps = {
   currentAccuracy: number;
@@ -48,7 +49,12 @@ export function LowerStats({ currentAccuracy, metrics, sessions, stats }: LowerS
           <ol>
             {sessions.map((session) => (
               <li key={`${session.createdAt}-${session.modeId}`}>
-                <span>{session.rank}</span>
+                <RankBadgeCanvas
+                  className="history-rank-canvas"
+                  height={32}
+                  rank={session.rank}
+                  width={68}
+                />
                 <strong>{Math.round(session.score).toLocaleString()}</strong>
                 <small>{modes.find((item) => item.id === session.modeId)?.label}</small>
                 <em>{session.challengeLanguage === "en" ? "English" : "日本語"}</em>

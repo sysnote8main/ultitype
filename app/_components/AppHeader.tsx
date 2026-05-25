@@ -1,7 +1,11 @@
-import { Settings } from "lucide-react";
+"use client";
+
+import { Settings, Star } from "lucide-react";
+import Link from "next/link";
 import type { Rank } from "@/src/lib/typing";
 import { challengeLanguages } from "../_lib/constants";
 import type { ChallengeLanguage } from "../_lib/types";
+import { RankBadgeCanvas } from "./RankBadgeCanvas";
 
 type AppHeaderProps = {
   bestPracticeRank: Rank;
@@ -22,6 +26,9 @@ export function AppHeader({
   onChangeChallengeLanguage,
   onOpenSettings,
 }: AppHeaderProps) {
+  const bestOverallRank =
+    bestProductionScore > bestPracticeScore ? bestProductionRank : bestPracticeRank;
+
   return (
     <header className="app-header" aria-label="UltiType header">
       <div className="brand-block">
@@ -48,6 +55,20 @@ export function AppHeader({
               </button>
             ))}
           </div>
+          <Link
+            aria-label={`ランクガイド（現在 ${bestOverallRank.label}）`}
+            className="rank-guide-link"
+            href="/ranks"
+            title="ランクガイド"
+          >
+            <Star size={18} fill="currentColor" />
+            <RankBadgeCanvas
+              className="rank-link-canvas"
+              height={28}
+              rank={bestOverallRank.label}
+              width={58}
+            />
+          </Link>
           <button
             className="settings-button"
             onClick={onOpenSettings}
@@ -66,7 +87,7 @@ function RankBadge({ label, rank, score }: { label: string; rank: string; score:
   return (
     <div className="rank-badge">
       <span>{label}</span>
-      <strong>{rank}</strong>
+      <RankBadgeCanvas className="rank-badge-canvas" rank={rank} />
       <small>{Math.round(score).toLocaleString()}</small>
     </div>
   );
