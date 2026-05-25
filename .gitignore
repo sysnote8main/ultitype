@@ -3,4 +3,5 @@ node_modules/
 .playwright-mcp/
 *.log
 *.tsbuildinfo
+/*.png
 ultitype-home.png
