@@ -137,10 +137,19 @@ export type RomajiVariantSelection = {
   preferred: string;
 };
 
+export type SokuonInputId = "ltsu" | "xtsu" | "ltu" | "xtu";
+
+export type SokuonInputSelection = {
+  allowSplit: boolean;
+  accepted: SokuonInputId[];
+  preferred: SokuonInputId;
+};
+
 export type RomajiInputConfig = {
   preset: RomajiInputPreset;
   selections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
   allowSplitYoon?: boolean;
+  sokuon?: SokuonInputSelection;
 };
 
 export type RomajiVariantOption = {
@@ -227,6 +236,16 @@ export const romajiVariantOptions: RomajiVariantOption[] = [
   { id: "jo", label: "じょ", alternatives: ["jo", "zyo"], shortest: "zyo", hepburn: "jo" },
 ];
 
+export const sokuonInputOptions = ["ltsu", "xtsu", "ltu", "xtu"] as const satisfies readonly SokuonInputId[];
+
+const sokuonSourceMarker = "^";
+
+const defaultSokuonInputSelection: SokuonInputSelection = {
+  allowSplit: true,
+  accepted: [...sokuonInputOptions],
+  preferred: "xtu",
+};
+
 const romajiVariantPatterns = romajiVariantOptions
   .filter(
     (option) =>
@@ -284,6 +303,13 @@ export function createRomajiInputTarget(guide: string, config: RomajiInputConfig
     if (/\s/.test(character)) {
       parts.push({ kind: "visual", text: character });
       index += 1;
+      continue;
+    }
+
+    const sokuon = readSokuon(source, index, config);
+    if (sokuon) {
+      pushRomajiToken(parts, tokens, sokuon);
+      index += sokuon.consumed;
       continue;
     }
 
@@ -586,6 +612,52 @@ function readVariant(
   };
 }
 
+function readSokuon(
+  source: string,
+  index: number,
+  config: RomajiInputConfig,
+): ReadRomajiTokenResult | null {
+  if (source[index] !== sokuonSourceMarker) {
+    return null;
+  }
+
+  const selection = resolveSokuonSelection(config);
+  const geminatePrefixes = getSokuonGeminatePrefixes(source, index + 1, config);
+  const accepted =
+    geminatePrefixes.length > 0
+      ? selection.allowSplit
+        ? uniqueStrings([...geminatePrefixes, ...selection.accepted])
+        : geminatePrefixes
+      : selection.accepted;
+
+  return {
+    accepted,
+    consumed: 1,
+    preferred: geminatePrefixes[0] ?? selection.preferred,
+  };
+}
+
+function getSokuonGeminatePrefixes(
+  source: string,
+  index: number,
+  config: RomajiInputConfig,
+): string[] {
+  const next = source[index] ?? "";
+  if (next === "" || next === "n" || !/[a-z]/.test(next)) {
+    return [];
+  }
+
+  const nextToken =
+    readVariant(source, index, config) ?? readSplitYoon(source, index, config);
+  const candidates = nextToken?.accepted ?? [next];
+
+  return uniqueStrings(
+    candidates
+      .map((candidate) => candidate[0] ?? "")
+      .filter((candidate) => candidate !== "" && candidate !== "n" && /[a-z]/.test(candidate)),
+  );
+}
+
 function readSplitYoon(
   source: string,
   index: number,
@@ -603,6 +675,27 @@ function readSplitYoon(
         : [match.pattern, ...match.splitAlternatives],
     consumed: match.pattern.length,
     preferred: match.pattern,
+  };
+}
+
+function resolveSokuonSelection(config: RomajiInputConfig): SokuonInputSelection {
+  const validOptions = new Set<SokuonInputId>(sokuonInputOptions);
+  const configuredAccepted =
+    config.sokuon?.accepted.filter((candidate) => validOptions.has(candidate)) ?? [];
+  const accepted = configuredAccepted.length > 0
+    ? configuredAccepted
+    : defaultSokuonInputSelection.accepted;
+  const preferred =
+    config.sokuon?.preferred && accepted.includes(config.sokuon.preferred)
+      ? config.sokuon.preferred
+      : accepted.includes(defaultSokuonInputSelection.preferred)
+        ? defaultSokuonInputSelection.preferred
+        : accepted[0]!;
+
+  return {
+    allowSplit: config.sokuon?.allowSplit ?? defaultSokuonInputSelection.allowSplit,
+    accepted,
+    preferred,
   };
 }
 
@@ -691,6 +784,10 @@ function dedupeRomajiStates<
     seen.add(key);
     return true;
   });
+}
+
+function uniqueStrings<T extends string>(values: T[]): T[] {
+  return Array.from(new Set(values));
 }
 
 export function calculateMetrics(input: MetricsInput): Metrics {

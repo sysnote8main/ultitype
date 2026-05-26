@@ -1,6 +1,7 @@
 import type {
   ModeId,
   RomajiInputPreset,
+  SokuonInputSelection,
   RomajiVariantId,
   RomajiVariantSelection,
 } from "@/src/lib/typing";
@@ -17,6 +18,7 @@ export type AppSettings = {
   romajiInputPreset: RomajiInputPreset;
   romajiInputSelections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
   allowSplitYoon: boolean;
+  sokuonInput: SokuonInputSelection;
   idleRetireSeconds: number;
   theme: Theme;
 };

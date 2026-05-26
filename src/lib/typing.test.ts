@@ -4,6 +4,7 @@ import {
   calculateMetrics,
   createRomajiInputTarget,
   getRomajiGuideDisplay,
+  getRomajiInputProgress,
   getRank,
   getRankProgression,
   getRankRequiredScore,
@@ -207,6 +208,64 @@ describe("applyDirectKey", () => {
     expect(typeDirectKeys(strictTarget, Array.from("kila")).mistakes).toBeGreaterThan(0);
     expect(typeDirectKeys(strictTarget, Array.from("kixa")).completedPrompts).toBe(0);
     expect(typeDirectKeys(strictTarget, Array.from("kixa")).mistakes).toBeGreaterThan(0);
+  });
+
+  test("can allow only selected split sokuon inputs before consonants", () => {
+    const target = createRomajiInputTarget("ke^ka", {
+      preset: "hepburn",
+      selections: {},
+      sokuon: {
+        allowSplit: true,
+        accepted: ["ltu", "xtu"],
+        preferred: "xtu",
+      },
+    });
+
+    expect(target.guide).toBe("kekka");
+    expect(typeDirectKeys(target, Array.from("kekka")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(target, Array.from("keltuka")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(target, Array.from("kextuka")).completedPrompts).toBe(1);
+    expect(getRomajiInputProgress(target, "keltsuka").accepted).toBe(false);
+    expect(typeDirectKeys(target, Array.from("keltsuka")).mistakes).toBeGreaterThan(0);
+  });
+
+  test("can disable split sokuon inputs while keeping consonant doubling", () => {
+    const target = createRomajiInputTarget("ke^ka", {
+      preset: "hepburn",
+      selections: {},
+      sokuon: {
+        allowSplit: false,
+        accepted: ["ltsu", "xtsu", "ltu", "xtu"],
+        preferred: "xtu",
+      },
+    });
+
+    expect(typeDirectKeys(target, Array.from("kekka")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(target, Array.from("kextuka")).completedPrompts).toBe(0);
+    expect(typeDirectKeys(target, Array.from("kextuka")).mistakes).toBeGreaterThan(0);
+  });
+
+  test("requires selected standalone sokuon inputs before n, symbols, and end of text", () => {
+    const config = {
+      preset: "hepburn" as const,
+      selections: {},
+      sokuon: {
+        allowSplit: false,
+        accepted: ["xtu"],
+        preferred: "xtu",
+      },
+    };
+
+    const beforeN = createRomajiInputTarget("ma^na", config);
+    const beforeSymbol = createRomajiInputTarget("ma^.", config);
+    const atEnd = createRomajiInputTarget("ma^", config);
+
+    expect(beforeN.guide).toBe("maxtuna");
+    expect(typeDirectKeys(beforeN, Array.from("maxtuna")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(beforeN, Array.from("manna")).completedPrompts).toBe(0);
+    expect(typeDirectKeys(beforeSymbol, Array.from("maxtu.")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(beforeSymbol, Array.from("ma.")).completedPrompts).toBe(0);
+    expect(typeDirectKeys(atEnd, Array.from("maxtu")).completedPrompts).toBe(1);
   });
 
   test("selects shortest and hepburn guide priority while accepting variants", () => {

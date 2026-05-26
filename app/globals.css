@@ -918,10 +918,37 @@ h2 span {
   align-items: start;
 }
 
+.sokuon-method-row {
+  align-items: start;
+}
+
 .romaji-method-controls {
   display: grid;
   width: min(560px, 48vw);
   gap: 12px;
+}
+
+.sokuon-setting-controls {
+  display: grid;
+  width: min(560px, 48vw);
+  gap: 10px;
+}
+
+.sokuon-split-toggle {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 5px 8px 5px 12px;
+}
+
+.sokuon-split-toggle > span:first-child {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .romaji-preset-segmented {
@@ -1556,6 +1583,10 @@ dd {
   }
 
   .romaji-method-controls {
+    width: 100%;
+  }
+
+  .sokuon-setting-controls {
     width: 100%;
   }
 

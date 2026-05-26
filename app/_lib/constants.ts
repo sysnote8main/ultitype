@@ -52,6 +52,11 @@ export const initialSettings: AppSettings = {
   romajiInputPreset: "hepburn",
   romajiInputSelections: {},
   allowSplitYoon: true,
+  sokuonInput: {
+    allowSplit: true,
+    accepted: ["ltsu", "xtsu", "ltu", "xtu"],
+    preferred: "xtu",
+  },
   idleRetireSeconds: 0,
   theme: "dark",
 };

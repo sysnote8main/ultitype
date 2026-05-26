@@ -7,7 +7,12 @@ import {
   Sun,
   Trash2,
 } from "lucide-react";
-import { romajiVariantOptions, type RomajiVariantOption } from "@/src/lib/typing";
+import {
+  romajiVariantOptions,
+  sokuonInputOptions,
+  type RomajiVariantOption,
+  type SokuonInputId,
+} from "@/src/lib/typing";
 import { clampInteger } from "../_lib/challenge-utils";
 import type { AppSettings } from "../_lib/types";
 
@@ -68,6 +73,38 @@ export function SettingsScreen({
         ? selection.accepted
         : [...selection.accepted, preferred],
       preferred,
+    });
+  }
+
+  function toggleSokuonAccepted(value: SokuonInputId, checked: boolean) {
+    const accepted = checked
+      ? Array.from(new Set([...settings.sokuonInput.accepted, value]))
+      : settings.sokuonInput.accepted.filter((candidate) => candidate !== value);
+
+    if (accepted.length === 0) {
+      return;
+    }
+
+    onChange({
+      sokuonInput: {
+        ...settings.sokuonInput,
+        accepted,
+        preferred: accepted.includes(settings.sokuonInput.preferred)
+          ? settings.sokuonInput.preferred
+          : accepted[0],
+      },
+    });
+  }
+
+  function preferSokuon(preferred: SokuonInputId) {
+    onChange({
+      sokuonInput: {
+        ...settings.sokuonInput,
+        accepted: settings.sokuonInput.accepted.includes(preferred)
+          ? settings.sokuonInput.accepted
+          : [...settings.sokuonInput.accepted, preferred],
+        preferred,
+      },
     });
   }
 
@@ -193,6 +230,60 @@ export function SettingsScreen({
                 })}
               </div>
             ) : null}
+          </div>
+        </section>
+
+        <section className="settings-row sokuon-method-row" aria-labelledby="sokuon-setting">
+          <div>
+            <h3 id="sokuon-setting">促音入力</h3>
+            <p>「っ」の子音重複と ltsu / xtsu / ltu / xtu の扱いを選ぶ</p>
+          </div>
+          <div className="sokuon-setting-controls">
+            <label className="sokuon-split-toggle">
+              <span>促音分割を許可</span>
+              <span className="toggle-control">
+                <input
+                  checked={settings.sokuonInput.allowSplit}
+                  onChange={(event) =>
+                    onChange({
+                      sokuonInput: {
+                        ...settings.sokuonInput,
+                        allowSplit: event.currentTarget.checked,
+                      },
+                    })
+                  }
+                  type="checkbox"
+                />
+                <span aria-hidden="true" />
+              </span>
+            </label>
+            <div className="romaji-choice-list" aria-label="促音入力候補">
+              {sokuonInputOptions.map((option) => (
+                <label key={option}>
+                  <input
+                    checked={settings.sokuonInput.accepted.includes(option)}
+                    onChange={(event) =>
+                      toggleSokuonAccepted(option, event.currentTarget.checked)
+                    }
+                    type="checkbox"
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+            <label className="romaji-preferred-select">
+              <span>表示</span>
+              <select
+                onChange={(event) => preferSokuon(event.currentTarget.value as SokuonInputId)}
+                value={settings.sokuonInput.preferred}
+              >
+                {sokuonInputOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </section>
 

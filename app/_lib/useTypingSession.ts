@@ -86,18 +86,21 @@ export function useTypingSession() {
   const imeChallenges = challengeLanguage === "ja" ? longChallenges : englishLongChallenges;
   const currentImeChallenge = imeChallenges[challengeIndex % imeChallenges.length] ?? "";
   const currentDirectGuideSource = currentDirectChallenge.guide ?? currentDirectChallenge.input;
-  const currentVisibleDirectGuide =
+  const currentDirectRomajiSource =
+    currentDirectChallenge.romajiSource ?? currentDirectGuideSource;
+  const currentVisibleDirectRomajiSource =
     challengeLanguage === "ja" &&
     !mode.requiresIme &&
     !stored.settings.showRomajiWordSpaces
-      ? removeRomajiVisualSpaces(currentDirectGuideSource)
-      : currentDirectGuideSource;
+      ? removeRomajiVisualSpaces(currentDirectRomajiSource)
+      : currentDirectRomajiSource;
   const currentRomajiTarget =
     challengeLanguage === "ja" && !mode.requiresIme
-      ? createRomajiInputTarget(currentVisibleDirectGuide, {
+      ? createRomajiInputTarget(currentVisibleDirectRomajiSource, {
           preset: stored.settings.romajiInputPreset,
           selections: stored.settings.romajiInputSelections,
           allowSplitYoon: stored.settings.allowSplitYoon,
+          sokuon: stored.settings.sokuonInput,
         })
       : null;
   const currentDisplay = mode.requiresIme
@@ -157,6 +160,10 @@ export function useTypingSession() {
         settings: {
           ...initialSettings,
           ...parsed.settings,
+          sokuonInput: {
+            ...initialSettings.sokuonInput,
+            ...parsed.settings?.sokuonInput,
+          },
         },
       });
     } catch {

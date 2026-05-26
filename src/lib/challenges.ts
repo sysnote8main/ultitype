@@ -7,6 +7,7 @@ export type DirectChallenge = {
   display: string;
   guide?: string;
   input: string;
+  romajiSource?: string;
 };
 
 export type JapaneseChallengeSource = {
@@ -42,15 +43,19 @@ export function parseJapaneseChallengeText(source: string): JapaneseChallengeSou
 
 function createJapaneseDirectChallenges(challenges: JapaneseChallengeSource[]): DirectChallenge[] {
   return challenges.map(({ display, reading }) => {
-    const guide = kanaReadingToRomaji(reading);
+    const romajiSource = kanaReadingToRomaji(reading);
+    const guide = createVisibleRomajiGuide(romajiSource);
 
     return {
       display,
       guide,
       input: removeVisualSpaces(guide),
+      romajiSource,
     };
   });
 }
+
+const sokuonSourceMarker = "^";
 
 function kanaReadingToRomaji(reading: string): string {
   const characters = Array.from(reading);
@@ -62,8 +67,7 @@ function kanaReadingToRomaji(reading: string): string {
     const pair = `${character}${next}`;
 
     if (character === "っ") {
-      const nextRomaji = resolveKanaRomaji(next);
-      result.push(nextRomaji ? nextRomaji[0] ?? "" : "");
+      result.push(sokuonSourceMarker);
       continue;
     }
 
@@ -81,6 +85,23 @@ function kanaReadingToRomaji(reading: string): string {
     }
 
     result.push(kanaRomaji[character] ?? character);
+  }
+
+  return result.join("");
+}
+
+function createVisibleRomajiGuide(source: string): string {
+  const result: string[] = [];
+
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index] ?? "";
+    if (character !== sokuonSourceMarker) {
+      result.push(character);
+      continue;
+    }
+
+    const next = source[index + 1] ?? "";
+    result.push(next !== "n" && /[a-z]/.test(next) ? next : "xtu");
   }
 
   return result.join("");

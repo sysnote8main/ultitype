@@ -50,6 +50,14 @@ describe("direct Japanese challenge romaji", () => {
       false,
     );
   });
+
+  test("keeps sokuon markers out of the visible Japanese guide", () => {
+    const challenge = directShortChallenges.find((item) => item.romajiSource?.includes("^"));
+
+    expect(challenge?.display).toContain("結果");
+    expect(challenge?.guide).toContain("kekka");
+    expect(challenge?.guide).not.toContain("^");
+  });
 });
 
 describe("English challenges", () => {
