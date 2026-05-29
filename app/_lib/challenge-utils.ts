@@ -32,3 +32,30 @@ export function clampInteger(value: string, min: number, max: number) {
 
   return Math.min(max, Math.max(min, parsed));
 }
+
+export function createShuffledIndexes(
+  length: number,
+  random: () => number = Math.random,
+  previousLastIndex?: number,
+): number[] {
+  const indexes = Array.from({ length }, (_, index) => index);
+
+  for (let index = indexes.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(random() * (index + 1));
+    [indexes[index], indexes[randomIndex]] = [indexes[randomIndex], indexes[index]];
+  }
+
+  if (indexes.length > 1 && indexes[0] === previousLastIndex) {
+    [indexes[0], indexes[1]] = [indexes[1], indexes[0]];
+  }
+
+  return indexes;
+}
+
+export function getOrderedChallengeIndex(position: number, challengeCount: number, order: number[]) {
+  if (challengeCount <= 0) {
+    return 0;
+  }
+
+  return order[position % challengeCount] ?? position % challengeCount;
+}

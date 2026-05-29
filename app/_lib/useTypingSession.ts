@@ -35,8 +35,10 @@ import {
 } from "./constants";
 import { shouldPersistStoredState } from "./stored-state";
 import {
+  createShuffledIndexes,
   estimateImeKeystrokes,
   getDirectChallenges,
+  getOrderedChallengeIndex,
   removeRomajiVisualSpaces,
 } from "./challenge-utils";
 import type {
@@ -51,6 +53,65 @@ import type {
   StoredState,
 } from "./types";
 
+const directCodeKeyMap: Record<string, [normal: string, shifted: string]> = {
+  Backquote: ["`", "~"],
+  BracketLeft: ["[", "{"],
+  BracketRight: ["]", "}"],
+  Backslash: ["\\", "|"],
+  Comma: [",", "<"],
+  Digit0: ["0", ")"],
+  Digit1: ["1", "!"],
+  Digit2: ["2", "@"],
+  Digit3: ["3", "#"],
+  Digit4: ["4", "$"],
+  Digit5: ["5", "%"],
+  Digit6: ["6", "^"],
+  Digit7: ["7", "&"],
+  Digit8: ["8", "*"],
+  Digit9: ["9", "("],
+  Equal: ["=", "+"],
+  IntlRo: ["\\", "_"],
+  Minus: ["-", "_"],
+  Period: [".", ">"],
+  Quote: ["'", "\""],
+  Semicolon: [";", ":"],
+  Slash: ["/", "?"],
+};
+
+export function getDirectInputKey(event: DirectKeyEvent): string | null {
+  if (ignoredKeys.has(event.key)) {
+    return null;
+  }
+
+  if (event.key === "Backspace") {
+    return "Backspace";
+  }
+
+  if (event.code === "Backspace") {
+    return "Backspace";
+  }
+
+  if (event.key.length === 1) {
+    return event.key;
+  }
+
+  if (/^Key[A-Z]$/.test(event.code)) {
+    const key = event.code.at(-1);
+    return event.shiftKey ? (key ?? null) : (key?.toLowerCase() ?? null);
+  }
+
+  if (event.code === "Space") {
+    return " ";
+  }
+
+  const mapped = directCodeKeyMap[event.code];
+  if (mapped) {
+    return mapped[event.shiftKey ? 1 : 0];
+  }
+
+  return null;
+}
+
 export function useTypingSession() {
   const [stored, setStored] = useState<StoredState>(initialStoredState);
   const [modeId, setModeId] = useState<ModeId>("practice-accuracy");
@@ -58,6 +119,9 @@ export function useTypingSession() {
   const [challengeLanguage, setChallengeLanguage] = useState<ChallengeLanguage>("ja");
   const [productionDuration, setProductionDuration] = useState<ProductionDuration>(300);
   const [challengeIndex, setChallengeIndex] = useState(0);
+  const [practiceChallengeOrder, setPracticeChallengeOrder] = useState(() =>
+    createShuffledIndexes(getDirectChallenges("ja", "practice").length),
+  );
   const [input, setInput] = useState("");
   const [stats, setStats] = useState<RuntimeStats>(initialStats);
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -76,8 +140,12 @@ export function useTypingSession() {
   const remainingSeconds = durationSeconds - elapsedSeconds;
   const productionUnlocked = isProductionUnlocked(stored.bestPracticeScore);
   const directChallenges = getDirectChallenges(challengeLanguage, mode.group);
+  const directChallengeIndex =
+    mode.group === "practice"
+      ? getOrderedChallengeIndex(challengeIndex, directChallenges.length, practiceChallengeOrder)
+      : getOrderedChallengeIndex(challengeIndex, directChallenges.length, []);
   const currentDirectChallenge =
-    directChallenges[challengeIndex % directChallenges.length] ??
+    directChallenges[directChallengeIndex] ??
     ({
       display: "",
       guide: "",
@@ -115,6 +183,28 @@ export function useTypingSession() {
       : currentDirectChallenge.guide;
   const bestPracticeRank = getRank(stored.bestPracticeScore);
   const bestProductionRank = getRank(stored.bestProductionScore);
+
+  function randomizePracticeChallengeOrder(language: ChallengeLanguage = challengeLanguage) {
+    setPracticeChallengeOrder(
+      createShuffledIndexes(getDirectChallenges(language, "practice").length),
+    );
+  }
+
+  function advanceChallenge() {
+    const nextChallengeIndex = challengeIndex + 1;
+
+    if (
+      mode.group === "practice" &&
+      directChallenges.length > 0 &&
+      nextChallengeIndex % directChallenges.length === 0
+    ) {
+      setPracticeChallengeOrder(
+        createShuffledIndexes(directChallenges.length, Math.random, directChallengeIndex),
+      );
+    }
+
+    setChallengeIndex(nextChallengeIndex);
+  }
 
   const metrics = useMemo(
     () =>
@@ -240,6 +330,7 @@ export function useTypingSession() {
     setStats(initialStats);
     setInput("");
     setChallengeIndex(0);
+    randomizePracticeChallengeOrder();
     setStartedAt(null);
     setNow(Date.now());
     setIsFinished(false);
@@ -264,10 +355,11 @@ export function useTypingSession() {
     setIsFinished(false);
   }
 
-  function resetSession() {
+  function resetSession(language: ChallengeLanguage = challengeLanguage) {
     setStats(initialStats);
     setInput("");
     setChallengeIndex(0);
+    randomizePracticeChallengeOrder(language);
     setStartedAt(null);
     setNow(Date.now());
     setIsFinished(false);
@@ -338,7 +430,7 @@ export function useTypingSession() {
     }
 
     setChallengeLanguage(nextLanguage);
-    resetSession();
+    resetSession(nextLanguage);
   }
 
   function updateSettings(nextSettings: Partial<AppSettings>) {
@@ -393,11 +485,8 @@ export function useTypingSession() {
       return;
     }
 
-    if (ignoredKeys.has(event.key)) {
-      return;
-    }
-
-    if (event.key !== "Backspace" && event.key.length !== 1) {
+    const key = getDirectInputKey(event);
+    if (!key) {
       return;
     }
 
@@ -417,7 +506,7 @@ export function useTypingSession() {
       !startedAt &&
       !isDirectKeyCorrect({
         state: directState,
-        key: event.key,
+        key,
         target: currentInputTarget,
       })
     ) {
@@ -430,7 +519,7 @@ export function useTypingSession() {
 
     const result = applyDirectKey({
       state: directState,
-      key: event.key,
+      key,
       target: currentInputTarget,
       lockMistakes: mode.lockMistakes,
     });
@@ -451,7 +540,7 @@ export function useTypingSession() {
     setInput(result.state.input);
 
     if (result.state.completedPrompts > stats.completedPrompts) {
-      setChallengeIndex((previous) => previous + 1);
+      advanceChallenge();
     }
   }
 
@@ -493,7 +582,7 @@ export function useTypingSession() {
     }));
     setInput("");
     setImeError("");
-    setChallengeIndex((previous) => previous + 1);
+    advanceChallenge();
   }
 
   function handleImeInput(nextInput: string) {
@@ -561,7 +650,7 @@ export function useTypingSession() {
       onImeKeyDown: handleImeKeyDown,
       onPrepareSession: prepareSession,
       onPreventDirectTextInput: preventDirectTextInput,
-      onResetSession: resetSession,
+      onResetSession: () => resetSession(),
     },
     bestPracticeScore: stored.bestPracticeScore,
     bestProductionScore: stored.bestProductionScore,

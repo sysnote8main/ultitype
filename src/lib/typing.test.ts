@@ -45,6 +45,34 @@ describe("calculateMetrics", () => {
 
     expect(metrics.consistency).toBeGreaterThanOrEqual(0.65);
   });
+
+  test("treats human-smooth pacing as full consistency", () => {
+    const metrics = calculateMetrics({
+      elapsedSeconds: 2,
+      keystrokes: 12,
+      characterAttempts: 12,
+      correctCharacters: 12,
+      mistakes: 0,
+      intervals: [150, 170, 140, 160, 145, 155, 175, 135],
+      accuracyExponent: 3,
+    });
+
+    expect(metrics.consistency).toBe(1);
+  });
+
+  test("penalizes clearly uneven pacing after the tolerance band", () => {
+    const metrics = calculateMetrics({
+      elapsedSeconds: 2,
+      keystrokes: 12,
+      characterAttempts: 12,
+      correctCharacters: 12,
+      mistakes: 0,
+      intervals: [80, 260, 90, 280, 75, 250],
+      accuracyExponent: 3,
+    });
+
+    expect(metrics.consistency).toBeLessThan(0.5);
+  });
 });
 
 describe("rank", () => {

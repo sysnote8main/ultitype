@@ -11,7 +11,10 @@ export type Theme = "dark" | "light";
 export type FinishReason = "completed" | "retired";
 export type Screen = "mode-select" | "typing" | "settings";
 export type ProductionDuration = 300 | 600;
-export type DirectKeyEvent = Pick<globalThis.KeyboardEvent, "key" | "preventDefault">;
+export type DirectKeyEvent = Pick<
+  globalThis.KeyboardEvent,
+  "code" | "key" | "preventDefault" | "shiftKey"
+>;
 
 export type AppSettings = {
   showRomajiWordSpaces: boolean;
