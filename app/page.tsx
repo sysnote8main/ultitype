@@ -19,6 +19,7 @@ export default function Home() {
         bestProductionRank={session.bestProductionRank}
         bestProductionScore={session.bestProductionScore}
         challengeLanguage={session.challengeLanguage}
+        soundSettings={session.settings}
         onChangeChallengeLanguage={session.changeChallengeLanguage}
         onOpenSettings={session.openSettings}
       />
@@ -35,6 +36,7 @@ export default function Home() {
           productionDuration={session.productionDuration}
           productionDurations={productionDurations}
           productionUnlocked={session.productionUnlocked}
+          soundSettings={session.settings}
           onProductionDurationChange={session.setProductionDuration}
           onSelectMode={session.selectMode}
         />

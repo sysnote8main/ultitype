@@ -1,14 +1,20 @@
 import { ArrowLeft, Star } from "lucide-react";
-import Link from "next/link";
 import { RankGuide } from "../_components/RankGuide";
+import { SelectSoundLink } from "../_components/SelectSoundLink";
 
 export default function RanksPage() {
   return (
     <main className="shell rank-guide-page">
       <header className="rank-guide-page-head">
-        <Link className="icon-link" href="/" aria-label="戻る" title="戻る">
+        <SelectSoundLink
+          className="icon-link"
+          href="/"
+          aria-label="戻る"
+          soundKind="back"
+          title="戻る"
+        >
           <ArrowLeft size={20} />
-        </Link>
+        </SelectSoundLink>
         <div>
           <div className="panel-heading">
             <Star size={18} fill="currentColor" />

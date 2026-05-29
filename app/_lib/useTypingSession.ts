@@ -52,6 +52,7 @@ import type {
   StoredSession,
   StoredState,
 } from "./types";
+import { getFinishSoundKind, useTypingSounds } from "./typing-sounds";
 
 const directCodeKeyMap: Record<string, [normal: string, shifted: string]> = {
   Backquote: ["`", "~"],
@@ -132,6 +133,7 @@ export function useTypingSession() {
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const skipNextPersistRef = useRef(false);
+  const playTypingSound = useTypingSounds(stored.settings);
 
   const mode = modes.find((item) => item.id === modeId) ?? modes[0];
   const acceptsTextInput = shouldAcceptTextInput(mode);
@@ -379,6 +381,15 @@ export function useTypingSession() {
       return;
     }
 
+    playTypingSound(
+      getFinishSoundKind({
+        modeGroup: mode.group,
+        score: metrics.score,
+        bestPracticeScore: stored.bestPracticeScore,
+        bestProductionScore: stored.bestProductionScore,
+      }),
+    );
+
     const session: StoredSession = {
       modeId,
       challengeLanguage,
@@ -510,6 +521,7 @@ export function useTypingSession() {
         target: currentInputTarget,
       })
     ) {
+      playTypingSound("mistake");
       return;
     }
 
@@ -523,7 +535,9 @@ export function useTypingSession() {
       target: currentInputTarget,
       lockMistakes: mode.lockMistakes,
     });
+    const didMistype = result.state.mistakes > directState.mistakes;
 
+    playTypingSound(didMistype ? "mistake" : "normal");
     recordKey(result.scoredKeystrokes);
     setStats((previous) => ({
       ...previous,
@@ -549,7 +563,8 @@ export function useTypingSession() {
       return;
     }
 
-    if (!ignoredKeys.has(event.key) && startedAt) {
+    if (!ignoredKeys.has(event.key) && event.key !== "Enter" && startedAt) {
+      playTypingSound("normal");
       recordKey(0, 1);
     }
 
@@ -566,11 +581,13 @@ export function useTypingSession() {
     const matches = isImeSubmissionMatch(input, currentDisplay);
 
     if (!matches) {
+      playTypingSound("mistake");
       setImeError("課題文と一致していません。修正してから Enter で提出してください。");
       setStats((previous) => ({ ...previous, mistakes: previous.mistakes + 1 }));
       return;
     }
 
+    playTypingSound("normal");
     const estimatedKeystrokes = estimateImeKeystrokes(currentDisplay);
     setStats((previous) => ({
       ...previous,
@@ -592,6 +609,7 @@ export function useTypingSession() {
 
     if (!startedAt && nextInput.length > 0) {
       beginSession();
+      playTypingSound("normal");
       recordKey(0, 1);
     }
 
@@ -643,6 +661,7 @@ export function useTypingSession() {
       mode,
       progress,
       remainingSeconds,
+      soundSettings: stored.settings,
       startedAt,
       stats,
       onBackToModeSelect: returnToModeSelect,

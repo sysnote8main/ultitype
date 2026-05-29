@@ -1,5 +1,8 @@
+"use client";
+
 import { Crosshair, Gauge, Keyboard, Languages, Lock, Waves, Zap } from "lucide-react";
 import { modes, type ModeId, type TypingMode } from "@/src/lib/typing";
+import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ProductionDuration } from "../_lib/types";
 
 const modeIcons = {
@@ -14,6 +17,7 @@ type ModeSelectScreenProps = {
   productionDuration: ProductionDuration;
   productionDurations: readonly ProductionDuration[];
   productionUnlocked: boolean;
+  soundSettings: SoundSettings;
   onProductionDurationChange: (duration: ProductionDuration) => void;
   onSelectMode: (modeId: ModeId) => void;
 };
@@ -22,9 +26,17 @@ export function ModeSelectScreen({
   productionDuration,
   productionDurations,
   productionUnlocked,
+  soundSettings,
   onProductionDurationChange,
   onSelectMode,
 }: ModeSelectScreenProps) {
+  const playTypingSound = useTypingSounds(soundSettings);
+
+  function handleSelectMode(modeId: ModeId) {
+    playTypingSound("select");
+    onSelectMode(modeId);
+  }
+
   return (
     <section className="mode-select-screen" aria-label="mode selection">
       <div className="mode-select-heading">
@@ -49,7 +61,7 @@ export function ModeSelectScreen({
                   key={item.id}
                   locked={false}
                   mode={item}
-                  onSelect={() => onSelectMode(item.id)}
+                  onSelect={() => handleSelectMode(item.id)}
                 />
               ))}
           </div>
@@ -82,7 +94,7 @@ export function ModeSelectScreen({
                   key={item.id}
                   locked={!productionUnlocked}
                   mode={item}
-                  onSelect={() => onSelectMode(item.id)}
+                  onSelect={() => handleSelectMode(item.id)}
                 />
               ))}
           </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowLeft,
   CheckCircle2,
@@ -24,6 +26,7 @@ import {
   type TypingMode,
 } from "@/src/lib/typing";
 import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
+import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ChallengeLanguage, FinishReason, RuntimeStats } from "../_lib/types";
 
 type BlockableTextEvent =
@@ -51,6 +54,7 @@ type TypingPanelProps = {
   mode: TypingMode;
   progress: number;
   remainingSeconds: number;
+  soundSettings: SoundSettings;
   startedAt: number | null;
   stats: RuntimeStats;
   onBackToModeSelect: () => void;
@@ -80,6 +84,7 @@ export function TypingPanel({
   mode,
   progress,
   remainingSeconds,
+  soundSettings,
   startedAt,
   stats,
   onBackToModeSelect,
@@ -89,10 +94,16 @@ export function TypingPanel({
   onPreventDirectTextInput,
   onResetSession,
 }: TypingPanelProps) {
+  const playTypingSound = useTypingSounds(soundSettings);
   const visibleRank = getVisibleSessionRank({
     elapsedSeconds,
     rankLabel: currentRank.label,
   });
+
+  function handleBackToModeSelect() {
+    playTypingSound("back");
+    onBackToModeSelect();
+  }
 
   return (
     <section
@@ -128,7 +139,7 @@ export function TypingPanel({
         <div className="actions">
           <button
             className="icon-button"
-            onClick={onBackToModeSelect}
+            onClick={handleBackToModeSelect}
             title="モード選択"
             type="button"
           >

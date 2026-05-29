@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowLeft,
   ChevronDown,
@@ -14,6 +16,7 @@ import {
   type SokuonInputId,
 } from "@/src/lib/typing";
 import { clampInteger } from "../_lib/challenge-utils";
+import { useTypingSounds } from "../_lib/typing-sounds";
 import type { AppSettings } from "../_lib/types";
 
 type SettingsScreenProps = {
@@ -29,6 +32,13 @@ export function SettingsScreen({
   onChange,
   onClearLocalData,
 }: SettingsScreenProps) {
+  const playTypingSound = useTypingSounds(settings);
+
+  function handleBack() {
+    playTypingSound("back");
+    onBack();
+  }
+
   function getRomajiSelection(option: RomajiVariantOption) {
     return (
       settings.romajiInputSelections[option.id] ?? {
@@ -114,6 +124,12 @@ export function SettingsScreen({
     });
   }
 
+  function updateSoundVolume(nextValue: string) {
+    onChange({
+      soundVolume: clampInteger(nextValue, 0, 100) / 100,
+    });
+  }
+
   function handleClearLocalData() {
     if (window.confirm("ローカルデータをすべて削除します。よろしいですか？")) {
       onClearLocalData();
@@ -130,12 +146,62 @@ export function SettingsScreen({
           </div>
           <h2>設定</h2>
         </div>
-        <button className="icon-button" onClick={onBack} title="戻る" type="button">
+        <button className="icon-button" onClick={handleBack} title="戻る" type="button">
           <ArrowLeft size={18} />
         </button>
       </div>
 
       <div className="settings-list">
+        <section className="settings-row sound-settings-row" aria-labelledby="sound-setting">
+          <div>
+            <h3 id="sound-setting">サウンド</h3>
+            <p>タイプ音とUI/結果音の音量、カテゴリ別のON/OFFを調整します。</p>
+          </div>
+          <div className="sound-settings-controls">
+            <label className="sound-volume-control">
+              <span>音量</span>
+              <input
+                aria-label="音量"
+                max={100}
+                min={0}
+                onChange={(event) => updateSoundVolume(event.currentTarget.value)}
+                step={1}
+                type="range"
+                value={Math.round(settings.soundVolume * 100)}
+              />
+              <strong>{Math.round(settings.soundVolume * 100)}%</strong>
+            </label>
+            <div className="sound-toggle-list">
+              <label className="sound-toggle-item">
+                <span>タイプ音</span>
+                <span className="toggle-control">
+                  <input
+                    checked={settings.typingSoundEnabled}
+                    onChange={(event) =>
+                      onChange({ typingSoundEnabled: event.currentTarget.checked })
+                    }
+                    type="checkbox"
+                  />
+                  <span aria-hidden="true" />
+                </span>
+              </label>
+              <label className="sound-toggle-item">
+                <span>UI/結果音</span>
+                <span className="toggle-control">
+                  <input
+                    checked={settings.uiSoundEnabled}
+                    onChange={(event) =>
+                      onChange({ uiSoundEnabled: event.currentTarget.checked })
+                    }
+                    type="checkbox"
+                  />
+                  <span aria-hidden="true" />
+                </span>
+              </label>
+            </div>
+          </div>
+        </section>
+
         <section className="settings-row" aria-labelledby="romaji-space-setting">
           <div>
             <h3 id="romaji-space-setting">日本語ローマ字のスペース</h3>

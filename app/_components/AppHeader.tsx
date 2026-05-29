@@ -1,11 +1,12 @@
 "use client";
 
 import { Settings, Star } from "lucide-react";
-import Link from "next/link";
 import type { Rank } from "@/src/lib/typing";
 import { challengeLanguages } from "../_lib/constants";
+import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ChallengeLanguage } from "../_lib/types";
 import { RankBadgeCanvas } from "./RankBadgeCanvas";
+import { SelectSoundLink } from "./SelectSoundLink";
 
 type AppHeaderProps = {
   bestPracticeRank: Rank;
@@ -13,6 +14,7 @@ type AppHeaderProps = {
   bestProductionRank: Rank;
   bestProductionScore: number;
   challengeLanguage: ChallengeLanguage;
+  soundSettings: SoundSettings;
   onChangeChallengeLanguage: (language: ChallengeLanguage) => void;
   onOpenSettings: () => void;
 };
@@ -23,11 +25,26 @@ export function AppHeader({
   bestProductionRank,
   bestProductionScore,
   challengeLanguage,
+  soundSettings,
   onChangeChallengeLanguage,
   onOpenSettings,
 }: AppHeaderProps) {
+  const playTypingSound = useTypingSounds(soundSettings);
   const bestOverallRank =
     bestProductionScore > bestPracticeScore ? bestProductionRank : bestPracticeRank;
+
+  function handleLanguageChange(language: ChallengeLanguage) {
+    if (challengeLanguage !== language) {
+      playTypingSound("select");
+    }
+
+    onChangeChallengeLanguage(language);
+  }
+
+  function handleOpenSettings() {
+    playTypingSound("select");
+    onOpenSettings();
+  }
 
   return (
     <header className="app-header" aria-label="UltiType header">
@@ -47,7 +64,7 @@ export function AppHeader({
                 aria-pressed={challengeLanguage === language.id}
                 className={challengeLanguage === language.id ? "selected" : ""}
                 key={language.id}
-                onClick={() => onChangeChallengeLanguage(language.id)}
+                onClick={() => handleLanguageChange(language.id)}
                 type="button"
               >
                 <img className="flag-icon" src={language.flagSrc} alt="" aria-hidden="true" />
@@ -55,10 +72,11 @@ export function AppHeader({
               </button>
             ))}
           </div>
-          <Link
+          <SelectSoundLink
             aria-label={`ランクガイド（現在 ${bestOverallRank.label}）`}
             className="rank-guide-link"
             href="/ranks"
+            soundSettings={soundSettings}
             title="ランクガイド"
           >
             <Star size={18} fill="currentColor" />
@@ -68,10 +86,10 @@ export function AppHeader({
               rank={bestOverallRank.label}
               width={58}
             />
-          </Link>
+          </SelectSoundLink>
           <button
             className="settings-button"
-            onClick={onOpenSettings}
+            onClick={handleOpenSettings}
             title="設定"
             type="button"
           >

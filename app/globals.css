@@ -886,6 +886,67 @@ h2 span {
   color: var(--accent);
 }
 
+.sound-settings-row {
+  align-items: start;
+}
+
+.sound-settings-controls {
+  display: grid;
+  width: min(520px, 46vw);
+  gap: 12px;
+}
+
+.sound-volume-control {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) 52px;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 8px 12px;
+}
+
+.sound-volume-control span,
+.sound-toggle-item > span:first-child {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.sound-volume-control input {
+  width: 100%;
+  accent-color: var(--accent-2);
+}
+
+.sound-volume-control input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.sound-volume-control strong {
+  color: var(--accent-2);
+  font-size: 14px;
+  text-align: right;
+}
+
+.sound-toggle-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sound-toggle-item {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 6px 8px 6px 12px;
+}
+
 .danger-row {
   border-color: rgba(255, 103, 95, 0.42);
 }
@@ -1592,6 +1653,22 @@ dd {
 
   .sokuon-setting-controls {
     width: 100%;
+  }
+
+  .sound-settings-controls {
+    width: 100%;
+  }
+
+  .sound-toggle-list {
+    grid-template-columns: 1fr;
+  }
+
+  .sound-volume-control {
+    grid-template-columns: 1fr;
+  }
+
+  .sound-volume-control strong {
+    text-align: left;
   }
 
   .romaji-preset-segmented,
