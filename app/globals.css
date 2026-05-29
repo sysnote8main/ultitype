@@ -716,6 +716,24 @@ h2 span {
 
 .settings-list {
   display: grid;
+  gap: 22px;
+}
+
+.settings-category {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-category-title {
+  margin: 0;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.settings-category-list {
+  display: grid;
   gap: 10px;
 }
 
@@ -729,7 +747,7 @@ h2 span {
   padding: 16px;
 }
 
-.settings-row h3 {
+.settings-row h4 {
   margin: 0;
   color: var(--text);
   font-size: 17px;
@@ -951,7 +969,7 @@ h2 span {
   border-color: rgba(255, 103, 95, 0.42);
 }
 
-.danger-row h3 {
+.danger-row h4 {
   color: var(--warn);
 }
 
