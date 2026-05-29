@@ -79,7 +79,7 @@ function kanaReadingToRomaji(reading: string): string {
     }
 
     if (character === "ん") {
-      const nextRomaji = resolveKanaRomaji(next);
+      const nextRomaji = resolveKanaRomaji(findNextNonSpaceCharacter(characters, index + 1));
       result.push(nextRomaji && /^[aiueoyn]/.test(nextRomaji) ? "n'" : "n");
       continue;
     }
@@ -95,6 +95,16 @@ function createVisibleRomajiGuide(source: string): string {
 
   for (let index = 0; index < source.length; index += 1) {
     const character = source[index] ?? "";
+    if (character === "n" && source[index + 1] === "'") {
+      result.push("nn");
+      index += 1;
+      continue;
+    }
+
+    if (character === "'") {
+      continue;
+    }
+
     if (character !== sokuonSourceMarker) {
       result.push(character);
       continue;
@@ -109,6 +119,17 @@ function createVisibleRomajiGuide(source: string): string {
 
 function resolveKanaRomaji(character: string): string {
   return kanaRomaji[character] ?? character;
+}
+
+function findNextNonSpaceCharacter(characters: string[], startIndex: number): string {
+  for (let index = startIndex; index < characters.length; index += 1) {
+    const character = characters[index] ?? "";
+    if (!/\s/.test(character)) {
+      return character;
+    }
+  }
+
+  return "";
 }
 
 const kanaRomaji: Record<string, string> = {

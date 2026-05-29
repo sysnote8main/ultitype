@@ -1336,6 +1336,10 @@ h2 span {
   border-color: var(--accent);
 }
 
+.char.correct.current {
+  color: var(--accent-2);
+}
+
 .visual-space {
   white-space: pre;
 }

@@ -58,6 +58,15 @@ describe("direct Japanese challenge romaji", () => {
     expect(challenge?.guide).toContain("kekka");
     expect(challenge?.guide).not.toContain("^");
   });
+
+  test("keeps syllabic n distinct before a following word that starts with a vowel", () => {
+    const challenge = directShortChallenges.find((item) => item.display.includes("視線移動"));
+
+    expect(challenge?.romajiSource).toContain("shisen' idou");
+    expect(challenge?.guide).toContain("shisenn idou");
+    expect(challenge?.input).toContain("shisennidou");
+    expect(challenge?.input).not.toContain("shisenidou");
+  });
 });
 
 describe("English challenges", () => {

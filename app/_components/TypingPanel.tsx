@@ -293,22 +293,32 @@ function renderRomajiGuideCharacters(target: RomajiInputTarget, input: string) {
       );
     }
 
-    const className =
-      part.tokenIndex < progress.completedTokens
-        ? "char correct"
-        : part.tokenIndex === progress.completedTokens
-          ? "char current"
-          : "char";
     const text =
       progress.currentTokenIndex === part.tokenIndex && progress.currentOption
         ? progress.currentOption
         : (progress.selectedOptions[part.tokenIndex] ?? part.text);
 
-    return Array.from(text).map((character, characterIndex) => (
-      <span className={className} key={`${part.tokenIndex}-${character}-${characterIndex}`}>
-        {character}
-      </span>
-    ));
+    return Array.from(text).map((character, characterIndex) => {
+      const isCompletedToken = part.tokenIndex < progress.completedTokens;
+      const isCurrentToken = part.tokenIndex === progress.currentTokenIndex;
+      const isTypedCurrentCharacter =
+        isCurrentToken &&
+        progress.currentOption !== null &&
+        characterIndex < progress.currentOptionOffset;
+      const className = isCompletedToken
+        ? "char correct"
+        : isCurrentToken
+          ? isTypedCurrentCharacter
+            ? "char correct current"
+            : "char current"
+          : "char";
+
+      return (
+        <span className={className} key={`${part.tokenIndex}-${character}-${characterIndex}`}>
+          {character}
+        </span>
+      );
+    });
   });
 }
 

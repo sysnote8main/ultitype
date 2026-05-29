@@ -129,14 +129,15 @@ describe("applyDirectKey", () => {
     );
   }
 
-  test("accepts syllabic n as n or nn but never accepts n apostrophe", () => {
+  test("requires nn for syllabic n before vowels and never accepts n apostrophe", () => {
     const target = createRomajiInputTarget("han'ei", {
       preset: "shortest",
       selections: {},
     });
 
-    expect(target.guide).toBe("hanei");
-    expect(typeDirectKeys(target, Array.from("hanei")).completedPrompts).toBe(1);
+    expect(target.guide).toBe("hannei");
+    expect(typeDirectKeys(target, Array.from("hanei")).completedPrompts).toBe(0);
+    expect(typeDirectKeys(target, Array.from("hanei")).mistakes).toBeGreaterThan(0);
     expect(typeDirectKeys(target, Array.from("hannei")).completedPrompts).toBe(1);
 
     const apostrophe = typeDirectKeys(target, Array.from("han'"));
@@ -147,8 +148,8 @@ describe("applyDirectKey", () => {
 
     const rejected = typeDirectKeys(target, Array.from("han'ei"));
 
-    expect(rejected.completedPrompts).toBe(1);
-    expect(rejected.mistakes).toBe(1);
+    expect(rejected.completedPrompts).toBe(0);
+    expect(rejected.mistakes).toBeGreaterThan(0);
   });
 
   test("allows n and nn for syllabic n before consonants", () => {
@@ -171,6 +172,19 @@ describe("applyDirectKey", () => {
     expect(getRomajiGuideDisplay(target, "han")).toBe("handan");
     expect(getRomajiGuideDisplay(target, "hann")).toBe("hanndan");
     expect(getRomajiGuideDisplay(target, "hanndann")).toBe("hanndann");
+  });
+
+  test("reports the typed offset within the current multi-character romaji token", () => {
+    const target = createRomajiInputTarget("nyu", {
+      preset: "hepburn",
+      selections: {},
+      allowSplitYoon: true,
+    });
+
+    const progress = getRomajiInputProgress(target, "n");
+
+    expect(progress.currentOption).toBe("nyu");
+    expect(progress.currentOptionOffset).toBe(1);
   });
 
   test("requires three n characters when syllabic n is followed by na-row input", () => {
@@ -274,7 +288,7 @@ describe("applyDirectKey", () => {
         preset: "shortest",
         selections: {},
       }).guide,
-    ).toBe("siti tu hu zyo hanei");
+    ).toBe("siti tu hu zyo hannei");
 
     const hepburn = createRomajiInputTarget("shichi tsu fu jo han'ei", {
       preset: "hepburn",
@@ -283,7 +297,7 @@ describe("applyDirectKey", () => {
 
     expect(hepburn.guide).toBe("shichi tsu fu jo hannei");
     expect(typeDirectKeys(hepburn, Array.from("shichitsufujohannei")).completedPrompts).toBe(1);
-    expect(typeDirectKeys(hepburn, Array.from("sitituhuzyohanei")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(hepburn, Array.from("sitituhuzyohannei")).completedPrompts).toBe(1);
   });
 
   test("custom selections can restrict accepted variants separately from display priority", () => {

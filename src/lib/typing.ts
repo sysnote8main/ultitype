@@ -209,8 +209,8 @@ export const romajiVariantOptions: RomajiVariantOption[] = [
   {
     id: "syllabicNBeforeVowel",
     label: "ん（母音・や行の前）",
-    alternatives: ["n", "nn"],
-    shortest: "n",
+    alternatives: ["nn"],
+    shortest: "nn",
     hepburn: "nn",
   },
   {
@@ -419,6 +419,7 @@ export function getRomajiInputProgress(target: RomajiInputTarget, input: string)
         completedTokens: 0,
         selectedOptions: [],
         currentOption: null,
+        currentOptionOffset: 0,
         currentTokenIndex: 0,
       };
     }
@@ -434,6 +435,7 @@ export function getRomajiInputProgress(target: RomajiInputTarget, input: string)
     completedTokens: bestState.tokenIndex,
     selectedOptions: bestState.selectedOptions,
     currentOption: bestState.option,
+    currentOptionOffset: bestState.option ? bestState.offset : 0,
     currentTokenIndex: bestState.tokenIndex,
   };
 }
