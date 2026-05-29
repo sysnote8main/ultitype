@@ -24,6 +24,9 @@ export type AppSettings = {
   sokuonInput: SokuonInputSelection;
   idleRetireSeconds: number;
   theme: Theme;
+  soundVolume: number;
+  typingSoundEnabled: boolean;
+  uiSoundEnabled: boolean;
 };
 
 export type StoredSession = {

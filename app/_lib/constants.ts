@@ -59,6 +59,9 @@ export const initialSettings: AppSettings = {
   },
   idleRetireSeconds: 0,
   theme: "dark",
+  soundVolume: 0.7,
+  typingSoundEnabled: true,
+  uiSoundEnabled: true,
 };
 
 export const initialStoredState: StoredState = {
