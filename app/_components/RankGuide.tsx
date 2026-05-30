@@ -7,20 +7,22 @@ import {
   modes,
   type RankProgressionItem,
 } from "@/src/lib/typing";
-import { initialStoredState, storageKey } from "../_lib/constants";
 import {
   formatRankGuideScore,
   getRankGuideStatusLabel,
   splitRankGuideColumns,
 } from "../_lib/rank-guide";
+import { cacheStoredState, getInitialStoredState, readStoredState } from "../_lib/stored-state";
 import type { StoredState } from "../_lib/types";
 import { RankBadgeCanvas } from "./RankBadgeCanvas";
 
 export function RankGuide() {
-  const [stored, setStored] = useState<StoredState>(initialStoredState);
+  const [stored, setStored] = useState<StoredState>(getInitialStoredState);
 
   useEffect(() => {
-    setStored(readStoredState());
+    const nextStored = readStoredState(window.localStorage);
+    cacheStoredState(nextStored);
+    setStored(nextStored);
   }, []);
 
   const bestScore = Math.max(stored.bestPracticeScore, stored.bestProductionScore);
@@ -151,22 +153,6 @@ function RankGuideColumn({
       </ol>
     </section>
   );
-}
-
-function readStoredState(): StoredState {
-  const raw = window.localStorage.getItem(storageKey);
-  if (!raw) {
-    return initialStoredState;
-  }
-
-  try {
-    return {
-      ...initialStoredState,
-      ...(JSON.parse(raw) as Partial<StoredState>),
-    };
-  } catch {
-    return initialStoredState;
-  }
 }
 
 function getNextTargetLabel(

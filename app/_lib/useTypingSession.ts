@@ -30,10 +30,14 @@ import {
   ignoredKeys,
   initialSettings,
   initialStats,
-  initialStoredState,
   storageKey,
 } from "./constants";
-import { shouldPersistStoredState } from "./stored-state";
+import {
+  cacheStoredState,
+  getInitialStoredState,
+  readStoredState,
+  shouldPersistStoredState,
+} from "./stored-state";
 import {
   createShuffledIndexes,
   estimateImeKeystrokes,
@@ -114,7 +118,7 @@ export function getDirectInputKey(event: DirectKeyEvent): string | null {
 }
 
 export function useTypingSession() {
-  const [stored, setStored] = useState<StoredState>(initialStoredState);
+  const [stored, setStored] = useState<StoredState>(getInitialStoredState);
   const [modeId, setModeId] = useState<ModeId>("practice-accuracy");
   const [screen, setScreen] = useState<Screen>("mode-select");
   const [challengeLanguage, setChallengeLanguage] = useState<ChallengeLanguage>("ja");
@@ -238,30 +242,9 @@ export function useTypingSession() {
   const correctionDebt = !acceptsTextInput && mode.lockMistakes ? stats.mistakeDebt : 0;
 
   useEffect(() => {
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) {
-      setHasLoadedStoredState(true);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as Partial<StoredState>;
-      setStored({
-        ...initialStoredState,
-        ...parsed,
-        settings: {
-          ...initialSettings,
-          ...parsed.settings,
-          sokuonInput: {
-            ...initialSettings.sokuonInput,
-            ...parsed.settings?.sokuonInput,
-          },
-        },
-      });
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    }
-
+    const nextStored = readStoredState(window.localStorage);
+    cacheStoredState(nextStored);
+    setStored(nextStored);
     setHasLoadedStoredState(true);
   }, []);
 
@@ -278,6 +261,7 @@ export function useTypingSession() {
       return;
     }
 
+    cacheStoredState(stored);
     window.localStorage.setItem(storageKey, JSON.stringify(stored));
   }, [hasLoadedStoredState, stored]);
 
@@ -458,11 +442,15 @@ export function useTypingSession() {
     }
 
     skipNextPersistRef.current = true;
-    setStored({
-      ...initialStoredState,
+    const nextStored = {
+      ...getInitialStoredState(),
+      bestPracticeScore: 0,
+      bestProductionScore: 0,
       sessions: [],
       settings: { ...initialSettings },
-    });
+    };
+    cacheStoredState(nextStored);
+    setStored(nextStored);
     setModeId("practice-accuracy");
     setChallengeLanguage("ja");
     setProductionDuration(300);

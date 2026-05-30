@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { drawRankBadge } from "../_lib/rank-badge";
+import { getRankBadgePaintSteps } from "../_lib/rank-badge-canvas";
 
 type RankBadgeCanvasProps = {
   className?: string;
@@ -18,7 +19,7 @@ export function RankBadgeCanvas({
 }: RankBadgeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -26,8 +27,7 @@ export function RankBadgeCanvas({
 
     let cancelled = false;
 
-    async function paint() {
-      await loadRankBadgeFonts(height);
+    function paint() {
       if (cancelled || !canvas) {
         return;
       }
@@ -47,7 +47,16 @@ export function RankBadgeCanvas({
       drawRankBadge(context, rank, width, height);
     }
 
-    void paint();
+    const canLoadFonts = Boolean(document.fonts);
+    const paintSteps = getRankBadgePaintSteps(canLoadFonts);
+
+    if (paintSteps.includes("immediate")) {
+      paint();
+    }
+
+    if (paintSteps.includes("font-ready")) {
+      void loadRankBadgeFonts(height).then(paint);
+    }
 
     return () => {
       cancelled = true;
