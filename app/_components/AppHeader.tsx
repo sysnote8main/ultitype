@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Star } from "lucide-react";
+import { Settings, Star, UserRound } from "lucide-react";
 import type { Rank } from "@/src/lib/typing";
 import { challengeLanguages } from "../_lib/constants";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
@@ -79,6 +79,15 @@ export function AppHeader({
               rank={bestOverallRank.label}
               width={58}
             />
+          </SelectSoundLink>
+          <SelectSoundLink
+            aria-label="ユーザー"
+            className="settings-button"
+            href="/user"
+            soundSettings={soundSettings}
+            title="ユーザー"
+          >
+            <UserRound size={18} />
           </SelectSoundLink>
           <SelectSoundLink
             aria-label="設定"

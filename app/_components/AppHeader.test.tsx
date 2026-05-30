@@ -25,4 +25,16 @@ describe("AppHeader", () => {
     expect(markup).toContain('href="/settings"');
     expect(markup).not.toContain('class="settings-button" type="button"');
   });
+
+  test("links to the user page from the shared header", () => {
+    const markup = renderAppHeader();
+
+    expect(markup).toContain('href="/user"');
+  });
+
+  test("places the user page link before settings", () => {
+    const markup = renderAppHeader();
+
+    expect(markup.indexOf('href="/user"')).toBeLessThan(markup.indexOf('href="/settings"'));
+  });
 });
