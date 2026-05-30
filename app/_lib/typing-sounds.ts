@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModeGroup } from "@/src/lib/typing";
 import { storageKey } from "./constants";
 import type { AppSettings } from "./types";
@@ -31,6 +31,39 @@ type TypingSoundSource =
   | typeof recordSoundSource
   | typeof selectSoundSource
   | typeof backSoundSource;
+
+type ChromeTabMutedInfo = {
+  muted?: boolean;
+};
+
+type ChromeTab = {
+  mutedInfo?: ChromeTabMutedInfo;
+};
+
+type ChromeTabChangeInfo = {
+  mutedInfo?: ChromeTabMutedInfo;
+};
+
+type ChromeTabsEvent<Listener> = {
+  addListener?: (listener: Listener) => void;
+  removeListener?: (listener: Listener) => void;
+};
+
+type ChromeTabsApi = {
+  query?: (
+    queryInfo: { active: true; currentWindow: true },
+    callback: (tabs: ChromeTab[]) => void,
+  ) => void;
+  onActivated?: ChromeTabsEvent<() => void>;
+  onUpdated?: ChromeTabsEvent<(tabId: number, changeInfo: ChromeTabChangeInfo) => void>;
+};
+
+type ChromeApi = {
+  runtime?: {
+    lastError?: unknown;
+  };
+  tabs?: ChromeTabsApi;
+};
 
 const defaultSoundSettings: SoundSettings = {
   soundVolume: 0.7,
@@ -88,6 +121,82 @@ export function getSoundPlaybackConfig(
     shouldPlay: isEnabled && volume > 0,
     volume,
   };
+}
+
+export function getChromeActiveTabMuted(chromeApi: ChromeApi | undefined = getGlobalChromeApi()) {
+  const query = chromeApi?.tabs?.query;
+  if (!query) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise<boolean | null>((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let settled = false;
+    const settle = (value: boolean | null) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      resolve(value);
+    };
+
+    timeoutId = setTimeout(() => settle(null), 250);
+
+    try {
+      query({ active: true, currentWindow: true }, (tabs) => {
+        if (chromeApi.runtime?.lastError) {
+          settle(null);
+          return;
+        }
+
+        const muted = tabs[0]?.mutedInfo?.muted;
+        settle(typeof muted === "boolean" ? muted : null);
+      });
+    } catch {
+      settle(null);
+    }
+  });
+}
+
+export function useChromeActiveTabMuted() {
+  const [isMuted, setIsMuted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const chromeApi = getGlobalChromeApi();
+    let isCurrent = true;
+
+    const refreshMutedState = () => {
+      void getChromeActiveTabMuted(chromeApi).then((nextMuted) => {
+        if (isCurrent) {
+          setIsMuted(nextMuted);
+        }
+      });
+    };
+
+    refreshMutedState();
+
+    const handleActivated = () => refreshMutedState();
+    const handleUpdated = (_tabId: number, changeInfo: ChromeTabChangeInfo) => {
+      if ("mutedInfo" in changeInfo) {
+        refreshMutedState();
+      }
+    };
+
+    chromeApi?.tabs?.onActivated?.addListener?.(handleActivated);
+    chromeApi?.tabs?.onUpdated?.addListener?.(handleUpdated);
+
+    return () => {
+      isCurrent = false;
+      chromeApi?.tabs?.onActivated?.removeListener?.(handleActivated);
+      chromeApi?.tabs?.onUpdated?.removeListener?.(handleUpdated);
+    };
+  }, []);
+
+  return isMuted;
 }
 
 export function useTypingSounds(settings?: SoundSettings) {
@@ -149,4 +258,8 @@ function readStoredSoundSettings(): SoundSettings {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function getGlobalChromeApi(): ChromeApi | undefined {
+  return (globalThis as { chrome?: ChromeApi }).chrome;
 }

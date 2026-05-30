@@ -14,14 +14,19 @@ function renderSettingsScreen() {
   );
 }
 
-function getCategoryLabels(markup: string) {
-  return Array.from(
-    markup.matchAll(/<h3[^>]*class="settings-category-title"[^>]*>(.*?)<\/h3>/g),
-    (match) => match[1],
+function renderMutedSettingsScreen() {
+  return renderToStaticMarkup(
+    <SettingsScreen
+      browserTabMuted={true}
+      onBack={() => undefined}
+      onChange={() => undefined}
+      onClearLocalData={() => undefined}
+      settings={initialSettings}
+    />,
   );
 }
 
-function getCategoryItemLabels(markup: string, categoryId: string) {
+function getCategoryMarkup(markup: string, categoryId: string) {
   const categoryIds = [
     "screen-settings",
     "sound-settings",
@@ -32,7 +37,19 @@ function getCategoryItemLabels(markup: string, categoryId: string) {
   const startIndex = markup.indexOf(`id="${categoryId}"`);
   const nextCategoryId = categoryIds[categoryIds.indexOf(categoryId) + 1];
   const endIndex = nextCategoryId ? markup.indexOf(`id="${nextCategoryId}"`) : markup.length;
-  const categoryMarkup = startIndex >= 0 ? markup.slice(startIndex, endIndex) : "";
+
+  return startIndex >= 0 ? markup.slice(startIndex, endIndex) : "";
+}
+
+function getCategoryLabels(markup: string) {
+  return Array.from(
+    markup.matchAll(/<h3[^>]*class="settings-category-title"[^>]*>(.*?)<\/h3>/g),
+    (match) => match[1],
+  );
+}
+
+function getCategoryItemLabels(markup: string, categoryId: string) {
+  const categoryMarkup = getCategoryMarkup(markup, categoryId);
 
   return Array.from(categoryMarkup.matchAll(/<h4[^>]*>(.*?)<\/h4>/g), (match) =>
     match[1],
@@ -69,5 +86,13 @@ describe("SettingsScreen", () => {
     expect(getCategoryItemLabels(markup, "danger-settings")).toEqual([
       "ローカルデータをすべて削除",
     ]);
+  });
+
+  test("disables sound controls when the active Chrome tab is muted", () => {
+    const markup = renderMutedSettingsScreen();
+    const soundMarkup = getCategoryMarkup(markup, "sound-settings");
+
+    expect(soundMarkup).toContain('aria-disabled="true"');
+    expect(Array.from(soundMarkup.matchAll(/disabled=""/g))).toHaveLength(3);
   });
 });

@@ -16,10 +16,11 @@ import {
   type SokuonInputId,
 } from "@/src/lib/typing";
 import { clampInteger } from "../_lib/challenge-utils";
-import { useTypingSounds } from "../_lib/typing-sounds";
+import { useChromeActiveTabMuted, useTypingSounds } from "../_lib/typing-sounds";
 import type { AppSettings } from "../_lib/types";
 
 type SettingsScreenProps = {
+  browserTabMuted?: boolean | null;
   settings: AppSettings;
   onBack: () => void;
   onChange: (settings: Partial<AppSettings>) => void;
@@ -27,12 +28,15 @@ type SettingsScreenProps = {
 };
 
 export function SettingsScreen({
+  browserTabMuted,
   settings,
   onBack,
   onChange,
   onClearLocalData,
 }: SettingsScreenProps) {
   const playTypingSound = useTypingSounds(settings);
+  const detectedBrowserTabMuted = useChromeActiveTabMuted();
+  const soundControlsDisabled = browserTabMuted ?? detectedBrowserTabMuted ?? false;
 
   function handleBack() {
     playTypingSound("back");
@@ -213,11 +217,12 @@ export function SettingsScreen({
                 <h4 id="sound-setting">サウンド</h4>
                 <p>タイプ音とUI/結果音の音量、カテゴリ別のON/OFFを調整します。</p>
               </div>
-              <div className="sound-settings-controls">
+              <div className="sound-settings-controls" aria-disabled={soundControlsDisabled}>
                 <label className="sound-volume-control">
                   <span>音量</span>
                   <input
                     aria-label="音量"
+                    disabled={soundControlsDisabled}
                     max={100}
                     min={0}
                     onChange={(event) => updateSoundVolume(event.currentTarget.value)}
@@ -233,6 +238,7 @@ export function SettingsScreen({
                     <span className="toggle-control">
                       <input
                         checked={settings.typingSoundEnabled}
+                        disabled={soundControlsDisabled}
                         onChange={(event) =>
                           onChange({ typingSoundEnabled: event.currentTarget.checked })
                         }
@@ -246,6 +252,7 @@ export function SettingsScreen({
                     <span className="toggle-control">
                       <input
                         checked={settings.uiSoundEnabled}
+                        disabled={soundControlsDisabled}
                         onChange={(event) =>
                           onChange({ uiSoundEnabled: event.currentTarget.checked })
                         }

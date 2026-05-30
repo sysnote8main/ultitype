@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  getChromeActiveTabMuted,
   getFinishSoundKind,
   getSoundPlaybackConfig,
   getTypingSoundSource,
@@ -123,5 +124,48 @@ describe("getSoundPlaybackConfig", () => {
         uiSoundEnabled: false,
       }).shouldPlay,
     ).toBe(false);
+  });
+});
+
+describe("getChromeActiveTabMuted", () => {
+  test("returns true when the active Chrome tab is muted", async () => {
+    const muted = await getChromeActiveTabMuted({
+      tabs: {
+        query: (_queryInfo, callback) => {
+          callback([{ mutedInfo: { muted: true } }]);
+        },
+      },
+    });
+
+    expect(muted).toBe(true);
+  });
+
+  test("returns false when the active Chrome tab is not muted", async () => {
+    const muted = await getChromeActiveTabMuted({
+      tabs: {
+        query: (_queryInfo, callback) => {
+          callback([{ mutedInfo: { muted: false } }]);
+        },
+      },
+    });
+
+    expect(muted).toBe(false);
+  });
+
+  test("returns null when mutedInfo cannot be obtained", async () => {
+    const muted = await getChromeActiveTabMuted({
+      tabs: {
+        query: (_queryInfo, callback) => {
+          callback([{}]);
+        },
+      },
+    });
+
+    expect(muted).toBe(null);
+  });
+
+  test("returns null when the Chrome tabs API is unavailable", async () => {
+    await expect(getChromeActiveTabMuted(undefined)).resolves.toBe(null);
+    await expect(getChromeActiveTabMuted({})).resolves.toBe(null);
   });
 });
