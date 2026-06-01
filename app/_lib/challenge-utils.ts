@@ -37,12 +37,16 @@ export function clampInteger(value: string, min: number, max: number) {
   return Math.min(max, Math.max(min, parsed));
 }
 
+export function createOrderedIndexes(length: number): number[] {
+  return Array.from({ length }, (_, index) => index);
+}
+
 export function createShuffledIndexes(
   length: number,
   random: () => number = Math.random,
   previousLastIndex?: number,
 ): number[] {
-  const indexes = Array.from({ length }, (_, index) => index);
+  const indexes = createOrderedIndexes(length);
 
   for (let index = indexes.length - 1; index > 0; index -= 1) {
     const randomIndex = Math.floor(random() * (index + 1));

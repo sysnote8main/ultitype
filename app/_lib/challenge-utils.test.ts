@@ -1,11 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import {
+  createOrderedIndexes,
   createShuffledIndexes,
   formatChallengeReading,
   getOrderedChallengeIndex,
 } from "./challenge-utils";
 
 describe("practice challenge order", () => {
+  test("can create a deterministic initial order for server-rendered mode pages", () => {
+    expect(createOrderedIndexes(4)).toEqual([0, 1, 2, 3]);
+  });
+
   test("shuffles indexes using the provided random source", () => {
     const randomValues = [0.99, 0, 0.5, 0.1];
     const order = createShuffledIndexes(5, () => randomValues.shift() ?? 0);
