@@ -19,14 +19,12 @@ import {
 } from "@/src/lib/challenges";
 import {
   type ModeId,
-  a0RankLevel,
   applyDirectKey,
   calculateMetrics,
   countCorrectDirectCharacters,
   countImeCorrectCharacters,
   createRomajiInputTarget,
   getRank,
-  getRankRequiredScore,
   isDirectKeyCorrect,
   isImeSubmissionMatch,
   isProductionUnlocked,
@@ -203,7 +201,7 @@ export function shouldAutoRetireSession({
 }
 
 export const autoRetireScoreMultiplier = 0.7;
-export const autoRetireScoreCap = getRankRequiredScore(a0RankLevel + 7) - 1;
+export const autoRetireScoreCap = 4820;
 
 export function applyAutoRetireScorePenalty(score: number) {
   return Math.min(score * autoRetireScoreMultiplier, autoRetireScoreCap);

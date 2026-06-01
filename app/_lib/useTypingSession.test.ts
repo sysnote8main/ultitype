@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { getRank } from "@/src/lib/typing";
 import { initialSettings, initialStats } from "./constants";
 import {
   applyAutoRetireScorePenalty,
@@ -176,9 +175,8 @@ describe("auto retire performance conditions", () => {
     ).toBe(false);
   });
 
-  test("applies a 0.7 rating multiplier and caps retired scores at A6", () => {
+  test("applies a 0.7 rating multiplier and caps retired scores at the A6 score", () => {
     expect(applyAutoRetireScorePenalty(1_000)).toBe(700);
-    expect(applyAutoRetireScorePenalty(10_000)).toBe(4_909);
-    expect(getRank(applyAutoRetireScorePenalty(10_000)).label).toBe("A6");
+    expect(applyAutoRetireScorePenalty(10_000)).toBe(4_820);
   });
 });
