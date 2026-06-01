@@ -1,7 +1,9 @@
 "use client";
 
 import { Crosshair, Gauge, Keyboard, Languages, Lock, Waves, Zap } from "lucide-react";
+import Link from "next/link";
 import { modes, type ModeId, type TypingMode } from "@/src/lib/typing";
+import { getModePath } from "../_lib/mode-routes";
 import { ALPHA_PRODUCTION_LOCK_MESSAGE } from "../_lib/release-gates";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ProductionDuration } from "../_lib/types";
@@ -21,7 +23,7 @@ type ModeSelectScreenProps = {
   productionUnlocked: boolean;
   soundSettings: SoundSettings;
   onProductionDurationChange: (duration: ProductionDuration) => void;
-  onSelectMode: (modeId: ModeId) => void;
+  onSelectMode?: (modeId: ModeId) => void;
 };
 
 export function ModeSelectScreen({
@@ -37,7 +39,7 @@ export function ModeSelectScreen({
 
   function handleSelectMode(modeId: ModeId) {
     playTypingSound("select");
-    onSelectMode(modeId);
+    onSelectMode?.(modeId);
   }
 
   return (
@@ -132,15 +134,8 @@ function ModeSelectCard({
   onSelect: () => void;
 }) {
   const ModeIcon = modeIcons[mode.id];
-
-  return (
-    <button
-      className={`mode-select-card ${locked ? "locked" : ""}`}
-      disabled={locked}
-      onClick={onSelect}
-      title={locked ? lockReason : mode.description}
-      type="button"
-    >
+  const cardContents = (
+    <>
       <span className="mode-icon" aria-hidden="true">
         <ModeIcon size={28} strokeWidth={2.2} />
       </span>
@@ -153,6 +148,30 @@ function ModeSelectCard({
           {lockLabel}
         </span>
       ) : null}
+    </>
+  );
+
+  if (!locked) {
+    return (
+      <Link
+        className="mode-select-card"
+        href={getModePath(mode.id)}
+        onClick={onSelect}
+        title={mode.description}
+      >
+        {cardContents}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      className="mode-select-card locked"
+      disabled
+      title={lockReason}
+      type="button"
+    >
+      {cardContents}
     </button>
   );
 }

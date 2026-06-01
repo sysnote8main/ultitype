@@ -36,4 +36,14 @@ describe("ModeSelectScreen", () => {
 
     expect(markup.match(/class="mode-select-card locked"/g)?.length ?? 0).toBe(0);
   });
+
+  test("links unlocked modes to their dedicated pages", () => {
+    const markup = renderModeSelectScreen({ productionPlayable: true, productionUnlocked: true });
+
+    expect(markup).toContain('href="/practice/accuracy"');
+    expect(markup).toContain('href="/practice/flow"');
+    expect(markup).toContain('href="/practice/speed"');
+    expect(markup).toContain('href="/production/ime-off"');
+    expect(markup).toContain('href="/production/ime-on"');
+  });
 });

@@ -49,6 +49,7 @@ import {
   canPlayProductionMode,
 } from "./release-gates";
 import {
+  createOrderedIndexes,
   createShuffledIndexes,
   estimateImeKeystrokes,
   formatChallengeReading,
@@ -74,6 +75,11 @@ type KeyStabilityInput = {
   key: string;
   isCorrect: boolean;
   kind: "input" | "correction";
+};
+
+export type UseTypingSessionOptions = {
+  initialModeId?: ModeId;
+  initialScreen?: Screen;
 };
 
 const directCodeKeyMap: Record<string, [normal: string, shifted: string]> = {
@@ -135,15 +141,18 @@ export function getDirectInputKey(event: DirectKeyEvent): string | null {
   return null;
 }
 
-export function useTypingSession() {
+export function useTypingSession({
+  initialModeId = "practice-accuracy",
+  initialScreen = "mode-select",
+}: UseTypingSessionOptions = {}) {
   const [stored, setStored] = useState<StoredState>(getInitialStoredState);
-  const [modeId, setModeId] = useState<ModeId>("practice-accuracy");
-  const [screen, setScreen] = useState<Screen>("mode-select");
+  const [modeId, setModeId] = useState<ModeId>(initialModeId);
+  const [screen, setScreen] = useState<Screen>(initialScreen);
   const [challengeLanguage, setChallengeLanguage] = useState<ChallengeLanguage>("ja");
   const [productionDuration, setProductionDuration] = useState<ProductionDuration>(300);
   const [challengeIndex, setChallengeIndex] = useState(0);
   const [practiceChallengeOrder, setPracticeChallengeOrder] = useState(() =>
-    createShuffledIndexes(getDirectChallenges("ja", "practice").length),
+    createOrderedIndexes(getDirectChallenges("ja", "practice").length),
   );
   const [input, setInput] = useState("");
   const [stats, setStats] = useState<RuntimeStats>(initialStats);

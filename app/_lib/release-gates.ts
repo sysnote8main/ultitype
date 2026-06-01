@@ -4,7 +4,7 @@ export const ALPHA_PRODUCTION_LOCK_MESSAGE =
 export function isProductionModePlayableInBuild(
   nodeEnv: string | undefined = process.env.NODE_ENV,
 ) {
-  return nodeEnv !== "production";
+  return nodeEnv === "development";
 }
 
 export function canPlayProductionMode({

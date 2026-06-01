@@ -2,15 +2,19 @@
 
 import type { ReactNode } from "react";
 import { AppHeader } from "./AppHeader";
-import { useTypingSession } from "../_lib/useTypingSession";
+import {
+  type UseTypingSessionOptions,
+  useTypingSession,
+} from "../_lib/useTypingSession";
 
 type AppShellProps = {
   children: (session: ReturnType<typeof useTypingSession>) => ReactNode;
   className?: string;
+  sessionOptions?: UseTypingSessionOptions;
 };
 
-export function AppShell({ children, className = "shell" }: AppShellProps) {
-  const session = useTypingSession();
+export function AppShell({ children, className = "shell", sessionOptions }: AppShellProps) {
+  const session = useTypingSession(sessionOptions);
 
   return (
     <main className={className}>

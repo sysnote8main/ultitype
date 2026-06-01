@@ -667,6 +667,7 @@ h2 span {
   color: var(--text);
   padding: 20px 18px;
   text-align: center;
+  text-decoration: none;
 }
 
 .mode-select-card:hover:not(:disabled),
