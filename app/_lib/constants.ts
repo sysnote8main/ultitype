@@ -50,6 +50,9 @@ export const initialStats: RuntimeStats = {
 };
 
 export const initialSettings: AppSettings = {
+  showKanjiDisplay: true,
+  showFuriganaDisplay: true,
+  showHiraganaDisplay: true,
   showRomajiWordSpaces: true,
   romajiInputPreset: "hepburn",
   romajiInputSelections: {},

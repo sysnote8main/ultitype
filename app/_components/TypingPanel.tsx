@@ -28,7 +28,10 @@ import {
   type RomajiInputTarget,
   type TypingMode,
 } from "@/src/lib/typing";
-import { createJapaneseReadingGuideParts } from "@/src/lib/challenges";
+import {
+  createJapaneseFuriganaParts,
+  createJapaneseReadingGuideParts,
+} from "@/src/lib/challenges";
 import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type {
@@ -53,6 +56,7 @@ type TypingPanelProps = {
   correctionDebt: number;
   currentAccuracy: number;
   currentDisplay: string;
+  currentFurigana: string;
   currentGuide: string;
   currentReading: string;
   currentRomajiTarget: RomajiInputTarget | null;
@@ -70,6 +74,9 @@ type TypingPanelProps = {
   progress: number;
   productionBlockReason: string;
   remainingSeconds: number;
+  showFuriganaDisplay: boolean;
+  showHiraganaDisplay: boolean;
+  showKanjiDisplay: boolean;
   soundSettings: SoundSettings;
   speedDisplayUnit: SpeedDisplayUnit;
   startedAt: number | null;
@@ -90,6 +97,7 @@ export function TypingPanel({
   correctionDebt,
   currentAccuracy,
   currentDisplay,
+  currentFurigana,
   currentGuide,
   currentReading,
   currentRomajiTarget,
@@ -107,6 +115,9 @@ export function TypingPanel({
   progress,
   productionBlockReason,
   remainingSeconds,
+  showFuriganaDisplay,
+  showHiraganaDisplay,
+  showKanjiDisplay,
   soundSettings,
   speedDisplayUnit,
   startedAt,
@@ -127,6 +138,7 @@ export function TypingPanel({
   });
   const speedMetric = getSpeedMetric(metrics.keysPerSecond, speedDisplayUnit);
   const SessionModeIcon = getSessionModeIcon(mode);
+  const showDisplayText = challengeLanguage !== "ja" || showKanjiDisplay;
 
   function handleBackToModeSelect() {
     playTypingSound("back");
@@ -207,17 +219,29 @@ export function TypingPanel({
           <div className="target-view" aria-label="current challenge">
             {mode.requiresIme ? (
               <>
-                <p className="display-text">{currentDisplay}</p>
-                {currentReading ? <p className="reading-text">{currentReading}</p> : null}
+                {showDisplayText ? (
+                  <DisplayText
+                    display={currentDisplay}
+                    furigana={currentFurigana}
+                    showFurigana={showFuriganaDisplay}
+                  />
+                ) : null}
+                {showHiraganaDisplay && currentReading ? (
+                  <p className="reading-text">{currentReading}</p>
+                ) : null}
               </>
             ) : (
               <DirectChallengeView
                 display={currentDisplay}
+                furigana={currentFurigana}
                 guide={currentGuide}
                 input={input}
                 mistakeFlash={mistakeFlash}
                 reading={currentReading}
                 romajiTarget={currentRomajiTarget}
+                showFuriganaDisplay={showFuriganaDisplay}
+                showHiraganaDisplay={showHiraganaDisplay}
+                showDisplayText={showDisplayText}
                 strictMistakeDisplayMode={strictMistakeDisplayMode}
                 strictMistakeInput={strictMistakeInput}
               />
@@ -539,20 +563,28 @@ function Metric({
 
 function DirectChallengeView({
   display,
+  furigana,
   guide,
   input,
   mistakeFlash,
   reading,
   romajiTarget,
+  showFuriganaDisplay,
+  showHiraganaDisplay,
+  showDisplayText,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
   display: string;
+  furigana: string;
   guide: string;
   input: string;
   mistakeFlash: MistakeFlash | null;
   reading: string;
   romajiTarget: RomajiInputTarget | null;
+  showFuriganaDisplay: boolean;
+  showHiraganaDisplay: boolean;
+  showDisplayText: boolean;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
@@ -560,8 +592,14 @@ function DirectChallengeView({
 
   return (
     <>
-      {hasSeparateDisplay ? <p className="display-text">{display}</p> : null}
-      {reading ? (
+      {showDisplayText && hasSeparateDisplay ? (
+        <DisplayText
+          display={display}
+          furigana={furigana}
+          showFurigana={showFuriganaDisplay}
+        />
+      ) : null}
+      {showHiraganaDisplay && reading ? (
         <p className="reading-text">
           {romajiTarget
             ? renderReadingGuideCharacters(reading, romajiTarget, input, mistakeFlash)
@@ -589,6 +627,37 @@ function DirectChallengeView({
             )}
       </p>
     </>
+  );
+}
+
+function DisplayText({
+  display,
+  furigana,
+  showFurigana,
+}: {
+  display: string;
+  furigana: string;
+  showFurigana: boolean;
+}) {
+  return (
+    <p className="display-text">
+      {showFurigana && furigana ? (
+        createJapaneseFuriganaParts(display, furigana).map((part, index) =>
+          part.ruby ? (
+            <ruby className="display-ruby" key={`${part.text}-${index}`}>
+              {part.text}
+              <rt>{part.ruby}</rt>
+            </ruby>
+          ) : (
+            <span className="display-plain" key={`${part.text}-${index}`}>
+              {part.text}
+            </span>
+          ),
+        )
+      ) : (
+        display
+      )}
+    </p>
   );
 }
 

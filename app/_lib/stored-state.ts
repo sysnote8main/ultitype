@@ -22,6 +22,12 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
     settings: {
       ...initialSettings,
       ...storedState?.settings,
+      showKanjiDisplay:
+        storedState?.settings?.showKanjiDisplay ?? initialSettings.showKanjiDisplay,
+      showFuriganaDisplay:
+        storedState?.settings?.showFuriganaDisplay ?? initialSettings.showFuriganaDisplay,
+      showHiraganaDisplay:
+        storedState?.settings?.showHiraganaDisplay ?? initialSettings.showHiraganaDisplay,
       speedDisplayUnit: storedState?.settings?.speedDisplayUnit ?? initialSettings.speedDisplayUnit,
       strictMistakeDisplayMode:
         storedState?.settings?.strictMistakeDisplayMode ??

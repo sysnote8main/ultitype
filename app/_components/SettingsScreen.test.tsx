@@ -31,6 +31,7 @@ function getCategoryMarkup(markup: string, categoryId: string) {
     "screen-settings",
     "sound-settings",
     "input-settings",
+    "input-screen-settings",
     "auto-retire-settings",
     "danger-settings",
   ];
@@ -64,6 +65,7 @@ describe("SettingsScreen", () => {
       "画面",
       "サウンド",
       "入力方式",
+      "入力画面",
       "自動リタイア",
       "危険な操作",
     ]);
@@ -82,6 +84,11 @@ describe("SettingsScreen", () => {
       "ローマ字入力法",
       "促音入力",
       "拗音分割入力",
+    ]);
+    expect(getCategoryItemLabels(markup, "input-screen-settings")).toEqual([
+      "漢字表示",
+      "ふりがな表示",
+      "ひらがな表示",
       "正確無比の誤入力表示",
     ]);
     expect(getCategoryItemLabels(markup, "auto-retire-settings")).toEqual([
@@ -114,13 +121,26 @@ describe("SettingsScreen", () => {
 
   test("shows strict accuracy mistake display choices with overwrite selected by default", () => {
     const markup = renderSettingsScreen();
-    const inputMarkup = getCategoryMarkup(markup, "input-settings");
+    const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
 
-    expect(inputMarkup).toContain('aria-label="正確無比の誤入力表示"');
-    expect(inputMarkup).toContain("上書き");
-    expect(inputMarkup).toContain("挿入");
-    expect(inputMarkup).toContain("何もしない");
-    expect(inputMarkup).toContain('aria-pressed="true"');
+    expect(inputScreenMarkup).toContain('aria-label="正確無比の誤入力表示"');
+    expect(inputScreenMarkup).toContain("上書き");
+    expect(inputScreenMarkup).toContain("挿入");
+    expect(inputScreenMarkup).toContain("何もしない");
+    expect(inputScreenMarkup).toContain('aria-pressed="true"');
+  });
+
+  test("shows kanji, furigana, and hiragana input screen visibility toggles enabled by default", () => {
+    const markup = renderSettingsScreen();
+    const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
+
+    expect(inputScreenMarkup).toContain("漢字表示");
+    expect(inputScreenMarkup).toContain("ふりがな表示");
+    expect(inputScreenMarkup).toContain("ひらがな表示");
+    expect(inputScreenMarkup).toContain('aria-label="漢字表示"');
+    expect(inputScreenMarkup).toContain('aria-label="ふりがな表示"');
+    expect(inputScreenMarkup).toContain('aria-label="ひらがな表示"');
+    expect(Array.from(inputScreenMarkup.matchAll(/checked=""/g))).toHaveLength(3);
   });
 
   test("shows auto retire performance settings disabled by default", () => {

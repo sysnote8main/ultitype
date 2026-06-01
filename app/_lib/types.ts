@@ -23,6 +23,9 @@ export type DirectKeyEvent = Pick<
 >;
 
 export type AppSettings = {
+  showKanjiDisplay: boolean;
+  showFuriganaDisplay: boolean;
+  showHiraganaDisplay: boolean;
   showRomajiWordSpaces: boolean;
   romajiInputPreset: RomajiInputPreset;
   romajiInputSelections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;

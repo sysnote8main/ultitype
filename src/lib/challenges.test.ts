@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  createJapaneseFuriganaParts,
   createJapaneseReadingGuideParts,
   directLongChallenges,
   directShortChallenges,
@@ -17,13 +18,20 @@ describe("plain text challenge data", () => {
     ]);
   });
 
-  test("parses Japanese challenges as display text and hiragana reading per line", () => {
-    expect(parseJapaneseChallengeText("解析結果を見る。\tかいせきけっかをみる。\n")).toEqual([
+  test("parses Japanese challenges as display text, hiragana reading, and furigana per line", () => {
+    expect(parseJapaneseChallengeText("解析結果を見る。\tかいせきけっかをみる。\tかいせきけっかをみる。\n")).toEqual([
       {
         display: "解析結果を見る。",
+        furigana: "かいせきけっかをみる。",
         reading: "かいせきけっかをみる。",
       },
     ]);
+  });
+
+  test("requires furigana for Japanese challenges", () => {
+    expect(() => parseJapaneseChallengeText("解析結果を見る。\tかいせきけっかをみる。\n")).toThrow(
+      "expected display<TAB>reading<TAB>furigana",
+    );
   });
 
   test("maps hiragana reading units to romaji input token ranges", () => {
@@ -34,12 +42,43 @@ describe("plain text challenge data", () => {
       { kind: "reading", text: "しゃ", tokenStart: 3, tokenEnd: 4 },
     ]);
   });
+
+  test("maps furigana to kanji word segments instead of the whole sentence", () => {
+    expect(
+      createJapaneseFuriganaParts(
+        "解析結果を見てから判断する速度は、経験によって大きく変わる。",
+        "かいせき けっか を みてから はんだん する そくど は、 けいけん に よって おおきく かわる。",
+      ),
+    ).toEqual([
+      { text: "解", ruby: "かい" },
+      { text: "析", ruby: "せき" },
+      { text: "結", ruby: "けっ" },
+      { text: "果", ruby: "か" },
+      { text: "を" },
+      { text: "見", ruby: "み" },
+      { text: "てから" },
+      { text: "判", ruby: "はん" },
+      { text: "断", ruby: "だん" },
+      { text: "する" },
+      { text: "速", ruby: "そく" },
+      { text: "度", ruby: "ど" },
+      { text: "は、" },
+      { text: "経", ruby: "けい" },
+      { text: "験", ruby: "けん" },
+      { text: "によって" },
+      { text: "大", ruby: "おお" },
+      { text: "きく" },
+      { text: "変", ruby: "か" },
+      { text: "わる。" },
+    ]);
+  });
 });
 
 describe("direct short challenges", () => {
   test("show Japanese prompts and do not leak generated control labels", () => {
     expect(directShortChallenges).toHaveLength(50);
     expect(directShortChallenges[0].display).toContain("解析結果");
+    expect(directShortChallenges[0].furigana).toContain("かいせき けっか");
     expect(directShortChallenges[0].reading).toContain("かいせき けっか");
     expect(directShortChallenges[0].guide).toContain(" ");
     expect(directShortChallenges[0].input).not.toContain(" ");

@@ -14,6 +14,7 @@ import {
 import {
   type DirectChallenge,
   englishLongChallenges,
+  longChallengeFurigana,
   longChallengeReadings,
   longChallenges,
 } from "@/src/lib/challenges";
@@ -274,6 +275,12 @@ export function useTypingSession({
   const currentDisplay = mode.requiresIme
     ? currentImeChallenge
     : currentDirectChallenge.display;
+  const currentFurigana =
+    challengeLanguage === "ja"
+      ? mode.requiresIme
+        ? (longChallengeFurigana[challengeIndex % longChallengeFurigana.length] ?? "")
+        : (currentDirectChallenge.furigana ?? "")
+      : "";
   const currentRawReading =
     challengeLanguage === "ja"
       ? mode.requiresIme
@@ -813,6 +820,7 @@ export function useTypingSession({
       correctionDebt,
       currentAccuracy,
       currentDisplay,
+      currentFurigana,
       currentReading,
       elapsedSeconds: startedAt ? elapsedSeconds : null,
       currentGuide:
@@ -831,6 +839,9 @@ export function useTypingSession({
       mode,
       progress,
       remainingSeconds,
+      showFuriganaDisplay: stored.settings.showFuriganaDisplay,
+      showHiraganaDisplay: stored.settings.showHiraganaDisplay,
+      showKanjiDisplay: stored.settings.showKanjiDisplay,
       soundSettings: stored.settings,
       speedDisplayUnit: stored.settings.speedDisplayUnit,
       startedAt,

@@ -70,6 +70,21 @@ describe("stored state persistence", () => {
     expect(stored.settings.strictMistakeDisplayMode).toBe("overwrite");
   });
 
+  test("fills input screen visibility settings when loading older stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        showKanjiDisplay: undefined,
+        showFuriganaDisplay: undefined,
+        showHiraganaDisplay: undefined,
+      },
+    });
+
+    expect(stored.settings.showKanjiDisplay).toBe(true);
+    expect(stored.settings.showFuriganaDisplay).toBe(true);
+    expect(stored.settings.showHiraganaDisplay).toBe(true);
+  });
+
   test("fills auto retire performance settings when loading older stored state", () => {
     const stored = normalizeStoredState({
       settings: {

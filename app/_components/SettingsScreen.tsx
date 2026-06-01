@@ -461,6 +461,65 @@ export function SettingsScreen({
               </label>
             </section>
 
+          </div>
+        </section>
+
+        <section className="settings-category" aria-labelledby="input-screen-settings">
+          <h3 className="settings-category-title" id="input-screen-settings">
+            入力画面
+          </h3>
+          <div className="settings-category-list">
+            <section className="settings-row" aria-labelledby="kanji-display-setting">
+              <div>
+                <h4 id="kanji-display-setting">漢字表示</h4>
+                <p>入力画面に漢字混じりの課題文を表示する</p>
+              </div>
+              <label className="toggle-control" aria-label="漢字表示">
+                <input
+                  checked={settings.showKanjiDisplay}
+                  onChange={(event) =>
+                    onChange({ showKanjiDisplay: event.currentTarget.checked })
+                  }
+                  type="checkbox"
+                />
+                <span aria-hidden="true" />
+              </label>
+            </section>
+
+            <section className="settings-row" aria-labelledby="furigana-display-setting">
+              <div>
+                <h4 id="furigana-display-setting">ふりがな表示</h4>
+                <p>漢字混じりの課題文の上にふりがなを表示する</p>
+              </div>
+              <label className="toggle-control" aria-label="ふりがな表示">
+                <input
+                  checked={settings.showFuriganaDisplay}
+                  onChange={(event) =>
+                    onChange({ showFuriganaDisplay: event.currentTarget.checked })
+                  }
+                  type="checkbox"
+                />
+                <span aria-hidden="true" />
+              </label>
+            </section>
+
+            <section className="settings-row" aria-labelledby="hiragana-display-setting">
+              <div>
+                <h4 id="hiragana-display-setting">ひらがな表示</h4>
+                <p>入力画面にひらがなの読みを表示する</p>
+              </div>
+              <label className="toggle-control" aria-label="ひらがな表示">
+                <input
+                  checked={settings.showHiraganaDisplay}
+                  onChange={(event) =>
+                    onChange({ showHiraganaDisplay: event.currentTarget.checked })
+                  }
+                  type="checkbox"
+                />
+                <span aria-hidden="true" />
+              </label>
+            </section>
+
             <section className="settings-row" aria-labelledby="strict-mistake-display-setting">
               <div>
                 <h4 id="strict-mistake-display-setting">正確無比の誤入力表示</h4>

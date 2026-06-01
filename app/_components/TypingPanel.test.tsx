@@ -13,6 +13,7 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     correctionDebt: 0,
     currentAccuracy: 1,
     currentDisplay: "ab",
+    currentFurigana: "",
     currentGuide: "ab",
     currentReading: "",
     currentRomajiTarget: null,
@@ -36,6 +37,9 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     progress: 0,
     productionBlockReason: "本番モードは仮レーティング A0 以上で解放されます。",
     remainingSeconds: 120,
+    showFuriganaDisplay: true,
+    showHiraganaDisplay: true,
+    showKanjiDisplay: true,
     soundSettings: initialSettings,
     speedDisplayUnit: "keysPerSecond",
     startedAt: null,
@@ -160,6 +164,7 @@ describe("TypingPanel", () => {
       selections: {},
     });
     const markup = renderTypingPanel({
+      challengeLanguage: "ja",
       currentDisplay: "解析結果",
       currentGuide: romajiTarget.guide,
       currentReading: "かいせきけっか",
@@ -175,6 +180,103 @@ describe("TypingPanel", () => {
     expect(markup.indexOf("reading-text")).toBeLessThan(
       markup.indexOf('aria-label="romaji input target"'),
     );
+  });
+
+  test("shows furigana above the Japanese display text by default", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "解析結果を見てから判断する。",
+      currentFurigana: "かいせき けっか を みてから はんだん する。",
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせき けっか を みてから はんだん する。",
+      currentRomajiTarget: romajiTarget,
+    });
+
+    expect(markup).toContain('<ruby class="display-ruby">解<rt>かい</rt></ruby>');
+    expect(markup).toContain('<ruby class="display-ruby">析<rt>せき</rt></ruby>');
+    expect(markup).toContain('<ruby class="display-ruby">結<rt>けっ</rt></ruby>');
+    expect(markup).toContain('<ruby class="display-ruby">果<rt>か</rt></ruby>');
+    expect(markup).toContain('<span class="display-plain">を</span>');
+    expect(markup).toContain('<ruby class="display-ruby">見<rt>み</rt></ruby>');
+    expect(markup).toContain('<span class="display-plain">てから</span>');
+    expect(markup).toContain('<ruby class="display-ruby">判<rt>はん</rt></ruby>');
+    expect(markup).toContain('<ruby class="display-ruby">断<rt>だん</rt></ruby>');
+  });
+
+  test("can hide furigana while keeping the Japanese display text", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "解析結果",
+      currentFurigana: "かいせきけっか",
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせきけっか",
+      currentRomajiTarget: romajiTarget,
+      showFuriganaDisplay: false,
+    });
+
+    expect(markup).toContain('<p class="display-text">解析結果</p>');
+    expect(markup).not.toContain("<rt>");
+  });
+
+  test("can hide the Japanese kanji display while keeping the hiragana reading", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "解析結果",
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせきけっか",
+      currentRomajiTarget: romajiTarget,
+      showKanjiDisplay: false,
+    });
+
+    expect(markup).not.toContain('<p class="display-text">解析結果</p>');
+    expect(markup).toContain('<p class="reading-text">');
+    expect(markup).toContain('aria-label="romaji input target"');
+  });
+
+  test("can hide the hiragana reading while keeping the Japanese kanji display", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "解析結果",
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせきけっか",
+      currentRomajiTarget: romajiTarget,
+      showHiraganaDisplay: false,
+    });
+
+    expect(markup).toContain('<p class="display-text">解析結果</p>');
+    expect(markup).not.toContain('<p class="reading-text">');
+    expect(markup).toContain('aria-label="romaji input target"');
+  });
+
+  test("keeps English IME challenges visible when the kanji display is hidden", () => {
+    const markup = renderTypingPanel({
+      challengeLanguage: "en",
+      currentDisplay: "hello world",
+      currentGuide: "hello world",
+      mode: modes.find((mode) => mode.id === "production-ime-on")!,
+      showKanjiDisplay: false,
+    });
+
+    expect(markup).toContain('<p class="display-text">hello world</p>');
   });
 
   test("highlights the hiragana reading with the current romaji progress", () => {
