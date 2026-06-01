@@ -60,6 +60,8 @@ export const initialSettings: AppSettings = {
     preferred: "xtu",
   },
   idleRetireSeconds: 0,
+  consecutiveMistypeRetireCount: 0,
+  accuracyRetireBorderPercent: 0,
   theme: "dark",
   soundVolume: 0.7,
   typingSoundEnabled: true,

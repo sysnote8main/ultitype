@@ -69,4 +69,17 @@ describe("stored state persistence", () => {
 
     expect(stored.settings.strictMistakeDisplayMode).toBe("overwrite");
   });
+
+  test("fills auto retire performance settings when loading older stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        consecutiveMistypeRetireCount: undefined,
+        accuracyRetireBorderPercent: undefined,
+      },
+    });
+
+    expect(stored.settings.consecutiveMistypeRetireCount).toBe(0);
+    expect(stored.settings.accuracyRetireBorderPercent).toBe(0);
+  });
 });

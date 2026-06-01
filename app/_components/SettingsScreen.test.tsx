@@ -84,7 +84,11 @@ describe("SettingsScreen", () => {
       "拗音分割入力",
       "正確無比の誤入力表示",
     ]);
-    expect(getCategoryItemLabels(markup, "auto-retire-settings")).toEqual(["無入力リタイア"]);
+    expect(getCategoryItemLabels(markup, "auto-retire-settings")).toEqual([
+      "無入力リタイア",
+      "連続誤打鍵リタイア",
+      "正誤率ボーダー",
+    ]);
     expect(getCategoryItemLabels(markup, "danger-settings")).toEqual([
       "ローカルデータをすべて削除",
     ]);
@@ -117,5 +121,16 @@ describe("SettingsScreen", () => {
     expect(inputMarkup).toContain("挿入");
     expect(inputMarkup).toContain("何もしない");
     expect(inputMarkup).toContain('aria-pressed="true"');
+  });
+
+  test("shows auto retire performance settings disabled by default", () => {
+    const markup = renderSettingsScreen();
+    const autoRetireMarkup = getCategoryMarkup(markup, "auto-retire-settings");
+
+    expect(autoRetireMarkup).toContain("連続誤打鍵リタイア");
+    expect(autoRetireMarkup).toContain('aria-label="連続誤打鍵数"');
+    expect(autoRetireMarkup).toContain("正誤率ボーダー");
+    expect(autoRetireMarkup).toContain('aria-label="正誤率ボーダー"');
+    expect(autoRetireMarkup).toContain('value="0"');
   });
 });

@@ -1,4 +1,4 @@
-export const APP_VERSION = "2026.6.0-alpha2";
+export const APP_VERSION = "2026.6.0-alpha3";
 
 export function getAppVersionLabel(nodeEnv: string | undefined = process.env.NODE_ENV) {
   return `${nodeEnv === "development" ? "DEVSRV-" : ""}v${APP_VERSION}`;

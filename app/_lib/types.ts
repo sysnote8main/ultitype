@@ -29,6 +29,8 @@ export type AppSettings = {
   allowSplitYoon: boolean;
   sokuonInput: SokuonInputSelection;
   idleRetireSeconds: number;
+  consecutiveMistypeRetireCount: number;
+  accuracyRetireBorderPercent: number;
   theme: Theme;
   soundVolume: number;
   typingSoundEnabled: boolean;

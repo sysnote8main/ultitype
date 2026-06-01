@@ -19,12 +19,14 @@ import {
 } from "@/src/lib/challenges";
 import {
   type ModeId,
+  a0RankLevel,
   applyDirectKey,
   calculateMetrics,
   countCorrectDirectCharacters,
   countImeCorrectCharacters,
   createRomajiInputTarget,
   getRank,
+  getRankRequiredScore,
   isDirectKeyCorrect,
   isImeSubmissionMatch,
   isProductionUnlocked,
@@ -139,6 +141,72 @@ export function getDirectInputKey(event: DirectKeyEvent): string | null {
   }
 
   return null;
+}
+
+export function countTrailingMistypes(history: RuntimeStats["keyStabilityHistory"]) {
+  let count = 0;
+
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const sample = history[index];
+    if (sample.kind !== "input" || sample.isCorrect) {
+      break;
+    }
+
+    count += 1;
+  }
+
+  return count;
+}
+
+export function shouldAutoRetireSession({
+  accuracy,
+  isFinished,
+  isProductionBlocked,
+  now,
+  settings,
+  startedAt,
+  stats,
+}: {
+  accuracy: number;
+  isFinished: boolean;
+  isProductionBlocked: boolean;
+  now: number;
+  settings: Pick<
+    AppSettings,
+    "idleRetireSeconds" | "consecutiveMistypeRetireCount" | "accuracyRetireBorderPercent"
+  >;
+  startedAt: number | null;
+  stats: Pick<RuntimeStats, "characterAttempts" | "keyStabilityHistory" | "lastInputAt">;
+}) {
+  if (startedAt === null || isFinished || isProductionBlocked) {
+    return false;
+  }
+
+  const idleRetireMs = settings.idleRetireSeconds * 1000;
+  const lastActivityAt = stats.lastInputAt ?? startedAt;
+  if (idleRetireMs > 0 && now - lastActivityAt >= idleRetireMs) {
+    return true;
+  }
+
+  if (
+    settings.consecutiveMistypeRetireCount > 0 &&
+    countTrailingMistypes(stats.keyStabilityHistory) >= settings.consecutiveMistypeRetireCount
+  ) {
+    return true;
+  }
+
+  return (
+    settings.accuracyRetireBorderPercent > 0 &&
+    stats.characterAttempts >= 20 &&
+    accuracy * 100 < settings.accuracyRetireBorderPercent
+  );
+}
+
+export const autoRetireScoreMultiplier = 0.7;
+export const autoRetireScoreCap = getRankRequiredScore(a0RankLevel + 7) - 1;
+
+export function applyAutoRetireScorePenalty(score: number) {
+  return Math.min(score * autoRetireScoreMultiplier, autoRetireScoreCap);
 }
 
 export function useTypingSession({
@@ -332,13 +400,17 @@ export function useTypingSession({
   });
 
   useEffect(() => {
-    const idleRetireMs = stored.settings.idleRetireSeconds * 1000;
-    if (!startedAt || isFinished || idleRetireMs <= 0 || isProductionBlocked) {
-      return;
-    }
-
-    const lastActivityAt = stats.lastInputAt ?? startedAt;
-    if (now - lastActivityAt >= idleRetireMs) {
+    if (
+      shouldAutoRetireSession({
+        accuracy: metrics.accuracy,
+        isFinished,
+        isProductionBlocked,
+        now,
+        settings: stored.settings,
+        startedAt,
+        stats,
+      })
+    ) {
       finishSession("retired");
     }
   });
@@ -426,24 +498,26 @@ export function useTypingSession({
     setIsFinished(true);
     setFinishReason(reason);
 
-    if (reason === "retired") {
-      return;
-    }
+    const sessionScore =
+      reason === "retired" ? applyAutoRetireScorePenalty(metrics.score) : metrics.score;
+    const sessionRank = getRank(sessionScore);
 
-    playTypingSound(
-      getFinishSoundKind({
-        modeGroup: mode.group,
-        score: metrics.score,
-        bestPracticeScore: stored.bestPracticeScore,
-        bestProductionScore: stored.bestProductionScore,
-      }),
-    );
+    if (reason !== "retired") {
+      playTypingSound(
+        getFinishSoundKind({
+          modeGroup: mode.group,
+          score: sessionScore,
+          bestPracticeScore: stored.bestPracticeScore,
+          bestProductionScore: stored.bestProductionScore,
+        }),
+      );
+    }
 
     const session: StoredSession = {
       modeId,
       challengeLanguage,
-      score: metrics.score,
-      rank: currentRank.label,
+      score: sessionScore,
+      rank: sessionRank.label,
       accuracy: metrics.accuracy,
       keysPerSecond: metrics.keysPerSecond,
       createdAt: new Date().toISOString(),
@@ -453,11 +527,11 @@ export function useTypingSession({
       settings: previous.settings,
       bestPracticeScore:
         mode.group === "practice"
-          ? Math.max(previous.bestPracticeScore, metrics.score)
+          ? Math.max(previous.bestPracticeScore, sessionScore)
           : previous.bestPracticeScore,
       bestProductionScore:
         mode.group === "production"
-          ? Math.max(previous.bestProductionScore, metrics.score)
+          ? Math.max(previous.bestProductionScore, sessionScore)
           : previous.bestProductionScore,
       sessions: [session, ...previous.sessions].slice(0, 8),
     }));

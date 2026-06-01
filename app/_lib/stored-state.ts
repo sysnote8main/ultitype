@@ -26,6 +26,12 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
       strictMistakeDisplayMode:
         storedState?.settings?.strictMistakeDisplayMode ??
         initialSettings.strictMistakeDisplayMode,
+      consecutiveMistypeRetireCount:
+        storedState?.settings?.consecutiveMistypeRetireCount ??
+        initialSettings.consecutiveMistypeRetireCount,
+      accuracyRetireBorderPercent:
+        storedState?.settings?.accuracyRetireBorderPercent ??
+        initialSettings.accuracyRetireBorderPercent,
       sokuonInput: {
         ...initialSettings.sokuonInput,
         ...storedState?.settings?.sokuonInput,

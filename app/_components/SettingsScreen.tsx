@@ -128,6 +128,18 @@ export function SettingsScreen({
     });
   }
 
+  function updateConsecutiveMistypeRetireCount(nextValue: number) {
+    onChange({
+      consecutiveMistypeRetireCount: Math.min(50, Math.max(0, nextValue)),
+    });
+  }
+
+  function updateAccuracyRetireBorderPercent(nextValue: number) {
+    onChange({
+      accuracyRetireBorderPercent: Math.min(100, Math.max(0, nextValue)),
+    });
+  }
+
   function updateSoundVolume(nextValue: string) {
     onChange({
       soundVolume: clampInteger(nextValue, 0, 100) / 100,
@@ -532,6 +544,55 @@ export function SettingsScreen({
                     <ChevronDown size={14} />
                   </button>
                 </div>
+              </div>
+            </section>
+
+            <section
+              className="settings-row"
+              aria-labelledby="consecutive-mistype-retire-setting"
+            >
+              <div>
+                <h4 id="consecutive-mistype-retire-setting">連続誤打鍵リタイア</h4>
+                <p>0 打鍵で無効</p>
+              </div>
+              <div className="number-control">
+                <input
+                  aria-label="連続誤打鍵数"
+                  min={0}
+                  max={50}
+                  onChange={(event) =>
+                    updateConsecutiveMistypeRetireCount(
+                      clampInteger(event.currentTarget.value, 0, 50),
+                    )
+                  }
+                  step={1}
+                  type="number"
+                  value={settings.consecutiveMistypeRetireCount}
+                />
+                <span>打鍵</span>
+              </div>
+            </section>
+
+            <section className="settings-row" aria-labelledby="accuracy-retire-border-setting">
+              <div>
+                <h4 id="accuracy-retire-border-setting">正誤率ボーダー</h4>
+                <p>0% で無効</p>
+              </div>
+              <div className="number-control">
+                <input
+                  aria-label="正誤率ボーダー"
+                  min={0}
+                  max={100}
+                  onChange={(event) =>
+                    updateAccuracyRetireBorderPercent(
+                      clampInteger(event.currentTarget.value, 0, 100),
+                    )
+                  }
+                  step={1}
+                  type="number"
+                  value={settings.accuracyRetireBorderPercent}
+                />
+                <span>%</span>
               </div>
             </section>
           </div>
