@@ -18,19 +18,58 @@ describe("plain text challenge data", () => {
     ]);
   });
 
-  test("parses Japanese challenges as display text, hiragana reading, and furigana per line", () => {
-    expect(parseJapaneseChallengeText("解析結果を見る。\tかいせきけっかをみる。\tかいせきけっかをみる。\n")).toEqual([
+  test("parses Japanese challenges as one annotated display line per challenge", () => {
+    expect(
+      parseJapaneseChallengeText("[解](かい)[析](せき)[結](けっ)[果](か)を[見](み)る。\n"),
+    ).toEqual([
       {
         display: "解析結果を見る。",
-        furigana: "かいせきけっかをみる。",
+        furigana: [
+          { text: "解", ruby: "かい" },
+          { text: "析", ruby: "せき" },
+          { text: "結", ruby: "けっ" },
+          { text: "果", ruby: "か" },
+          { text: "見", ruby: "み" },
+        ],
         reading: "かいせきけっかをみる。",
       },
     ]);
   });
 
-  test("requires furigana for Japanese challenges", () => {
-    expect(() => parseJapaneseChallengeText("解析結果を見る。\tかいせきけっかをみる。\n")).toThrow(
-      "expected display<TAB>reading<TAB>furigana",
+  test("derives display, reading, and ruby groups from one annotated line", () => {
+    expect(
+      parseJapaneseChallengeText("[結](けっ)[果](か)を[見](み)てから[今日](きょう)は[帰](かえ)る"),
+    ).toEqual([
+      {
+        display: "結果を見てから今日は帰る",
+        furigana: [
+          { text: "結", ruby: "けっ" },
+          { text: "果", ruby: "か" },
+          { text: "見", ruby: "み" },
+          { text: "今日", ruby: "きょう" },
+          { text: "帰", ruby: "かえ" },
+        ],
+        reading: "けっかをみてからきょうはかえる",
+      },
+    ]);
+  });
+
+  test("supports escaping markdown-style annotation characters", () => {
+    expect(parseJapaneseChallengeText("\\[Ctrl\\]\\(A\\)と[結](けっ)[果](か)")).toEqual([
+      {
+        display: "[Ctrl](A)と結果",
+        furigana: [
+          { text: "結", ruby: "けっ" },
+          { text: "果", ruby: "か" },
+        ],
+        reading: "[Ctrl](A)とけっか",
+      },
+    ]);
+  });
+
+  test("requires unescaped kanji to have ruby annotations", () => {
+    expect(() => parseJapaneseChallengeText("解析結果を見る。")).toThrow(
+      "unannotated kanji requires ruby annotation",
     );
   });
 
@@ -43,11 +82,25 @@ describe("plain text challenge data", () => {
     ]);
   });
 
-  test("maps furigana to kanji word segments instead of the whole sentence", () => {
+  test("maps explicit furigana groups to display occurrences in order", () => {
     expect(
       createJapaneseFuriganaParts(
         "解析結果を見てから判断する速度は、経験によって大きく変わる。",
-        "かいせき けっか を みてから はんだん する そくど は、 けいけん に よって おおきく かわる。",
+        [
+          { text: "解", ruby: "かい" },
+          { text: "析", ruby: "せき" },
+          { text: "結", ruby: "けっ" },
+          { text: "果", ruby: "か" },
+          { text: "見", ruby: "み" },
+          { text: "判", ruby: "はん" },
+          { text: "断", ruby: "だん" },
+          { text: "速", ruby: "そく" },
+          { text: "度", ruby: "ど" },
+          { text: "経", ruby: "けい" },
+          { text: "験", ruby: "けん" },
+          { text: "大", ruby: "おお" },
+          { text: "変", ruby: "か" },
+        ],
       ),
     ).toEqual([
       { text: "解", ruby: "かい" },
@@ -72,15 +125,48 @@ describe("plain text challenge data", () => {
       { text: "わる。" },
     ]);
   });
+
+  test("keeps multi-kanji ruby groups intact for synchronized advancement", () => {
+    expect(
+      createJapaneseFuriganaParts("今日は帰る", [
+        { text: "今日", ruby: "きょう" },
+        { text: "帰", ruby: "かえ" },
+      ]),
+    ).toEqual([
+      { text: "今日", ruby: "きょう" },
+      { text: "は" },
+      { text: "帰", ruby: "かえ" },
+      { text: "る" },
+    ]);
+  });
+
+  test("maps repeated kanji by occurrence instead of using a shared word-level reading", () => {
+    expect(
+      createJapaneseFuriganaParts("生まれた生地を見る。", [
+        { text: "生", ruby: "う" },
+        { text: "生", ruby: "き" },
+        { text: "地", ruby: "じ" },
+        { text: "見", ruby: "み" },
+      ]),
+    ).toEqual([
+      { text: "生", ruby: "う" },
+      { text: "まれた" },
+      { text: "生", ruby: "き" },
+      { text: "地", ruby: "じ" },
+      { text: "を" },
+      { text: "見", ruby: "み" },
+      { text: "る。" },
+    ]);
+  });
 });
 
 describe("direct short challenges", () => {
   test("show Japanese prompts and do not leak generated control labels", () => {
     expect(directShortChallenges).toHaveLength(50);
     expect(directShortChallenges[0].display).toContain("解析結果");
-    expect(directShortChallenges[0].furigana).toContain("かいせき けっか");
-    expect(directShortChallenges[0].reading).toContain("かいせき けっか");
-    expect(directShortChallenges[0].guide).toContain(" ");
+    expect(directShortChallenges[0].furigana).toContainEqual({ text: "結", ruby: "けっ" });
+    expect(directShortChallenges[0].furigana).toContainEqual({ text: "果", ruby: "か" });
+    expect(directShortChallenges[0].reading).toContain("かいせきけっか");
     expect(directShortChallenges[0].input).not.toContain(" ");
     expect(directShortChallenges.some((challenge) => challenge.display.includes("control set"))).toBe(
       false,
@@ -112,8 +198,8 @@ describe("direct Japanese challenge romaji", () => {
   test("keeps syllabic n distinct before a following word that starts with a vowel", () => {
     const challenge = directShortChallenges.find((item) => item.display.includes("視線移動"));
 
-    expect(challenge?.romajiSource).toContain("shisen' idou");
-    expect(challenge?.guide).toContain("shisenn idou");
+    expect(challenge?.romajiSource).toContain("shisen'idou");
+    expect(challenge?.guide).toContain("shisennidou");
     expect(challenge?.input).toContain("shisennidou");
     expect(challenge?.input).not.toContain("shisenidou");
   });

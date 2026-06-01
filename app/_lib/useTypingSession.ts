@@ -278,9 +278,9 @@ export function useTypingSession({
   const currentFurigana =
     challengeLanguage === "ja"
       ? mode.requiresIme
-        ? (longChallengeFurigana[challengeIndex % longChallengeFurigana.length] ?? "")
-        : (currentDirectChallenge.furigana ?? "")
-      : "";
+        ? (longChallengeFurigana[challengeIndex % longChallengeFurigana.length] ?? [])
+        : (currentDirectChallenge.furigana ?? [])
+      : [];
   const currentRawReading =
     challengeLanguage === "ja"
       ? mode.requiresIme

@@ -30,6 +30,7 @@ import {
 } from "@/src/lib/typing";
 import {
   createJapaneseFuriganaParts,
+  type JapaneseFuriganaEntry,
   createJapaneseReadingGuideParts,
 } from "@/src/lib/challenges";
 import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
@@ -56,7 +57,7 @@ type TypingPanelProps = {
   correctionDebt: number;
   currentAccuracy: number;
   currentDisplay: string;
-  currentFurigana: string;
+  currentFurigana: JapaneseFuriganaEntry[];
   currentGuide: string;
   currentReading: string;
   currentRomajiTarget: RomajiInputTarget | null;
@@ -576,7 +577,7 @@ function DirectChallengeView({
   strictMistakeInput,
 }: {
   display: string;
-  furigana: string;
+  furigana: JapaneseFuriganaEntry[];
   guide: string;
   input: string;
   mistakeFlash: MistakeFlash | null;
@@ -636,12 +637,12 @@ function DisplayText({
   showFurigana,
 }: {
   display: string;
-  furigana: string;
+  furigana: JapaneseFuriganaEntry[];
   showFurigana: boolean;
 }) {
   return (
     <p className="display-text">
-      {showFurigana && furigana ? (
+      {showFurigana && furigana.length > 0 ? (
         createJapaneseFuriganaParts(display, furigana).map((part, index) =>
           part.ruby ? (
             <ruby className="display-ruby" key={`${part.text}-${index}`}>
