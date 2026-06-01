@@ -44,6 +44,11 @@ import {
   shouldPersistStoredState,
 } from "./stored-state";
 import {
+  ALPHA_PRODUCTION_LOCK_MESSAGE,
+  PRODUCTION_MODE_PLAYABLE,
+  canPlayProductionMode,
+} from "./release-gates";
+import {
   createShuffledIndexes,
   estimateImeKeystrokes,
   formatChallengeReading,
@@ -213,6 +218,7 @@ export function useTypingSession() {
       : currentDirectChallenge.guide;
   const bestPracticeRank = getRank(stored.bestPracticeScore);
   const bestProductionRank = getRank(stored.bestProductionScore);
+  const productionPlayable = PRODUCTION_MODE_PLAYABLE;
 
   function randomizePracticeChallengeOrder(language: ChallengeLanguage = challengeLanguage) {
     setPracticeChallengeOrder(
@@ -261,7 +267,12 @@ export function useTypingSession() {
       : input.length > 0
         ? currentCorrect / input.length
         : 1;
-  const isProductionBlocked = mode.group === "production" && !productionUnlocked;
+  const isProductionBlocked =
+    mode.group === "production" &&
+    !canPlayProductionMode({ unlocked: productionUnlocked });
+  const productionBlockReason = productionPlayable
+    ? "本番モードは仮レーティング A0 以上で解放されます。"
+    : ALPHA_PRODUCTION_LOCK_MESSAGE;
   const progress = Math.min(100, (elapsedSeconds / durationSeconds) * 100);
   const correctionDebt = !acceptsTextInput && mode.lockMistakes ? stats.mistakeDebt : 0;
 
@@ -445,7 +456,11 @@ export function useTypingSession() {
 
   function selectMode(nextModeId: ModeId) {
     const nextMode = modes.find((item) => item.id === nextModeId);
-    if (!nextMode || (nextMode.group === "production" && !productionUnlocked)) {
+    if (
+      !nextMode ||
+      (nextMode.group === "production" &&
+        !canPlayProductionMode({ unlocked: productionUnlocked }))
+    ) {
       return;
     }
 
@@ -704,6 +719,7 @@ export function useTypingSession() {
     challengeLanguage,
     currentAccuracy,
     productionDuration,
+    productionPlayable,
     productionUnlocked,
     screen,
     settings: stored.settings,
@@ -726,6 +742,7 @@ export function useTypingSession() {
       inputRef,
       isFinished,
       isProductionBlocked,
+      productionBlockReason,
       mistakeFlash: mistakeFlash?.input === input ? mistakeFlash : null,
       metrics,
       mode,

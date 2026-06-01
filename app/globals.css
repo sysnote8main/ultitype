@@ -616,6 +616,17 @@ h2 span {
   font-weight: 800;
 }
 
+.alpha-lock-note {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--line));
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 .mode-select-grid {
   display: grid;
   gap: 12px;

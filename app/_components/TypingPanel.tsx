@@ -64,6 +64,7 @@ type TypingPanelProps = {
   metrics: Metrics;
   mode: TypingMode;
   progress: number;
+  productionBlockReason: string;
   remainingSeconds: number;
   soundSettings: SoundSettings;
   speedDisplayUnit: SpeedDisplayUnit;
@@ -98,6 +99,7 @@ export function TypingPanel({
   metrics,
   mode,
   progress,
+  productionBlockReason,
   remainingSeconds,
   soundSettings,
   speedDisplayUnit,
@@ -184,7 +186,7 @@ export function TypingPanel({
       {isProductionBlocked ? (
         <div className="locked-panel">
           <Lock size={28} />
-          <p>本番モードは仮レーティング A0 以上で解放されます。</p>
+          <p>{productionBlockReason}</p>
         </div>
       ) : (
         <>

@@ -2,6 +2,7 @@
 
 import { Crosshair, Gauge, Keyboard, Languages, Lock, Waves, Zap } from "lucide-react";
 import { modes, type ModeId, type TypingMode } from "@/src/lib/typing";
+import { ALPHA_PRODUCTION_LOCK_MESSAGE } from "../_lib/release-gates";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ProductionDuration } from "../_lib/types";
 
@@ -16,6 +17,7 @@ const modeIcons = {
 type ModeSelectScreenProps = {
   productionDuration: ProductionDuration;
   productionDurations: readonly ProductionDuration[];
+  productionPlayable: boolean;
   productionUnlocked: boolean;
   soundSettings: SoundSettings;
   onProductionDurationChange: (duration: ProductionDuration) => void;
@@ -25,6 +27,7 @@ type ModeSelectScreenProps = {
 export function ModeSelectScreen({
   productionDuration,
   productionDurations,
+  productionPlayable,
   productionUnlocked,
   soundSettings,
   onProductionDurationChange,
@@ -72,13 +75,18 @@ export function ModeSelectScreen({
             <span>Rating</span>
             <small>本番モード</small>
           </div>
+          {!productionPlayable ? (
+            <p className="alpha-lock-note">{ALPHA_PRODUCTION_LOCK_MESSAGE}</p>
+          ) : null}
           <div className="duration-block mode-select-duration">
             <div className="segmented">
               {productionDurations.map((duration) => (
                 <button
                   className={productionDuration === duration ? "selected" : ""}
+                  disabled={!productionPlayable}
                   key={duration}
                   onClick={() => onProductionDurationChange(duration)}
+                  title={!productionPlayable ? ALPHA_PRODUCTION_LOCK_MESSAGE : undefined}
                   type="button"
                 >
                   {duration / 60}分
@@ -92,7 +100,13 @@ export function ModeSelectScreen({
               .map((item) => (
                 <ModeSelectCard
                   key={item.id}
-                  locked={!productionUnlocked}
+                  lockLabel={productionPlayable ? "A0" : "Alpha"}
+                  lockReason={
+                    productionPlayable
+                      ? "仮レーティング A0 以上で解放"
+                      : ALPHA_PRODUCTION_LOCK_MESSAGE
+                  }
+                  locked={!productionPlayable || !productionUnlocked}
                   mode={item}
                   onSelect={() => handleSelectMode(item.id)}
                 />
@@ -105,10 +119,14 @@ export function ModeSelectScreen({
 }
 
 function ModeSelectCard({
+  lockLabel,
+  lockReason,
   locked,
   mode,
   onSelect,
 }: {
+  lockLabel?: string;
+  lockReason?: string;
   locked: boolean;
   mode: TypingMode;
   onSelect: () => void;
@@ -120,7 +138,7 @@ function ModeSelectCard({
       className={`mode-select-card ${locked ? "locked" : ""}`}
       disabled={locked}
       onClick={onSelect}
-      title={locked ? "仮レーティング A0 以上で解放" : mode.description}
+      title={locked ? lockReason : mode.description}
       type="button"
     >
       <span className="mode-icon" aria-hidden="true">
@@ -132,7 +150,7 @@ function ModeSelectCard({
       {locked ? (
         <span className="mode-lock">
           <Lock size={15} />
-          A0
+          {lockLabel}
         </span>
       ) : null}
     </button>

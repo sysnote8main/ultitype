@@ -14,6 +14,7 @@ export default function Home() {
             <ModeSelectScreen
               productionDuration={session.productionDuration}
               productionDurations={productionDurations}
+              productionPlayable={session.productionPlayable}
               productionUnlocked={session.productionUnlocked}
               soundSettings={session.settings}
               onProductionDurationChange={session.setProductionDuration}

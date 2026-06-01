@@ -34,6 +34,7 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     },
     mode: modes[0]!,
     progress: 0,
+    productionBlockReason: "本番モードは仮レーティング A0 以上で解放されます。",
     remainingSeconds: 120,
     soundSettings: initialSettings,
     speedDisplayUnit: "keysPerSecond",
