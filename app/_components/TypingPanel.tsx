@@ -3,10 +3,13 @@
 import {
   ArrowLeft,
   CheckCircle2,
+  Crosshair,
   Lock,
   Play,
   RotateCcw,
   Timer,
+  Waves,
+  Zap,
 } from "lucide-react";
 import type {
   ClipboardEvent,
@@ -118,6 +121,7 @@ export function TypingPanel({
     rankLabel: currentRank.label,
   });
   const speedMetric = getSpeedMetric(metrics.keysPerSecond, speedDisplayUnit);
+  const SessionModeIcon = getSessionModeIcon(mode);
 
   function handleBackToModeSelect() {
     playTypingSound("back");
@@ -146,6 +150,11 @@ export function TypingPanel({
         <div>
           <p className="mode-label">{mode.label}</p>
           <h2>
+            {SessionModeIcon ? (
+              <span className="session-mode-symbol" aria-label={mode.label}>
+                <SessionModeIcon size={72} strokeWidth={1.6} aria-hidden="true" />
+              </span>
+            ) : null}
             <span
               aria-label={visibleRank.isConcealed ? "Rank hidden for the first 30 seconds" : undefined}
               className={`session-rank-value ${visibleRank.isConcealed ? "concealed" : ""}`}
@@ -341,6 +350,23 @@ function ChallengeAnalysis({
       </div>
     </section>
   );
+}
+
+function getSessionModeIcon(mode: TypingMode) {
+  if (mode.group !== "practice") {
+    return null;
+  }
+
+  switch (mode.id) {
+    case "practice-accuracy":
+      return Crosshair;
+    case "practice-flow":
+      return Waves;
+    case "practice-speed":
+      return Zap;
+    default:
+      return null;
+  }
 }
 
 function CorrectionDebtIndicator({ debt }: { debt: number }) {

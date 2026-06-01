@@ -53,6 +53,35 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
 }
 
 describe("TypingPanel", () => {
+  test("shows only the practice mode icon before the in-session rank", () => {
+    const markup = renderTypingPanel({
+      currentRank: getRank(500),
+      elapsedSeconds: 31,
+      mode: modes.find((mode) => mode.id === "practice-flow")!,
+    });
+
+    expect(markup).toContain('<span class="session-mode-symbol"');
+    expect(markup).toContain("lucide-waves-horizontal");
+    expect(markup).toContain('width="72"');
+    expect(markup).toContain('height="72"');
+    expect(markup).not.toContain(
+      `<span class="session-mode-symbol">${modes.find((mode) => mode.id === "practice-flow")!.shortLabel}</span>`,
+    );
+    expect(markup.indexOf("session-mode-symbol")).toBeLessThan(
+      markup.indexOf("session-rank-value"),
+    );
+  });
+
+  test("does not show a mode symbol before production ranks", () => {
+    const markup = renderTypingPanel({
+      currentRank: getRank(500),
+      elapsedSeconds: 31,
+      mode: modes.find((mode) => mode.id === "production-ime-off")!,
+    });
+
+    expect(markup).not.toContain("session-mode-symbol");
+  });
+
   test("flashes the current direct character after a mistake", () => {
     const markup = renderTypingPanel({
       mistakeFlash: { id: 1, input: "" },

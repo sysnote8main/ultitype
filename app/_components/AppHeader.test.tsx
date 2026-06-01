@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getRank } from "@/src/lib/typing";
 import { initialSettings } from "../_lib/constants";
-import { APP_VERSION } from "../_lib/version";
+import { APP_VERSION_LABEL } from "../_lib/version";
 import { AppHeader } from "./AppHeader";
 
 function renderAppHeader() {
@@ -37,7 +37,7 @@ describe("AppHeader", () => {
     const markup = renderAppHeader();
 
     expect(markup).toContain("UltiType");
-    expect(markup).toContain(`v${APP_VERSION}`);
+    expect(markup).toContain(APP_VERSION_LABEL);
   });
 
   test("places the user page link before settings", () => {
