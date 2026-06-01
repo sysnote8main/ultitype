@@ -41,6 +41,7 @@ export const initialStats: RuntimeStats = {
   correctCharacters: 0,
   mistakes: 0,
   mistakeDebt: 0,
+  mistakeInput: "",
   intervals: [],
   keyStabilityHistory: [],
   lastKeyAt: null,
@@ -64,6 +65,7 @@ export const initialSettings: AppSettings = {
   typingSoundEnabled: true,
   uiSoundEnabled: true,
   speedDisplayUnit: "keysPerSecond",
+  strictMistakeDisplayMode: "overwrite",
 };
 
 export const initialStoredState: StoredState = {

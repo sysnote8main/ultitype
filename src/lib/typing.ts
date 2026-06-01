@@ -104,6 +104,7 @@ export type DirectTypingState = {
   input: string;
   scoredInputLength: number;
   mistakeDebt: number;
+  mistakeInput?: string;
   characterAttempts: number;
   correctCharacters: number;
   mistakes: number;
@@ -483,12 +484,15 @@ export function applyDirectKey({
   target,
   lockMistakes,
 }: DirectKeyInput): DirectKeyResult {
+  const mistakeInput = state.mistakeInput ?? "";
+
   if (key === "Backspace") {
     if (lockMistakes && state.mistakeDebt > 0) {
       return {
         state: {
           ...state,
           mistakeDebt: state.mistakeDebt - 1,
+          mistakeInput: mistakeInput.slice(0, -1),
         },
         scoredKeystrokes: 0,
       };
@@ -512,6 +516,7 @@ export function applyDirectKey({
       state: {
         ...state,
         mistakeDebt: state.mistakeDebt + 1,
+        mistakeInput: mistakeInput + key,
         characterAttempts: state.characterAttempts + 1,
         mistakes: state.mistakes + 1,
       },
@@ -534,6 +539,7 @@ export function applyDirectKey({
       state: {
         ...state,
         mistakeDebt: lockMistakes ? state.mistakeDebt + 1 : state.mistakeDebt,
+        mistakeInput: lockMistakes ? mistakeInput + key : mistakeInput,
         characterAttempts: state.characterAttempts + 1,
         mistakes: state.mistakes + 1,
       },

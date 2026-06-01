@@ -38,6 +38,7 @@ import type {
   MistakeFlash,
   RuntimeStats,
   SpeedDisplayUnit,
+  StrictMistakeDisplayMode,
 } from "../_lib/types";
 
 type BlockableTextEvent =
@@ -73,6 +74,8 @@ type TypingPanelProps = {
   speedDisplayUnit: SpeedDisplayUnit;
   startedAt: number | null;
   stats: RuntimeStats;
+  strictMistakeDisplayMode: StrictMistakeDisplayMode;
+  strictMistakeInput: string;
   onBackToModeSelect: () => void;
   onImeInput: (input: string) => void;
   onImeKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -108,6 +111,8 @@ export function TypingPanel({
   speedDisplayUnit,
   startedAt,
   stats,
+  strictMistakeDisplayMode,
+  strictMistakeInput,
   onBackToModeSelect,
   onImeInput,
   onImeKeyDown,
@@ -213,6 +218,8 @@ export function TypingPanel({
                 mistakeFlash={mistakeFlash}
                 reading={currentReading}
                 romajiTarget={currentRomajiTarget}
+                strictMistakeDisplayMode={strictMistakeDisplayMode}
+                strictMistakeInput={strictMistakeInput}
               />
             )}
           </div>
@@ -537,6 +544,8 @@ function DirectChallengeView({
   mistakeFlash,
   reading,
   romajiTarget,
+  strictMistakeDisplayMode,
+  strictMistakeInput,
 }: {
   display: string;
   guide: string;
@@ -544,6 +553,8 @@ function DirectChallengeView({
   mistakeFlash: MistakeFlash | null;
   reading: string;
   romajiTarget: RomajiInputTarget | null;
+  strictMistakeDisplayMode: StrictMistakeDisplayMode;
+  strictMistakeInput: string;
 }) {
   const hasSeparateDisplay = display !== guide;
 
@@ -562,8 +573,20 @@ function DirectChallengeView({
         aria-label={hasSeparateDisplay ? "romaji input target" : "input target"}
       >
         {romajiTarget
-          ? renderRomajiGuideCharacters(romajiTarget, input, mistakeFlash)
-          : renderGuideCharacters(guide, input, mistakeFlash)}
+          ? renderRomajiGuideCharacters(
+              romajiTarget,
+              input,
+              mistakeFlash,
+              strictMistakeInput,
+              strictMistakeDisplayMode,
+            )
+          : renderGuideCharacters(
+              guide,
+              input,
+              mistakeFlash,
+              strictMistakeInput,
+              strictMistakeDisplayMode,
+            )}
       </p>
     </>
   );
@@ -611,19 +634,29 @@ function renderRomajiGuideCharacters(
   target: RomajiInputTarget,
   input: string,
   mistakeFlash: MistakeFlash | null,
+  strictMistakeInput: string,
+  strictMistakeDisplayMode: StrictMistakeDisplayMode,
 ) {
   const progress = getRomajiInputProgress(target, input);
   const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
   const flashCharacterIndex =
     mistakeFlash && progress.currentOption ? progress.currentOptionOffset : 0;
+  const mistakeCharacters = getVisibleStrictMistakeCharacters(
+    strictMistakeInput,
+    strictMistakeDisplayMode,
+  );
+  const elements: ReactNode[] = [];
+  let inputCharacterIndex = 0;
+  let insertedMistakes = false;
 
-  return target.parts.map((part, partIndex) => {
+  target.parts.forEach((part, partIndex) => {
     if (part.kind === "visual") {
-      return (
+      elements.push(
         <span className="visual-space" key={`space-${partIndex}`} aria-hidden="true">
           {part.text}
-        </span>
+        </span>,
       );
+      return;
     }
 
     const text =
@@ -631,7 +664,35 @@ function renderRomajiGuideCharacters(
         ? progress.currentOption
         : (progress.selectedOptions[part.tokenIndex] ?? part.text);
 
-    return Array.from(text).map((character, characterIndex) => {
+    Array.from(text).forEach((character, characterIndex) => {
+      if (
+        strictMistakeDisplayMode === "insert" &&
+        !insertedMistakes &&
+        inputCharacterIndex === input.length
+      ) {
+        elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "romaji-insert"));
+        insertedMistakes = true;
+      }
+
+      const overwriteMistake = getOverwriteMistakeCharacter(
+        mistakeCharacters,
+        inputCharacterIndex,
+        input.length,
+        strictMistakeDisplayMode,
+      );
+      if (overwriteMistake) {
+        elements.push(
+          <span
+            className="char wrong"
+            key={`romaji-overwrite-${part.tokenIndex}-${characterIndex}`}
+          >
+            {overwriteMistake}
+          </span>,
+        );
+        inputCharacterIndex += 1;
+        return;
+      }
+
       const isCompletedToken = part.tokenIndex < progress.completedTokens;
       const isCurrentToken = part.tokenIndex === progress.currentTokenIndex;
       const isTypedCurrentCharacter =
@@ -652,37 +713,87 @@ function renderRomajiGuideCharacters(
       const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
       const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
-      return (
+      elements.push(
         <span
           className={flashClassName}
           key={`${part.tokenIndex}-${character}-${characterIndex}-${flashKey}`}
         >
           {character}
-        </span>
+        </span>,
       );
+      inputCharacterIndex += 1;
     });
   });
+
+  if (strictMistakeDisplayMode === "insert" && !insertedMistakes) {
+    elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "romaji-insert"));
+  }
+
+  if (strictMistakeDisplayMode === "overwrite") {
+    elements.push(
+      ...renderStrictMistakeCharacters(
+        mistakeCharacters.slice(Math.max(0, inputCharacterIndex - input.length)),
+        "romaji-overwrite-tail",
+      ),
+    );
+  }
+
+  return elements;
 }
 
 function renderGuideCharacters(
   guide: string,
   input: string,
   mistakeFlash: MistakeFlash | null,
+  strictMistakeInput: string,
+  strictMistakeDisplayMode: StrictMistakeDisplayMode,
 ) {
+  const mistakeCharacters = getVisibleStrictMistakeCharacters(
+    strictMistakeInput,
+    strictMistakeDisplayMode,
+  );
+  const elements: ReactNode[] = [];
   let targetIndex = 0;
+  let insertedMistakes = false;
 
-  return Array.from(guide).map((character, index) => {
+  Array.from(guide).forEach((character, index) => {
     if (/\s/.test(character)) {
-      return (
+      elements.push(
         <span className="visual-space" key={`space-${index}`} aria-hidden="true">
           {character}
-        </span>
+        </span>,
       );
+      return;
     }
 
     const typed = input[targetIndex];
     const currentIndex = targetIndex;
+
+    if (
+      strictMistakeDisplayMode === "insert" &&
+      !insertedMistakes &&
+      currentIndex === input.length
+    ) {
+      elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "direct-insert"));
+      insertedMistakes = true;
+    }
+
+    const overwriteMistake = getOverwriteMistakeCharacter(
+      mistakeCharacters,
+      currentIndex,
+      input.length,
+      strictMistakeDisplayMode,
+    );
     targetIndex += 1;
+    if (overwriteMistake) {
+      elements.push(
+        <span className="char wrong" key={`direct-overwrite-${index}`}>
+          {overwriteMistake}
+        </span>,
+      );
+      return;
+    }
+
     const isMistakeFlash =
       mistakeFlash !== null && typed === undefined && currentIndex === input.length;
 
@@ -697,10 +808,54 @@ function renderGuideCharacters(
     const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
     const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
-    return (
+    elements.push(
       <span className={flashClassName} key={`${character}-${index}-${flashKey}`}>
         {character}
-      </span>
+      </span>,
     );
   });
+
+  if (strictMistakeDisplayMode === "insert" && !insertedMistakes) {
+    elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "direct-insert"));
+  }
+
+  if (strictMistakeDisplayMode === "overwrite") {
+    elements.push(
+      ...renderStrictMistakeCharacters(
+        mistakeCharacters.slice(Math.max(0, targetIndex - input.length)),
+        "direct-overwrite-tail",
+      ),
+    );
+  }
+
+  return elements;
+}
+
+function getVisibleStrictMistakeCharacters(
+  strictMistakeInput: string,
+  strictMistakeDisplayMode: StrictMistakeDisplayMode,
+) {
+  return strictMistakeDisplayMode === "none" ? [] : Array.from(strictMistakeInput);
+}
+
+function getOverwriteMistakeCharacter(
+  mistakeCharacters: string[],
+  currentIndex: number,
+  inputLength: number,
+  strictMistakeDisplayMode: StrictMistakeDisplayMode,
+) {
+  if (strictMistakeDisplayMode !== "overwrite") {
+    return null;
+  }
+
+  const mistakeIndex = currentIndex - inputLength;
+  return mistakeIndex >= 0 ? (mistakeCharacters[mistakeIndex] ?? null) : null;
+}
+
+function renderStrictMistakeCharacters(mistakeCharacters: string[], keyPrefix: string) {
+  return mistakeCharacters.map((character, index) => (
+    <span className="char wrong" key={`${keyPrefix}-${index}`}>
+      {character}
+    </span>
+  ));
 }

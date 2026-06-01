@@ -40,6 +40,8 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     speedDisplayUnit: "keysPerSecond",
     startedAt: null,
     stats: initialStats,
+    strictMistakeDisplayMode: "overwrite",
+    strictMistakeInput: "",
     onBackToModeSelect: () => undefined,
     onImeInput: () => undefined,
     onImeKeyDown: () => undefined,
@@ -105,6 +107,50 @@ describe("TypingPanel", () => {
     });
 
     expect(markup).toContain('<span class="char current mistake-flash">h</span>');
+  });
+
+  test("overwrites the next direct guide character with strict mistake input", () => {
+    const markup = renderTypingPanel({
+      currentDisplay: "abc",
+      currentGuide: "abc",
+      input: "a",
+      strictMistakeDisplayMode: "overwrite",
+      strictMistakeInput: "x",
+    });
+
+    expect(markup).toContain('<span class="char correct">a</span>');
+    expect(markup).toContain('<span class="char wrong">x</span>');
+    expect(markup).not.toContain('<span class="char current">b</span>');
+  });
+
+  test("inserts strict mistake input before the next direct guide character", () => {
+    const markup = renderTypingPanel({
+      currentDisplay: "abc",
+      currentGuide: "abc",
+      input: "a",
+      strictMistakeDisplayMode: "insert",
+      strictMistakeInput: "x",
+    });
+
+    expect(markup.indexOf('<span class="char correct">a</span>')).toBeLessThan(
+      markup.indexOf('<span class="char wrong">x</span>'),
+    );
+    expect(markup.indexOf('<span class="char wrong">x</span>')).toBeLessThan(
+      markup.indexOf('<span class="char current">b</span>'),
+    );
+  });
+
+  test("hides strict mistake input when display mode is none", () => {
+    const markup = renderTypingPanel({
+      currentDisplay: "abc",
+      currentGuide: "abc",
+      input: "a",
+      strictMistakeDisplayMode: "none",
+      strictMistakeInput: "x",
+    });
+
+    expect(markup).not.toContain('<span class="char wrong">x</span>');
+    expect(markup).toContain('<span class="char current">b</span>');
   });
 
   test("shows the hiragana reading between Japanese display text and romaji target", () => {

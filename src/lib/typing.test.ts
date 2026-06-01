@@ -508,6 +508,49 @@ describe("applyDirectKey", () => {
     expect(correct.state.mistakeDebt).toBe(0);
   });
 
+  test("tracks strict accuracy wrong keys until Backspace clears them", () => {
+    const firstMiss = applyDirectKey({
+      state: {
+        input: "a",
+        scoredInputLength: 1,
+        mistakeDebt: 0,
+        characterAttempts: 1,
+        correctCharacters: 1,
+        mistakes: 0,
+        completedPrompts: 0,
+      },
+      key: "x",
+      target: "abc",
+      lockMistakes: true,
+    });
+
+    const secondMiss = applyDirectKey({
+      state: firstMiss.state,
+      key: "y",
+      target: "abc",
+      lockMistakes: true,
+    });
+
+    const oneBackspace = applyDirectKey({
+      state: secondMiss.state,
+      key: "Backspace",
+      target: "abc",
+      lockMistakes: true,
+    });
+
+    const twoBackspaces = applyDirectKey({
+      state: oneBackspace.state,
+      key: "Backspace",
+      target: "abc",
+      lockMistakes: true,
+    });
+
+    expect((firstMiss.state as { mistakeInput?: string }).mistakeInput).toBe("x");
+    expect((secondMiss.state as { mistakeInput?: string }).mistakeInput).toBe("xy");
+    expect((oneBackspace.state as { mistakeInput?: string }).mistakeInput).toBe("x");
+    expect((twoBackspaces.state as { mistakeInput?: string }).mistakeInput).toBe("");
+  });
+
   test("ignores wrong characters outside strict accuracy mode without advancing", () => {
     const miss = applyDirectKey({
       state: {

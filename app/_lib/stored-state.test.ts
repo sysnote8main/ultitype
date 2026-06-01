@@ -58,4 +58,15 @@ describe("stored state persistence", () => {
 
     expect(stored.settings.speedDisplayUnit).toBe("keysPerSecond");
   });
+
+  test("fills the strict mistake display setting when loading older stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        strictMistakeDisplayMode: undefined,
+      },
+    });
+
+    expect(stored.settings.strictMistakeDisplayMode).toBe("overwrite");
+  });
 });

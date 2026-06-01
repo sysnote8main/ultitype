@@ -448,6 +448,45 @@ export function SettingsScreen({
                 <span aria-hidden="true" />
               </label>
             </section>
+
+            <section className="settings-row" aria-labelledby="strict-mistake-display-setting">
+              <div>
+                <h4 id="strict-mistake-display-setting">正確無比の誤入力表示</h4>
+                <p>誤入力した文字を課題文ローマ字上に表示する方法を選ぶ</p>
+              </div>
+              <div
+                className="romaji-preset-segmented"
+                role="group"
+                aria-label="正確無比の誤入力表示"
+              >
+                <button
+                  aria-pressed={settings.strictMistakeDisplayMode === "overwrite"}
+                  className={
+                    settings.strictMistakeDisplayMode === "overwrite" ? "selected" : ""
+                  }
+                  onClick={() => onChange({ strictMistakeDisplayMode: "overwrite" })}
+                  type="button"
+                >
+                  上書き
+                </button>
+                <button
+                  aria-pressed={settings.strictMistakeDisplayMode === "insert"}
+                  className={settings.strictMistakeDisplayMode === "insert" ? "selected" : ""}
+                  onClick={() => onChange({ strictMistakeDisplayMode: "insert" })}
+                  type="button"
+                >
+                  挿入
+                </button>
+                <button
+                  aria-pressed={settings.strictMistakeDisplayMode === "none"}
+                  className={settings.strictMistakeDisplayMode === "none" ? "selected" : ""}
+                  onClick={() => onChange({ strictMistakeDisplayMode: "none" })}
+                  type="button"
+                >
+                  何もしない
+                </button>
+              </div>
+            </section>
           </div>
         </section>
 

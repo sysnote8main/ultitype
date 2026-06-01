@@ -9,6 +9,7 @@ import type {
 export type ChallengeLanguage = "ja" | "en";
 export type Theme = "dark" | "light";
 export type SpeedDisplayUnit = "keysPerSecond" | "keysPerMinute";
+export type StrictMistakeDisplayMode = "overwrite" | "insert" | "none";
 export type FinishReason = "completed" | "retired";
 export type Screen = "mode-select" | "typing";
 export type ProductionDuration = 300 | 600;
@@ -33,6 +34,7 @@ export type AppSettings = {
   typingSoundEnabled: boolean;
   uiSoundEnabled: boolean;
   speedDisplayUnit: SpeedDisplayUnit;
+  strictMistakeDisplayMode: StrictMistakeDisplayMode;
 };
 
 export type StoredSession = {
@@ -70,6 +72,7 @@ export type RuntimeStats = {
   correctCharacters: number;
   mistakes: number;
   mistakeDebt: number;
+  mistakeInput: string;
   intervals: number[];
   keyStabilityHistory: KeyStabilitySample[];
   lastKeyAt: number | null;

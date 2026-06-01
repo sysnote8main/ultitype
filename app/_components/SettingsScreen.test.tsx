@@ -82,6 +82,7 @@ describe("SettingsScreen", () => {
       "ローマ字入力法",
       "促音入力",
       "拗音分割入力",
+      "正確無比の誤入力表示",
     ]);
     expect(getCategoryItemLabels(markup, "auto-retire-settings")).toEqual(["無入力リタイア"]);
     expect(getCategoryItemLabels(markup, "danger-settings")).toEqual([
@@ -105,5 +106,16 @@ describe("SettingsScreen", () => {
     expect(screenMarkup).toContain("打鍵/秒");
     expect(screenMarkup).toContain("打鍵/分");
     expect(screenMarkup).toContain('aria-pressed="true"');
+  });
+
+  test("shows strict accuracy mistake display choices with overwrite selected by default", () => {
+    const markup = renderSettingsScreen();
+    const inputMarkup = getCategoryMarkup(markup, "input-settings");
+
+    expect(inputMarkup).toContain('aria-label="正確無比の誤入力表示"');
+    expect(inputMarkup).toContain("上書き");
+    expect(inputMarkup).toContain("挿入");
+    expect(inputMarkup).toContain("何もしない");
+    expect(inputMarkup).toContain('aria-pressed="true"');
   });
 });
