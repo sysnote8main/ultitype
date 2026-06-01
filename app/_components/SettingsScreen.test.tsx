@@ -75,7 +75,7 @@ describe("SettingsScreen", () => {
     expect(getCategoryItemLabels(markup, "screen-settings")).toEqual([
       "テーマ",
       "速度表示",
-      "日本語ローマ字のスペース",
+      "日本語ガイドのスペース",
     ]);
     expect(getCategoryItemLabels(markup, "sound-settings")).toEqual(["サウンド"]);
     expect(getCategoryItemLabels(markup, "input-settings")).toEqual([

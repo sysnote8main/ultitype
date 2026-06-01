@@ -215,8 +215,8 @@ export function SettingsScreen({
 
             <section className="settings-row" aria-labelledby="romaji-space-setting">
               <div>
-                <h4 id="romaji-space-setting">日本語ローマ字のスペース</h4>
-                <p>ローマ字ガイドの単語間スペースを表示する</p>
+                <h4 id="romaji-space-setting">日本語ガイドのスペース</h4>
+                <p>ひらがな読みとローマ字ガイドの単語間スペースを表示する</p>
               </div>
               <label className="toggle-control">
                 <input

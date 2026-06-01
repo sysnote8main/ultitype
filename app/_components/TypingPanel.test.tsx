@@ -1,0 +1,122 @@
+import { describe, expect, test } from "bun:test";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createRomajiInputTarget, getRank, modes } from "@/src/lib/typing";
+import { initialSettings, initialStats } from "../_lib/constants";
+import { TypingPanel } from "./TypingPanel";
+
+type TypingPanelProps = Parameters<typeof TypingPanel>[0];
+
+function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
+  const props: TypingPanelProps = {
+    acceptsTextInput: false,
+    challengeLanguage: "en",
+    correctionDebt: 0,
+    currentAccuracy: 1,
+    currentDisplay: "ab",
+    currentGuide: "ab",
+    currentReading: "",
+    currentRomajiTarget: null,
+    currentRank: getRank(0),
+    elapsedSeconds: null,
+    finishReason: null,
+    imeError: "",
+    input: "",
+    inputRef: { current: null },
+    isFinished: false,
+    isProductionBlocked: false,
+    mistakeFlash: null,
+    metrics: {
+      accuracy: 1,
+      consistency: 1,
+      keysPerSecond: 0,
+      paceMs: 0,
+      score: 0,
+    },
+    mode: modes[0]!,
+    progress: 0,
+    remainingSeconds: 120,
+    soundSettings: initialSettings,
+    speedDisplayUnit: "keysPerSecond",
+    startedAt: null,
+    stats: initialStats,
+    onBackToModeSelect: () => undefined,
+    onImeInput: () => undefined,
+    onImeKeyDown: () => undefined,
+    onPrepareSession: () => undefined,
+    onPreventDirectTextInput: () => undefined,
+    onResetSession: () => undefined,
+    ...overrides,
+  };
+
+  return renderToStaticMarkup(<TypingPanel {...props} />);
+}
+
+describe("TypingPanel", () => {
+  test("flashes the current direct character after a mistake", () => {
+    const markup = renderTypingPanel({
+      mistakeFlash: { id: 1, input: "" },
+    });
+
+    expect(markup).toContain('<span class="char current mistake-flash">a</span>');
+  });
+
+  test("flashes the next romaji character inside the active token", () => {
+    const romajiTarget = createRomajiInputTarget("shi", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "し",
+      currentGuide: romajiTarget.guide,
+      currentRomajiTarget: romajiTarget,
+      input: "s",
+      mistakeFlash: { id: 2, input: "s" },
+    });
+
+    expect(markup).toContain('<span class="char current mistake-flash">h</span>');
+  });
+
+  test("shows the hiragana reading between Japanese display text and romaji target", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "解析結果",
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせきけっか",
+      currentRomajiTarget: romajiTarget,
+    });
+
+    expect(markup).toContain('<p class="display-text">解析結果</p>');
+    expect(markup).toContain('<p class="reading-text">');
+    expect(markup).toContain(">か</span>");
+    expect(markup).toContain(">い</span>");
+    expect(markup).toContain(">せ</span>");
+    expect(markup.indexOf("解析結果")).toBeLessThan(markup.indexOf("reading-text"));
+    expect(markup.indexOf("reading-text")).toBeLessThan(
+      markup.indexOf('aria-label="romaji input target"'),
+    );
+  });
+
+  test("highlights the hiragana reading with the current romaji progress", () => {
+    const romajiTarget = createRomajiInputTarget("kai", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "貝",
+      currentGuide: romajiTarget.guide,
+      currentReading: "かい",
+      currentRomajiTarget: romajiTarget,
+      input: "ka",
+    });
+
+    expect(markup).toContain(
+      '<p class="reading-text"><span class="char correct">か</span><span class="char current">い</span></p>',
+    );
+  });
+});

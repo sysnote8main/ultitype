@@ -2,11 +2,13 @@ import englishProductionText from "./challenge-data/en-production.txt" with { ty
 import englishPracticeText from "./challenge-data/en-practice.txt" with { type: "text" };
 import japaneseProductionText from "./challenge-data/ja-production.txt" with { type: "text" };
 import japanesePracticeText from "./challenge-data/ja-practice.txt" with { type: "text" };
+import { createRomajiInputTarget } from "./typing";
 
 export type DirectChallenge = {
   display: string;
   guide?: string;
   input: string;
+  reading?: string;
   romajiSource?: string;
 };
 
@@ -14,6 +16,18 @@ export type JapaneseChallengeSource = {
   display: string;
   reading: string;
 };
+
+export type JapaneseReadingGuidePart =
+  | {
+      kind: "visual";
+      text: string;
+    }
+  | {
+      kind: "reading";
+      text: string;
+      tokenStart: number;
+      tokenEnd: number;
+    };
 
 export function parseEnglishChallengeText(source: string): string[] {
   return source
@@ -50,6 +64,7 @@ function createJapaneseDirectChallenges(challenges: JapaneseChallengeSource[]): 
       display,
       guide,
       input: removeVisualSpaces(guide),
+      reading,
       romajiSource,
     };
   });
@@ -58,36 +73,88 @@ function createJapaneseDirectChallenges(challenges: JapaneseChallengeSource[]): 
 const sokuonSourceMarker = "^";
 
 function kanaReadingToRomaji(reading: string): string {
+  return createJapaneseReadingSourceParts(reading)
+    .map((part) => part.source)
+    .join("");
+}
+
+export function createJapaneseReadingGuideParts(reading: string): JapaneseReadingGuidePart[] {
+  let tokenIndex = 0;
+
+  return createJapaneseReadingSourceParts(reading).map((part) => {
+    if (part.kind === "visual") {
+      return {
+        kind: "visual",
+        text: part.text,
+      };
+    }
+
+    const tokenCount = countRomajiInputTokens(part.source);
+    const guidePart = {
+      kind: "reading",
+      text: part.text,
+      tokenStart: tokenIndex,
+      tokenEnd: tokenIndex + tokenCount,
+    } satisfies JapaneseReadingGuidePart;
+    tokenIndex += tokenCount;
+    return guidePart;
+  });
+}
+
+type JapaneseReadingSourcePart = {
+  kind: "reading" | "visual";
+  source: string;
+  text: string;
+};
+
+function createJapaneseReadingSourceParts(reading: string): JapaneseReadingSourcePart[] {
   const characters = Array.from(reading);
-  const result: string[] = [];
+  const parts: JapaneseReadingSourcePart[] = [];
 
   for (let index = 0; index < characters.length; index += 1) {
     const character = characters[index] ?? "";
     const next = characters[index + 1] ?? "";
     const pair = `${character}${next}`;
 
+    if (/\s/.test(character)) {
+      parts.push({ kind: "visual", source: character, text: character });
+      continue;
+    }
+
     if (character === "っ") {
-      result.push(sokuonSourceMarker);
+      parts.push({ kind: "reading", source: sokuonSourceMarker, text: character });
       continue;
     }
 
     const pairedRomaji = kanaRomaji[pair];
     if (pairedRomaji) {
-      result.push(pairedRomaji);
+      parts.push({ kind: "reading", source: pairedRomaji, text: pair });
       index += 1;
       continue;
     }
 
     if (character === "ん") {
       const nextRomaji = resolveKanaRomaji(findNextNonSpaceCharacter(characters, index + 1));
-      result.push(nextRomaji && /^[aiueoyn]/.test(nextRomaji) ? "n'" : "n");
+      parts.push({
+        kind: "reading",
+        source: nextRomaji && /^[aiueoyn]/.test(nextRomaji) ? "n'" : "n",
+        text: character,
+      });
       continue;
     }
 
-    result.push(kanaRomaji[character] ?? character);
+    parts.push({ kind: "reading", source: kanaRomaji[character] ?? character, text: character });
   }
 
-  return result.join("");
+  return parts;
+}
+
+function countRomajiInputTokens(source: string): number {
+  return createRomajiInputTarget(source, {
+    allowSplitYoon: true,
+    preset: "hepburn",
+    selections: {},
+  }).tokens.length;
 }
 
 function createVisibleRomajiGuide(source: string): string {
@@ -260,6 +327,8 @@ const japaneseProductionChallenges = parseJapaneseChallengeText(japaneseProducti
 
 export const shortChallenges = japanesePracticeChallenges.map(({ display }) => display);
 export const longChallenges = japaneseProductionChallenges.map(({ display }) => display);
+export const shortChallengeReadings = japanesePracticeChallenges.map(({ reading }) => reading);
+export const longChallengeReadings = japaneseProductionChallenges.map(({ reading }) => reading);
 
 export const directShortChallenges = createJapaneseDirectChallenges(japanesePracticeChallenges);
 export const directLongChallenges = createJapaneseDirectChallenges(japaneseProductionChallenges);

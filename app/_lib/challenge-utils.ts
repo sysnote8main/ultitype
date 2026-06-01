@@ -19,6 +19,10 @@ export function removeRomajiVisualSpaces(value: string) {
   return value.replace(/\s/g, "");
 }
 
+export function formatChallengeReading(reading: string, showWordSpaces: boolean) {
+  return showWordSpaces ? reading : removeRomajiVisualSpaces(reading);
+}
+
 export function estimateImeKeystrokes(target: string): number {
   const kanaLike = Array.from(target).filter((character) => !/\s/.test(character)).length;
   return Math.ceil(kanaLike * 1.15);

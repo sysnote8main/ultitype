@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { createShuffledIndexes, getOrderedChallengeIndex } from "./challenge-utils";
+import {
+  createShuffledIndexes,
+  formatChallengeReading,
+  getOrderedChallengeIndex,
+} from "./challenge-utils";
 
 describe("practice challenge order", () => {
   test("shuffles indexes using the provided random source", () => {
@@ -25,5 +29,19 @@ describe("practice challenge order", () => {
 
     expect(getOrderedChallengeIndex(0, 3, order)).toBe(2);
     expect(getOrderedChallengeIndex(4, 3, order)).toBe(0);
+  });
+});
+
+describe("challenge reading display", () => {
+  test("keeps hiragana word spaces when guide spaces are enabled", () => {
+    expect(formatChallengeReading("こうそくな たいぴんぐ では", true)).toBe(
+      "こうそくな たいぴんぐ では",
+    );
+  });
+
+  test("removes hiragana word spaces when guide spaces are disabled", () => {
+    expect(formatChallengeReading("こうそくな たいぴんぐ では", false)).toBe(
+      "こうそくなたいぴんぐでは",
+    );
   });
 });

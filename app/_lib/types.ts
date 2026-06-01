@@ -12,6 +12,10 @@ export type SpeedDisplayUnit = "keysPerSecond" | "keysPerMinute";
 export type FinishReason = "completed" | "retired";
 export type Screen = "mode-select" | "typing";
 export type ProductionDuration = 300 | 600;
+export type MistakeFlash = {
+  id: number;
+  input: string;
+};
 export type DirectKeyEvent = Pick<
   globalThis.KeyboardEvent,
   "code" | "key" | "preventDefault" | "shiftKey"

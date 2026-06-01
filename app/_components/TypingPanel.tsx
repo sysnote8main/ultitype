@@ -25,12 +25,14 @@ import {
   type RomajiInputTarget,
   type TypingMode,
 } from "@/src/lib/typing";
+import { createJapaneseReadingGuideParts } from "@/src/lib/challenges";
 import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type {
   ChallengeLanguage,
   FinishReason,
   KeyStabilitySample,
+  MistakeFlash,
   RuntimeStats,
   SpeedDisplayUnit,
 } from "../_lib/types";
@@ -48,6 +50,7 @@ type TypingPanelProps = {
   currentAccuracy: number;
   currentDisplay: string;
   currentGuide: string;
+  currentReading: string;
   currentRomajiTarget: RomajiInputTarget | null;
   currentRank: Rank;
   elapsedSeconds: number | null;
@@ -57,6 +60,7 @@ type TypingPanelProps = {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   isFinished: boolean;
   isProductionBlocked: boolean;
+  mistakeFlash: MistakeFlash | null;
   metrics: Metrics;
   mode: TypingMode;
   progress: number;
@@ -80,6 +84,7 @@ export function TypingPanel({
   currentAccuracy,
   currentDisplay,
   currentGuide,
+  currentReading,
   currentRomajiTarget,
   currentRank,
   elapsedSeconds,
@@ -89,6 +94,7 @@ export function TypingPanel({
   inputRef,
   isFinished,
   isProductionBlocked,
+  mistakeFlash,
   metrics,
   mode,
   progress,
@@ -184,12 +190,17 @@ export function TypingPanel({
         <>
           <div className="target-view" aria-label="current challenge">
             {mode.requiresIme ? (
-              <p>{currentDisplay}</p>
+              <>
+                <p className="display-text">{currentDisplay}</p>
+                {currentReading ? <p className="reading-text">{currentReading}</p> : null}
+              </>
             ) : (
               <DirectChallengeView
                 display={currentDisplay}
                 guide={currentGuide}
                 input={input}
+                mistakeFlash={mistakeFlash}
+                reading={currentReading}
                 romajiTarget={currentRomajiTarget}
               />
             )}
@@ -495,11 +506,15 @@ function DirectChallengeView({
   display,
   guide,
   input,
+  mistakeFlash,
+  reading,
   romajiTarget,
 }: {
   display: string;
   guide: string;
   input: string;
+  mistakeFlash: MistakeFlash | null;
+  reading: string;
   romajiTarget: RomajiInputTarget | null;
 }) {
   const hasSeparateDisplay = display !== guide;
@@ -507,18 +522,72 @@ function DirectChallengeView({
   return (
     <>
       {hasSeparateDisplay ? <p className="display-text">{display}</p> : null}
+      {reading ? (
+        <p className="reading-text">
+          {romajiTarget
+            ? renderReadingGuideCharacters(reading, romajiTarget, input, mistakeFlash)
+            : reading}
+        </p>
+      ) : null}
       <p
         className="input-target"
         aria-label={hasSeparateDisplay ? "romaji input target" : "input target"}
       >
-        {romajiTarget ? renderRomajiGuideCharacters(romajiTarget, input) : renderGuideCharacters(guide, input)}
+        {romajiTarget
+          ? renderRomajiGuideCharacters(romajiTarget, input, mistakeFlash)
+          : renderGuideCharacters(guide, input, mistakeFlash)}
       </p>
     </>
   );
 }
 
-function renderRomajiGuideCharacters(target: RomajiInputTarget, input: string) {
+function renderReadingGuideCharacters(
+  reading: string,
+  target: RomajiInputTarget,
+  input: string,
+  mistakeFlash: MistakeFlash | null,
+) {
   const progress = getRomajiInputProgress(target, input);
+  const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
+
+  return createJapaneseReadingGuideParts(reading).map((part, partIndex) => {
+    if (part.kind === "visual") {
+      return (
+        <span className="visual-space" key={`reading-space-${partIndex}`} aria-hidden="true">
+          {part.text}
+        </span>
+      );
+    }
+
+    const isCompleted = part.tokenEnd <= progress.completedTokens;
+    const isCurrent =
+      part.tokenStart <= progress.currentTokenIndex &&
+      progress.currentTokenIndex < part.tokenEnd;
+    const isMistakeFlash = flashTokenIndex !== null && isCurrent && !isCompleted;
+    const className = isCompleted ? "char correct" : isCurrent ? "char current" : "char";
+    const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+    const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
+
+    return (
+      <span
+        className={flashClassName}
+        key={`reading-${part.tokenStart}-${part.text}-${partIndex}-${flashKey}`}
+      >
+        {part.text}
+      </span>
+    );
+  });
+}
+
+function renderRomajiGuideCharacters(
+  target: RomajiInputTarget,
+  input: string,
+  mistakeFlash: MistakeFlash | null,
+) {
+  const progress = getRomajiInputProgress(target, input);
+  const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
+  const flashCharacterIndex =
+    mistakeFlash && progress.currentOption ? progress.currentOptionOffset : 0;
 
   return target.parts.map((part, partIndex) => {
     if (part.kind === "visual") {
@@ -541,6 +610,10 @@ function renderRomajiGuideCharacters(target: RomajiInputTarget, input: string) {
         isCurrentToken &&
         progress.currentOption !== null &&
         characterIndex < progress.currentOptionOffset;
+      const isMistakeFlash =
+        flashTokenIndex === part.tokenIndex &&
+        characterIndex === flashCharacterIndex &&
+        !isTypedCurrentCharacter;
       const className = isCompletedToken
         ? "char correct"
         : isCurrentToken
@@ -548,9 +621,14 @@ function renderRomajiGuideCharacters(target: RomajiInputTarget, input: string) {
             ? "char correct current"
             : "char current"
           : "char";
+      const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+      const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
       return (
-        <span className={className} key={`${part.tokenIndex}-${character}-${characterIndex}`}>
+        <span
+          className={flashClassName}
+          key={`${part.tokenIndex}-${character}-${characterIndex}-${flashKey}`}
+        >
           {character}
         </span>
       );
@@ -558,7 +636,11 @@ function renderRomajiGuideCharacters(target: RomajiInputTarget, input: string) {
   });
 }
 
-function renderGuideCharacters(guide: string, input: string) {
+function renderGuideCharacters(
+  guide: string,
+  input: string,
+  mistakeFlash: MistakeFlash | null,
+) {
   let targetIndex = 0;
 
   return Array.from(guide).map((character, index) => {
@@ -573,6 +655,8 @@ function renderGuideCharacters(guide: string, input: string) {
     const typed = input[targetIndex];
     const currentIndex = targetIndex;
     targetIndex += 1;
+    const isMistakeFlash =
+      mistakeFlash !== null && typed === undefined && currentIndex === input.length;
 
     const className =
       typed === undefined
@@ -582,9 +666,11 @@ function renderGuideCharacters(guide: string, input: string) {
         : typed === character
           ? "char correct"
           : "char wrong";
+    const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+    const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
     return (
-      <span className={className} key={`${character}-${index}`}>
+      <span className={flashClassName} key={`${character}-${index}-${flashKey}`}>
         {character}
       </span>
     );

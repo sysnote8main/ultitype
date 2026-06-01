@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  createJapaneseReadingGuideParts,
   directLongChallenges,
   directShortChallenges,
   englishDirectLongChallenges,
@@ -24,12 +25,22 @@ describe("plain text challenge data", () => {
       },
     ]);
   });
+
+  test("maps hiragana reading units to romaji input token ranges", () => {
+    expect(createJapaneseReadingGuideParts("かい しゃ")).toEqual([
+      { kind: "reading", text: "か", tokenStart: 0, tokenEnd: 2 },
+      { kind: "reading", text: "い", tokenStart: 2, tokenEnd: 3 },
+      { kind: "visual", text: " " },
+      { kind: "reading", text: "しゃ", tokenStart: 3, tokenEnd: 4 },
+    ]);
+  });
 });
 
 describe("direct short challenges", () => {
   test("show Japanese prompts and do not leak generated control labels", () => {
     expect(directShortChallenges).toHaveLength(50);
     expect(directShortChallenges[0].display).toContain("解析結果");
+    expect(directShortChallenges[0].reading).toContain("かいせき けっか");
     expect(directShortChallenges[0].guide).toContain(" ");
     expect(directShortChallenges[0].input).not.toContain(" ");
     expect(directShortChallenges.some((challenge) => challenge.display.includes("control set"))).toBe(

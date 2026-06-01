@@ -11,7 +11,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { type DirectChallenge, englishLongChallenges, longChallenges } from "@/src/lib/challenges";
+import {
+  type DirectChallenge,
+  englishLongChallenges,
+  longChallengeReadings,
+  longChallenges,
+} from "@/src/lib/challenges";
 import {
   type ModeId,
   applyDirectKey,
@@ -41,6 +46,7 @@ import {
 import {
   createShuffledIndexes,
   estimateImeKeystrokes,
+  formatChallengeReading,
   getDirectChallenges,
   getOrderedChallengeIndex,
   removeRomajiVisualSpaces,
@@ -50,6 +56,7 @@ import type {
   ChallengeLanguage,
   DirectKeyEvent,
   FinishReason,
+  MistakeFlash,
   ProductionDuration,
   RuntimeStats,
   Screen,
@@ -140,6 +147,7 @@ export function useTypingSession() {
   const [isFinished, setIsFinished] = useState(false);
   const [finishReason, setFinishReason] = useState<FinishReason | null>(null);
   const [imeError, setImeError] = useState("");
+  const [mistakeFlash, setMistakeFlash] = useState<MistakeFlash | null>(null);
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const skipNextPersistRef = useRef(false);
@@ -186,6 +194,16 @@ export function useTypingSession() {
   const currentDisplay = mode.requiresIme
     ? currentImeChallenge
     : currentDirectChallenge.display;
+  const currentRawReading =
+    challengeLanguage === "ja"
+      ? mode.requiresIme
+        ? (longChallengeReadings[challengeIndex % longChallengeReadings.length] ?? "")
+        : (currentDirectChallenge.reading ?? "")
+      : "";
+  const currentReading = formatChallengeReading(
+    currentRawReading,
+    stored.settings.showRomajiWordSpaces,
+  );
   const currentInputTarget = mode.requiresIme
     ? currentImeChallenge
     : (currentRomajiTarget ?? currentDirectChallenge.input);
@@ -318,6 +336,25 @@ export function useTypingSession() {
     return () => window.removeEventListener("keydown", handleWindowKeyDown);
   });
 
+  useEffect(() => {
+    if (!mistakeFlash) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setMistakeFlash(null);
+    }, 220);
+
+    return () => window.clearTimeout(timer);
+  }, [mistakeFlash]);
+
+  function triggerMistakeFlash() {
+    setMistakeFlash((previous) => ({
+      id: (previous?.id ?? 0) + 1,
+      input,
+    }));
+  }
+
   function prepareSession() {
     setStats(initialStats);
     setInput("");
@@ -328,6 +365,7 @@ export function useTypingSession() {
     setIsFinished(false);
     setFinishReason(null);
     setImeError("");
+    setMistakeFlash(null);
     window.requestAnimationFrame(() => {
       if (acceptsTextInput) {
         inputRef.current?.focus();
@@ -357,6 +395,7 @@ export function useTypingSession() {
     setIsFinished(false);
     setFinishReason(null);
     setImeError("");
+    setMistakeFlash(null);
   }
 
   function finishSession(reason: FinishReason = "completed") {
@@ -534,6 +573,7 @@ export function useTypingSession() {
       })
     ) {
       playTypingSound("mistake");
+      triggerMistakeFlash();
       return;
     }
 
@@ -550,6 +590,9 @@ export function useTypingSession() {
     const didMistype = result.state.mistakes > directState.mistakes;
 
     playTypingSound(didMistype ? "mistake" : "normal");
+    if (didMistype) {
+      triggerMistakeFlash();
+    }
     recordKey(result.scoredKeystrokes, 1, {
       key,
       isCorrect: key === "Backspace" ? true : !didMistype,
@@ -671,6 +714,7 @@ export function useTypingSession() {
       correctionDebt,
       currentAccuracy,
       currentDisplay,
+      currentReading,
       elapsedSeconds: startedAt ? elapsedSeconds : null,
       currentGuide:
         currentGuide ?? (typeof currentInputTarget === "string" ? currentInputTarget : currentInputTarget.guide),
@@ -682,6 +726,7 @@ export function useTypingSession() {
       inputRef,
       isFinished,
       isProductionBlocked,
+      mistakeFlash: mistakeFlash?.input === input ? mistakeFlash : null,
       metrics,
       mode,
       progress,
