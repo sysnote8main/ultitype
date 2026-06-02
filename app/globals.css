@@ -569,19 +569,44 @@ h2 span {
   display: grid;
   min-height: calc(100vh - 150px);
   align-content: center;
-  gap: 22px;
-  padding: 28px 0 42px;
+  gap: 26px;
+  padding: 22px 0 42px;
+}
+
+.mode-select-intro {
+  display: grid;
+  width: min(1040px, 100%);
+  gap: 14px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
 }
 
 .mode-select-heading {
-  width: min(920px, 100%);
-  margin: 0 auto;
-  text-align: center;
+  display: grid;
+  gap: 7px;
+  text-align: left;
+}
+
+.mode-select-language {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 10px;
+}
+
+.language-switch-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .mode-select-heading .panel-heading {
-  justify-content: center;
-  margin-bottom: 8px;
+  justify-content: flex-start;
+  margin-bottom: 0;
 }
 
 .mode-select-heading p {
@@ -594,26 +619,28 @@ h2 span {
 .mode-select-group {
   display: grid;
   width: min(1040px, 100%);
-  gap: 34px;
+  gap: 30px;
   margin: 0 auto;
 }
 
 .mode-select-section {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .production-section {
-  padding-top: 28px;
+  padding-top: 18px;
 }
 
 .mode-select-section-heading {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
   align-items: baseline;
   color: var(--muted);
-  text-align: center;
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  text-align: left;
 }
 
 .mode-select-section-heading span {
@@ -650,24 +677,33 @@ h2 span {
 }
 
 .production-modes {
-  width: min(700px, 100%);
+  width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 0 auto;
+  margin: 0;
 }
 
 .mode-select-card {
   position: relative;
-  display: grid;
-  min-height: 176px;
-  align-content: center;
-  justify-items: center;
-  gap: 9px;
+  display: flex;
+  min-height: 164px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
   border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--text);
-  padding: 20px 18px;
-  text-align: center;
+  overflow: hidden;
+  padding: 18px;
+  text-align: left;
   text-decoration: none;
+}
+
+.mode-select-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: transparent;
+  content: "";
 }
 
 .mode-select-card:hover:not(:disabled),
@@ -677,18 +713,31 @@ h2 span {
   outline: none;
 }
 
+.mode-select-card:hover:not(:disabled)::before,
+.mode-select-card:focus-visible::before {
+  background: var(--accent);
+}
+
 .mode-select-card:disabled {
   opacity: 0.5;
 }
 
 .mode-icon {
   display: grid;
-  width: 50px;
-  height: 50px;
+  width: 46px;
+  height: 46px;
   place-items: center;
   border: 1px solid rgba(215, 255, 95, 0.24);
   background: var(--panel-strong);
   color: var(--accent);
+}
+
+.mode-card-top {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .mode-select-card .mode-code {
@@ -699,6 +748,12 @@ h2 span {
   background: var(--surface-deep);
   color: var(--accent-2);
   font-size: 12px;
+  text-align: center;
+}
+
+.mode-card-copy {
+  display: grid;
+  gap: 7px;
 }
 
 .mode-select-card strong {
@@ -726,7 +781,7 @@ h2 span {
 
 .mode-select-duration {
   width: min(360px, 100%);
-  margin: 0 auto 4px;
+  margin: 0 0 4px;
   padding-top: 0;
   border-top: 0;
 }
@@ -1320,6 +1375,12 @@ h2 span {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+.mode-select-duration {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .duration-block > span {
@@ -2204,6 +2265,18 @@ dd {
   .language-switch button {
     flex: 1;
     justify-content: center;
+  }
+
+  .mode-select-intro {
+    width: 100%;
+  }
+
+  .mode-select-language {
+    width: 100%;
+  }
+
+  .mode-select-language .language-switch {
+    flex: 1;
   }
 
   .workspace,

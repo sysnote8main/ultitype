@@ -9,11 +9,13 @@ export default function Home() {
     <AppShell>
       {(session) => (
         <ModeSelectScreen
+          challengeLanguage={session.challengeLanguage}
           productionDuration={session.productionDuration}
           productionDurations={productionDurations}
           productionPlayable={session.productionPlayable}
           productionUnlocked={session.productionUnlocked}
           soundSettings={session.settings}
+          onChangeChallengeLanguage={session.changeChallengeLanguage}
           onProductionDurationChange={session.setProductionDuration}
         />
       )}

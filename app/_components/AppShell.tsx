@@ -23,9 +23,7 @@ export function AppShell({ children, className = "shell", sessionOptions }: AppS
         bestPracticeScore={session.bestPracticeScore}
         bestProductionRank={session.bestProductionRank}
         bestProductionScore={session.bestProductionScore}
-        challengeLanguage={session.challengeLanguage}
         soundSettings={session.settings}
-        onChangeChallengeLanguage={session.changeChallengeLanguage}
       />
       {children(session)}
     </main>

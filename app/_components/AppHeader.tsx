@@ -2,9 +2,7 @@
 
 import { Settings, Star, UserRound } from "lucide-react";
 import type { Rank } from "@/src/lib/typing";
-import { challengeLanguages } from "../_lib/constants";
-import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
-import type { ChallengeLanguage } from "../_lib/types";
+import type { SoundSettings } from "../_lib/typing-sounds";
 import { APP_VERSION_LABEL } from "../_lib/version";
 import { RankBadgeCanvas } from "./RankBadgeCanvas";
 import { SelectSoundLink } from "./SelectSoundLink";
@@ -14,9 +12,7 @@ type AppHeaderProps = {
   bestPracticeScore: number;
   bestProductionRank: Rank;
   bestProductionScore: number;
-  challengeLanguage: ChallengeLanguage;
   soundSettings: SoundSettings;
-  onChangeChallengeLanguage: (language: ChallengeLanguage) => void;
 };
 
 export function AppHeader({
@@ -24,21 +20,10 @@ export function AppHeader({
   bestPracticeScore,
   bestProductionRank,
   bestProductionScore,
-  challengeLanguage,
   soundSettings,
-  onChangeChallengeLanguage,
 }: AppHeaderProps) {
-  const playTypingSound = useTypingSounds(soundSettings);
   const bestOverallRank =
     bestProductionScore > bestPracticeScore ? bestProductionRank : bestPracticeRank;
-
-  function handleLanguageChange(language: ChallengeLanguage) {
-    if (challengeLanguage !== language) {
-      playTypingSound("select");
-    }
-
-    onChangeChallengeLanguage(language);
-  }
 
   return (
     <header className="app-header" aria-label="UltiType header">
@@ -54,21 +39,7 @@ export function AppHeader({
           <RankBadge label="仮" rank={bestPracticeRank.label} score={bestPracticeScore} />
           <RankBadge label="本" rank={bestProductionRank.label} score={bestProductionScore} />
         </div>
-        <div className="header-actions" aria-label="settings and language">
-          <div className="language-switch" aria-label="challenge language">
-            {challengeLanguages.map((language) => (
-              <button
-                aria-pressed={challengeLanguage === language.id}
-                className={challengeLanguage === language.id ? "selected" : ""}
-                key={language.id}
-                onClick={() => handleLanguageChange(language.id)}
-                type="button"
-              >
-                <img className="flag-icon" src={language.flagSrc} alt="" aria-hidden="true" />
-                {language.label}
-              </button>
-            ))}
-          </div>
+        <div className="header-actions" aria-label="settings">
           <SelectSoundLink
             aria-label={`ランクガイド（現在 ${bestOverallRank.label}）`}
             className="rank-guide-link"

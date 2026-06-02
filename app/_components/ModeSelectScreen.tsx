@@ -3,10 +3,11 @@
 import { Crosshair, Gauge, Keyboard, Languages, Lock, Waves, Zap } from "lucide-react";
 import Link from "next/link";
 import { modes, type ModeId, type TypingMode } from "@/src/lib/typing";
+import { challengeLanguages } from "../_lib/constants";
 import { getModePath } from "../_lib/mode-routes";
 import { ALPHA_PRODUCTION_LOCK_MESSAGE } from "../_lib/release-gates";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
-import type { ProductionDuration } from "../_lib/types";
+import type { ChallengeLanguage, ProductionDuration } from "../_lib/types";
 
 const modeIcons = {
   "practice-accuracy": Crosshair,
@@ -17,21 +18,25 @@ const modeIcons = {
 } satisfies Record<ModeId, typeof Gauge>;
 
 type ModeSelectScreenProps = {
+  challengeLanguage: ChallengeLanguage;
   productionDuration: ProductionDuration;
   productionDurations: readonly ProductionDuration[];
   productionPlayable: boolean;
   productionUnlocked: boolean;
   soundSettings: SoundSettings;
+  onChangeChallengeLanguage: (language: ChallengeLanguage) => void;
   onProductionDurationChange: (duration: ProductionDuration) => void;
   onSelectMode?: (modeId: ModeId) => void;
 };
 
 export function ModeSelectScreen({
+  challengeLanguage,
   productionDuration,
   productionDurations,
   productionPlayable,
   productionUnlocked,
   soundSettings,
+  onChangeChallengeLanguage,
   onProductionDurationChange,
   onSelectMode,
 }: ModeSelectScreenProps) {
@@ -42,14 +47,42 @@ export function ModeSelectScreen({
     onSelectMode?.(modeId);
   }
 
+  function handleLanguageChange(language: ChallengeLanguage) {
+    if (challengeLanguage !== language) {
+      playTypingSound("select");
+    }
+
+    onChangeChallengeLanguage(language);
+  }
+
   return (
     <section className="mode-select-screen" aria-label="mode selection">
+      <div className="mode-select-intro">
+      <div className="mode-select-language">
+        <span className="language-switch-label">Text</span>
+        <div className="language-switch" aria-label="challenge language">
+          {challengeLanguages.map((language) => (
+            <button
+              aria-pressed={challengeLanguage === language.id}
+              className={challengeLanguage === language.id ? "selected" : ""}
+              key={language.id}
+              onClick={() => handleLanguageChange(language.id)}
+              type="button"
+            >
+              <img className="flag-icon" src={language.flagSrc} alt="" aria-hidden="true" />
+              {language.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="mode-select-heading">
         <div className="panel-heading">
           <Gauge size={18} />
           <span>Modes</span>
         </div>
         <p>練習モードまたは本番モードを選択してください。</p>
+      </div>
+
       </div>
 
       <div className="mode-select-group">
@@ -136,12 +169,16 @@ function ModeSelectCard({
   const ModeIcon = modeIcons[mode.id];
   const cardContents = (
     <>
-      <span className="mode-icon" aria-hidden="true">
-        <ModeIcon size={28} strokeWidth={2.2} />
-      </span>
-      <span className="mode-code">{mode.shortLabel}</span>
-      <strong>{mode.label}</strong>
-      <small>{mode.description}</small>
+      <div className="mode-card-top">
+        <span className="mode-icon" aria-hidden="true">
+          <ModeIcon size={26} strokeWidth={2.2} />
+        </span>
+        <span className="mode-code">{mode.shortLabel}</span>
+      </div>
+      <div className="mode-card-copy">
+        <strong>{mode.label}</strong>
+        <small>{mode.description}</small>
+      </div>
       {locked ? (
         <span className="mode-lock">
           <Lock size={15} />

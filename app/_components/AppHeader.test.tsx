@@ -12,8 +12,6 @@ function renderAppHeader() {
       bestPracticeScore={0}
       bestProductionRank={getRank(0)}
       bestProductionScore={0}
-      challengeLanguage="ja"
-      onChangeChallengeLanguage={() => undefined}
       soundSettings={initialSettings}
     />,
   );
@@ -44,5 +42,11 @@ describe("AppHeader", () => {
     const markup = renderAppHeader();
 
     expect(markup.indexOf('href="/user"')).toBeLessThan(markup.indexOf('href="/settings"'));
+  });
+
+  test("does not show the challenge language selector in the shared header", () => {
+    const markup = renderAppHeader();
+
+    expect(markup).not.toContain('class="language-switch"');
   });
 });

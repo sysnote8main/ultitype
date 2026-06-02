@@ -12,11 +12,13 @@ function renderModeSelectScreen({
 } = {}) {
   return renderToStaticMarkup(
     <ModeSelectScreen
+      challengeLanguage="ja"
       productionDuration={300}
       productionDurations={productionDurations}
       productionPlayable={productionPlayable}
       productionUnlocked={productionUnlocked}
       soundSettings={initialSettings}
+      onChangeChallengeLanguage={() => undefined}
       onProductionDurationChange={() => undefined}
       onSelectMode={() => undefined}
     />,
@@ -45,5 +47,11 @@ describe("ModeSelectScreen", () => {
     expect(markup).toContain('href="/practice/speed"');
     expect(markup).toContain('href="/production/ime-off"');
     expect(markup).toContain('href="/production/ime-on"');
+  });
+
+  test("places the challenge language selector above the modes heading", () => {
+    const markup = renderModeSelectScreen();
+
+    expect(markup.indexOf('class="language-switch"')).toBeLessThan(markup.indexOf("Modes"));
   });
 });
