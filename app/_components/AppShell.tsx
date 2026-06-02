@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AppHeader } from "./AppHeader";
+import { MobileViewportWarning } from "./MobileViewportWarning";
 import {
   type UseTypingSessionOptions,
   useTypingSession,
@@ -25,6 +26,7 @@ export function AppShell({ children, className = "shell", sessionOptions }: AppS
         bestProductionScore={session.bestProductionScore}
         soundSettings={session.settings}
       />
+      <MobileViewportWarning />
       {children(session)}
     </main>
   );
