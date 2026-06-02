@@ -17,7 +17,7 @@ function renderInputScreenSettingsScreen(settings = initialSettings) {
 }
 
 function getCategoryMarkup(markup: string, categoryId: string) {
-  const categoryIds = ["input-settings", "input-screen-settings"];
+  const categoryIds = ["top-display-settings", "input-settings", "input-screen-settings"];
   const startIndex = markup.indexOf(`id="${categoryId}"`);
   const nextCategoryId = categoryIds[categoryIds.indexOf(categoryId) + 1];
   const endIndex = nextCategoryId ? markup.indexOf(`id="${nextCategoryId}"`) : markup.length;
@@ -43,6 +43,14 @@ function getCategoryItemLabels(markup: string, categoryId: string) {
   const categoryMarkup = getCategoryMarkup(markup, categoryId);
 
   return Array.from(categoryMarkup.matchAll(/<h4[^>]*>(.*?)<\/h4>/g), (match) =>
+    match[1],
+  );
+}
+
+function getCategoryOptionLabels(markup: string, categoryId: string) {
+  const categoryMarkup = getCategoryMarkup(markup, categoryId);
+
+  return Array.from(categoryMarkup.matchAll(/<label[^>]*>.*?<span>(.*?)<\/span>/g), (match) =>
     match[1],
   );
 }
@@ -75,7 +83,8 @@ describe("InputScreenSettingsScreen", () => {
   test("groups migrated settings under input method and input screen categories", () => {
     const markup = renderInputScreenSettingsScreen();
 
-    expect(getCategoryLabels(markup)).toEqual(["入力方式", "入力画面"]);
+    expect(getCategoryLabels(markup)).toEqual(["上部表示情報", "入力方式", "入力画面"]);
+    expect(getCategoryItemLabels(markup, "top-display-settings")).toEqual(["表示する情報"]);
     expect(getCategoryItemLabels(markup, "input-settings")).toEqual([
       "ローマ字入力法",
       "促音入力",
@@ -91,6 +100,26 @@ describe("InputScreenSettingsScreen", () => {
       "ローマ字マーカー",
       "正確無比の誤入力表示",
     ]);
+  });
+
+  test("shows all top display metric choices without requiring remaining time", () => {
+    const markup = renderInputScreenSettingsScreen();
+    const topDisplayMarkup = getCategoryMarkup(markup, "top-display-settings");
+
+    expect(getCategoryOptionLabels(markup, "top-display-settings")).toEqual([
+      "残り時間",
+      "残り時間（％）",
+      "打鍵/秒",
+      "打鍵/分",
+      "正確率",
+      "ミス数",
+      "物理打鍵",
+      "完了課題",
+      "ミス/物理打鍵",
+      "正解/物理打鍵",
+    ]);
+    expect(topDisplayMarkup).toContain("残り時間を外しても、残り時間バーは表示されます。");
+    expect(topDisplayMarkup).not.toContain("disabled");
   });
 
   test("shows strict accuracy mistake display choices with overwrite selected by default", () => {

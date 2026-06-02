@@ -34,6 +34,7 @@ import {
   type JapaneseFuriganaEntry,
   createJapaneseReadingGuideParts,
 } from "@/src/lib/challenges";
+import { topDisplayMetricOptions } from "../_lib/constants";
 import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type {
@@ -44,6 +45,7 @@ import type {
   RuntimeStats,
   SpeedDisplayUnit,
   StrictMistakeDisplayMode,
+  TopDisplayMetricId,
 } from "../_lib/types";
 
 type BlockableTextEvent =
@@ -91,6 +93,7 @@ type TypingPanelProps = {
   strictMistakeInput: string;
   sessionModeIcon?: LucideIcon | null;
   sessionModeLabel?: string;
+  topDisplayMetricIds: TopDisplayMetricId[];
   onBackToModeSelect: () => void;
   onImeInput: (input: string) => void;
   onImeKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -138,6 +141,7 @@ export function TypingPanel({
   strictMistakeInput,
   sessionModeIcon,
   sessionModeLabel,
+  topDisplayMetricIds,
   onBackToModeSelect,
   onImeInput,
   onImeKeyDown,
@@ -150,7 +154,13 @@ export function TypingPanel({
     elapsedSeconds,
     rankLabel: currentRank.label,
   });
-  const speedMetric = getSpeedMetric(metrics.keysPerSecond, speedDisplayUnit);
+  const topDisplayMetrics = createTopDisplayMetrics({
+    metrics,
+    progress,
+    remainingSeconds,
+    stats,
+    topDisplayMetricIds,
+  });
   const SessionModeIcon = sessionModeIcon === undefined ? getSessionModeIcon(mode) : sessionModeIcon;
   const visibleModeLabel = sessionModeLabel ?? mode.label;
   const showDisplayText = challengeLanguage !== "ja" || showKanjiDisplay;
@@ -166,12 +176,14 @@ export function TypingPanel({
       aria-label="typing practice"
     >
       <div className="meter-row">
-        <Metric label="残り" value={formatTimer(remainingSeconds)} icon={<Timer size={17} />} />
-        <Metric label={speedMetric.label} value={speedMetric.value} />
-        <Metric label="正確率" value={`${(metrics.accuracy * 100).toFixed(1)}%`} />
-        <Metric label="ミス" value={stats.mistakes.toString()} />
-        <Metric label="物理打鍵" value={stats.physicalKeystrokes.toString()} />
-        <Metric label="完了課題" value={stats.completedPrompts.toString()} />
+        {topDisplayMetrics.map((metric) => (
+          <Metric
+            icon={metric.id === "remainingTime" ? <Timer size={17} /> : undefined}
+            key={metric.id}
+            label={metric.label}
+            value={metric.value}
+          />
+        ))}
       </div>
 
       <div className="progress-track" aria-hidden="true">
@@ -443,6 +455,93 @@ function CorrectionDebtIndicator({ debt }: { debt: number }) {
   );
 }
 
+function createTopDisplayMetrics({
+  metrics,
+  progress,
+  remainingSeconds,
+  stats,
+  topDisplayMetricIds,
+}: {
+  metrics: Metrics;
+  progress: number;
+  remainingSeconds: number;
+  stats: RuntimeStats;
+  topDisplayMetricIds: TopDisplayMetricId[];
+}) {
+  const selectedIds = new Set(topDisplayMetricIds);
+  return topDisplayMetricOptions
+    .map((option) => option.id)
+    .filter((id) => selectedIds.has(id))
+    .map((id) => {
+      switch (id) {
+        case "remainingTime":
+          return {
+            id,
+            label: "残り時間",
+            value: formatTimer(remainingSeconds),
+          };
+        case "remainingPercent":
+          return {
+            id,
+            label: "残り時間（％）",
+            value: `${Math.round(clampPercent(100 - progress))}%`,
+          };
+        case "keysPerSecond":
+          return {
+            id,
+            label: "打鍵/秒",
+            value: metrics.keysPerSecond.toFixed(2),
+          };
+        case "keysPerMinute":
+          return {
+            id,
+            label: "打鍵/分",
+            value: Math.round(metrics.keysPerSecond * 60).toLocaleString(),
+          };
+        case "accuracy":
+          return {
+            id,
+            label: "正確率",
+            value: `${(metrics.accuracy * 100).toFixed(1)}%`,
+          };
+        case "mistakes":
+          return {
+            id,
+            label: "ミス数",
+            value: stats.mistakes.toString(),
+          };
+        case "physicalKeystrokes":
+          return {
+            id,
+            label: "物理打鍵",
+            value: stats.physicalKeystrokes.toString(),
+          };
+        case "completedPrompts":
+          return {
+            id,
+            label: "完了課題",
+            value: stats.completedPrompts.toString(),
+          };
+        case "mistakeRate":
+          return {
+            id,
+            label: "ミス/物理打鍵",
+            value: <MetricSplitValue left={stats.mistakes} right={stats.physicalKeystrokes} />,
+          };
+        case "correctRate":
+          return {
+            id,
+            label: "正解/物理打鍵",
+            value: <MetricSplitValue left={stats.correctCharacters} right={stats.physicalKeystrokes} />,
+          };
+      }
+    });
+}
+
+function clampPercent(value: number) {
+  return Math.min(100, Math.max(0, value));
+}
+
 type CorrectnessTile = {
   id: string;
   label: string;
@@ -569,7 +668,7 @@ function Metric({
   icon,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   icon?: ReactNode;
 }) {
   return (
@@ -580,6 +679,16 @@ function Metric({
       </span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function MetricSplitValue({ left, right }: { left: number; right: number }) {
+  return (
+    <span className="metric-split-value">
+      <span>{left.toLocaleString()}</span>
+      <span>/</span>
+      <span>{right.toLocaleString()}</span>
+    </span>
   );
 }
 

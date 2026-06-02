@@ -5,6 +5,7 @@ import {
   type RomajiVariantOption,
   type SokuonInputId,
 } from "@/src/lib/typing";
+import { topDisplayMetricOptions } from "../_lib/constants";
 import type { AppSettings } from "../_lib/types";
 
 type InputSettingsSectionsProps = {
@@ -97,8 +98,51 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
     });
   }
 
+  function toggleTopDisplayMetric(id: AppSettings["topDisplayMetricIds"][number], checked: boolean) {
+    const selectedIds = new Set(settings.topDisplayMetricIds);
+    if (checked) {
+      selectedIds.add(id);
+    } else {
+      selectedIds.delete(id);
+    }
+
+    onChange({
+      topDisplayMetricIds: topDisplayMetricOptions
+        .map((option) => option.id)
+        .filter((metricId) => selectedIds.has(metricId)),
+    });
+  }
+
   return (
     <>
+      <section className="settings-category" aria-labelledby="top-display-settings">
+        <h3 className="settings-category-title" id="top-display-settings">
+          上部表示情報
+        </h3>
+        <div className="settings-category-list">
+          <section className="settings-row top-display-settings-row" aria-labelledby="top-display-setting">
+            <div>
+              <h4 id="top-display-setting">表示する情報</h4>
+              <p>残り時間を外しても、残り時間バーは表示されます。</p>
+            </div>
+            <div className="top-display-setting-controls" aria-label="上部表示情報">
+              {topDisplayMetricOptions.map((option) => (
+                <label className="top-display-option" key={option.id}>
+                  <input
+                    checked={settings.topDisplayMetricIds.includes(option.id)}
+                    onChange={(event) =>
+                      toggleTopDisplayMetric(option.id, event.currentTarget.checked)
+                    }
+                    type="checkbox"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+        </div>
+      </section>
+
       <section className="settings-category" aria-labelledby="input-settings">
         <h3 className="settings-category-title" id="input-settings">
           入力方式

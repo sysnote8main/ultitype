@@ -1,4 +1,10 @@
-import { initialSettings, initialStoredState, storageKey } from "./constants";
+import {
+  defaultTopDisplayMetricIds,
+  initialSettings,
+  initialStoredState,
+  storageKey,
+  topDisplayMetricOptions,
+} from "./constants";
 import type { AppSettings, StoredState } from "./types";
 
 let cachedStoredState: StoredState | null = null;
@@ -24,6 +30,7 @@ export function normalizeAppSettings(settings: AppSettings): AppSettings {
     showKanjiMarker: settings.showKanjiDisplay && settings.showKanjiMarker,
     showFuriganaMarker: showFuriganaDisplay && settings.showFuriganaMarker,
     showHiraganaMarker: settings.showHiraganaDisplay && settings.showHiraganaMarker,
+    topDisplayMetricIds: normalizeTopDisplayMetricIds(settings.topDisplayMetricIds),
   };
 }
 
@@ -52,6 +59,8 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
       strictMistakeDisplayMode:
         storedState?.settings?.strictMistakeDisplayMode ??
         initialSettings.strictMistakeDisplayMode,
+      topDisplayMetricIds:
+        storedState?.settings?.topDisplayMetricIds ?? [...defaultTopDisplayMetricIds],
       consecutiveMistypeRetireCount:
         storedState?.settings?.consecutiveMistypeRetireCount ??
         initialSettings.consecutiveMistypeRetireCount,
@@ -64,6 +73,15 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
       },
     }),
   };
+}
+
+function normalizeTopDisplayMetricIds(value: AppSettings["topDisplayMetricIds"]) {
+  if (!Array.isArray(value)) {
+    return [...defaultTopDisplayMetricIds];
+  }
+
+  const validIds = new Set(topDisplayMetricOptions.map((option) => option.id));
+  return value.filter((id) => validIds.has(id));
 }
 
 export function readStoredState(

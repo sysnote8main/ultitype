@@ -70,6 +70,35 @@ describe("stored state persistence", () => {
     expect(stored.settings.strictMistakeDisplayMode).toBe("overwrite");
   });
 
+  test("fills top display metrics when loading older stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        topDisplayMetricIds: undefined,
+      },
+    });
+
+    expect(stored.settings.topDisplayMetricIds).toEqual([
+      "remainingTime",
+      "keysPerSecond",
+      "accuracy",
+      "mistakes",
+      "physicalKeystrokes",
+      "completedPrompts",
+    ]);
+  });
+
+  test("keeps an explicitly empty top display metric selection", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        topDisplayMetricIds: [],
+      },
+    });
+
+    expect(stored.settings.topDisplayMetricIds).toEqual([]);
+  });
+
   test("fills input screen visibility settings when loading older stored state", () => {
     const stored = normalizeStoredState({
       settings: {

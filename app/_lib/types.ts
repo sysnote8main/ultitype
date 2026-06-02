@@ -10,6 +10,17 @@ export type ChallengeLanguage = "ja" | "en";
 export type Theme = "dark" | "light";
 export type SpeedDisplayUnit = "keysPerSecond" | "keysPerMinute";
 export type StrictMistakeDisplayMode = "overwrite" | "insert" | "none";
+export type TopDisplayMetricId =
+  | "remainingTime"
+  | "remainingPercent"
+  | "keysPerSecond"
+  | "keysPerMinute"
+  | "accuracy"
+  | "mistakes"
+  | "physicalKeystrokes"
+  | "completedPrompts"
+  | "mistakeRate"
+  | "correctRate";
 export type FinishReason = "completed" | "retired";
 export type Screen = "mode-select" | "typing";
 export type ProductionDuration = 300 | 600;
@@ -44,6 +55,7 @@ export type AppSettings = {
   uiSoundEnabled: boolean;
   speedDisplayUnit: SpeedDisplayUnit;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
+  topDisplayMetricIds: TopDisplayMetricId[];
 };
 
 export type StoredSession = {

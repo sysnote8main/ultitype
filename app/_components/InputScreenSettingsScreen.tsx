@@ -185,6 +185,7 @@ export function InputScreenSettingsScreen({
               }}
               strictMistakeDisplayMode={settings.strictMistakeDisplayMode}
               strictMistakeInput=""
+              topDisplayMetricIds={settings.topDisplayMetricIds}
               onBackToModeSelect={() => undefined}
               onImeInput={() => undefined}
               onImeKeyDown={() => undefined}

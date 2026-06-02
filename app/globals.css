@@ -1087,6 +1087,10 @@ h2 span {
   align-items: start;
 }
 
+.top-display-settings-row {
+  align-items: start;
+}
+
 .romaji-method-controls {
   display: grid;
   width: min(560px, 48vw);
@@ -1097,6 +1101,33 @@ h2 span {
   display: grid;
   width: min(560px, 48vw);
   gap: 10px;
+}
+
+.top-display-setting-controls {
+  display: grid;
+  width: min(620px, 50vw);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.top-display-option {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.top-display-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent-2);
 }
 
 .sokuon-split-toggle {
@@ -1362,7 +1393,7 @@ h2 span {
 
 .meter-row {
   display: grid;
-  grid-template-columns: repeat(6, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 8px;
 }
 
@@ -1388,6 +1419,35 @@ h2 span {
   color: var(--text);
   font-size: 28px;
   line-height: 1;
+}
+
+.metric strong .metric-split-value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: baseline;
+  min-width: 3.9em;
+  width: max-content;
+  margin-inline: auto;
+  column-gap: 5px;
+  color: var(--text);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.metric strong .metric-split-value span {
+  display: block;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.metric strong .metric-split-value span:first-child {
+  text-align: right;
+}
+
+.metric strong .metric-split-value span:last-child {
+  text-align: left;
 }
 
 .progress-track {
@@ -2255,6 +2315,11 @@ dd {
 
   .sokuon-setting-controls {
     width: 100%;
+  }
+
+  .top-display-setting-controls {
+    width: 100%;
+    grid-template-columns: 1fr;
   }
 
   .sound-settings-controls {

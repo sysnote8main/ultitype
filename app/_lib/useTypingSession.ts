@@ -853,6 +853,7 @@ export function useTypingSession({
       stats,
       strictMistakeDisplayMode: stored.settings.strictMistakeDisplayMode,
       strictMistakeInput: stats.mistakeInput,
+      topDisplayMetricIds: stored.settings.topDisplayMetricIds,
       onBackToModeSelect: returnToModeSelect,
       onImeInput: handleImeInput,
       onImeKeyDown: handleImeKeyDown,

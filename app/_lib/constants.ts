@@ -4,6 +4,7 @@ import type {
   ProductionDuration,
   RuntimeStats,
   StoredState,
+  TopDisplayMetricId,
 } from "./types";
 
 export const storageKey = "ultitype:v0";
@@ -32,6 +33,31 @@ export const ignoredKeys = new Set([
   "ArrowLeft",
   "ArrowRight",
 ]);
+
+export const topDisplayMetricOptions = [
+  { id: "remainingTime", label: "残り時間" },
+  { id: "remainingPercent", label: "残り時間（％）" },
+  { id: "keysPerSecond", label: "打鍵/秒" },
+  { id: "keysPerMinute", label: "打鍵/分" },
+  { id: "accuracy", label: "正確率" },
+  { id: "mistakes", label: "ミス数" },
+  { id: "physicalKeystrokes", label: "物理打鍵" },
+  { id: "completedPrompts", label: "完了課題" },
+  { id: "mistakeRate", label: "ミス/物理打鍵" },
+  { id: "correctRate", label: "正解/物理打鍵" },
+] as const satisfies readonly {
+  id: TopDisplayMetricId;
+  label: string;
+}[];
+
+export const defaultTopDisplayMetricIds = [
+  "remainingTime",
+  "keysPerSecond",
+  "accuracy",
+  "mistakes",
+  "physicalKeystrokes",
+  "completedPrompts",
+] as const satisfies readonly TopDisplayMetricId[];
 
 export const initialStats: RuntimeStats = {
   keystrokes: 0,
@@ -75,6 +101,7 @@ export const initialSettings: AppSettings = {
   uiSoundEnabled: true,
   speedDisplayUnit: "keysPerSecond",
   strictMistakeDisplayMode: "overwrite",
+  topDisplayMetricIds: [...defaultTopDisplayMetricIds],
 };
 
 export const initialStoredState: StoredState = {

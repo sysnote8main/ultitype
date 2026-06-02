@@ -50,6 +50,7 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     stats: initialStats,
     strictMistakeDisplayMode: "overwrite",
     strictMistakeInput: "",
+    topDisplayMetricIds: initialSettings.topDisplayMetricIds,
     onBackToModeSelect: () => undefined,
     onImeInput: () => undefined,
     onImeKeyDown: () => undefined,
@@ -63,6 +64,44 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
 }
 
 describe("TypingPanel", () => {
+  test("renders only the selected top display metrics", () => {
+    const markup = renderTypingPanel({
+      metrics: {
+        accuracy: 0.875,
+        consistency: 1,
+        keysPerSecond: 2.5,
+        paceMs: 400,
+        score: 0,
+      },
+      progress: 25,
+      remainingSeconds: 90,
+      stats: {
+        ...initialStats,
+        correctCharacters: 18,
+        mistakes: 2,
+        physicalKeystrokes: 20,
+      },
+      topDisplayMetricIds: [
+        "remainingPercent",
+        "keysPerMinute",
+        "mistakeRate",
+        "correctRate",
+      ],
+    });
+
+    expect(markup).toContain(">残り時間（％）</span><strong>75%</strong>");
+    expect(markup).toContain(">打鍵/分</span><strong>150</strong>");
+    expect(markup).toContain(
+      '>ミス/物理打鍵</span><strong><span class="metric-split-value"><span>2</span><span>/</span><span>20</span></span></strong>',
+    );
+    expect(markup).toContain(
+      '>正解/物理打鍵</span><strong><span class="metric-split-value"><span>18</span><span>/</span><span>20</span></span></strong>',
+    );
+    expect(markup).not.toContain(">残り時間</span>");
+    expect(markup).not.toContain(">打鍵/秒</span>");
+    expect(markup).toContain('class="progress-track"');
+  });
+
   test("shows only the practice mode icon before the in-session rank", () => {
     const markup = renderTypingPanel({
       currentRank: getRank(500),
