@@ -3,13 +3,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { initialSettings } from "../_lib/constants";
 import { SettingsScreen } from "./SettingsScreen";
 
-function renderSettingsScreen() {
+function renderSettingsScreen(settings = initialSettings) {
   return renderToStaticMarkup(
     <SettingsScreen
       onBack={() => undefined}
       onChange={() => undefined}
       onClearLocalData={() => undefined}
-      settings={initialSettings}
+      settings={settings}
     />,
   );
 }
@@ -30,8 +30,6 @@ function getCategoryMarkup(markup: string, categoryId: string) {
   const categoryIds = [
     "screen-settings",
     "sound-settings",
-    "input-settings",
-    "input-screen-settings",
     "auto-retire-settings",
     "danger-settings",
   ];
@@ -64,8 +62,6 @@ describe("SettingsScreen", () => {
     expect(getCategoryLabels(markup)).toEqual([
       "画面",
       "サウンド",
-      "入力方式",
-      "入力画面",
       "自動リタイア",
       "危険な操作",
     ]);
@@ -78,19 +74,9 @@ describe("SettingsScreen", () => {
       "テーマ",
       "速度表示",
       "日本語ガイドのスペース",
+      "入力画面と入力方式",
     ]);
     expect(getCategoryItemLabels(markup, "sound-settings")).toEqual(["サウンド"]);
-    expect(getCategoryItemLabels(markup, "input-settings")).toEqual([
-      "ローマ字入力法",
-      "促音入力",
-      "拗音分割入力",
-    ]);
-    expect(getCategoryItemLabels(markup, "input-screen-settings")).toEqual([
-      "漢字表示",
-      "ふりがな表示",
-      "ひらがな表示",
-      "正確無比の誤入力表示",
-    ]);
     expect(getCategoryItemLabels(markup, "auto-retire-settings")).toEqual([
       "無入力リタイア",
       "連続誤打鍵リタイア",
@@ -99,6 +85,14 @@ describe("SettingsScreen", () => {
     expect(getCategoryItemLabels(markup, "danger-settings")).toEqual([
       "ローカルデータをすべて削除",
     ]);
+  });
+
+  test("links to the dedicated input screen settings page", () => {
+    const markup = renderSettingsScreen();
+    const screenMarkup = getCategoryMarkup(markup, "screen-settings");
+
+    expect(screenMarkup).toContain('href="/settings/screen"');
+    expect(screenMarkup).toContain("入力画面と入力方式");
   });
 
   test("disables sound controls when the active Chrome tab is muted", () => {
@@ -117,30 +111,6 @@ describe("SettingsScreen", () => {
     expect(screenMarkup).toContain("打鍵/秒");
     expect(screenMarkup).toContain("打鍵/分");
     expect(screenMarkup).toContain('aria-pressed="true"');
-  });
-
-  test("shows strict accuracy mistake display choices with overwrite selected by default", () => {
-    const markup = renderSettingsScreen();
-    const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
-
-    expect(inputScreenMarkup).toContain('aria-label="正確無比の誤入力表示"');
-    expect(inputScreenMarkup).toContain("上書き");
-    expect(inputScreenMarkup).toContain("挿入");
-    expect(inputScreenMarkup).toContain("何もしない");
-    expect(inputScreenMarkup).toContain('aria-pressed="true"');
-  });
-
-  test("shows kanji, furigana, and hiragana input screen visibility toggles enabled by default", () => {
-    const markup = renderSettingsScreen();
-    const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
-
-    expect(inputScreenMarkup).toContain("漢字表示");
-    expect(inputScreenMarkup).toContain("ふりがな表示");
-    expect(inputScreenMarkup).toContain("ひらがな表示");
-    expect(inputScreenMarkup).toContain('aria-label="漢字表示"');
-    expect(inputScreenMarkup).toContain('aria-label="ふりがな表示"');
-    expect(inputScreenMarkup).toContain('aria-label="ひらがな表示"');
-    expect(Array.from(inputScreenMarkup.matchAll(/checked=""/g))).toHaveLength(3);
   });
 
   test("shows auto retire performance settings disabled by default", () => {

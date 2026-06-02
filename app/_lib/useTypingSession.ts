@@ -41,6 +41,7 @@ import {
 import {
   cacheStoredState,
   getInitialStoredState,
+  normalizeAppSettings,
   readStoredState,
   shouldPersistStoredState,
 } from "./stored-state";
@@ -574,10 +575,10 @@ export function useTypingSession({
   function updateSettings(nextSettings: Partial<AppSettings>) {
     setStored((previous) => ({
       ...previous,
-      settings: {
+      settings: normalizeAppSettings({
         ...previous.settings,
         ...nextSettings,
-      },
+      }),
     }));
   }
 
@@ -840,8 +841,12 @@ export function useTypingSession({
       progress,
       remainingSeconds,
       showFuriganaDisplay: stored.settings.showFuriganaDisplay,
+      showFuriganaMarker: stored.settings.showFuriganaMarker,
       showHiraganaDisplay: stored.settings.showHiraganaDisplay,
+      showHiraganaMarker: stored.settings.showHiraganaMarker,
       showKanjiDisplay: stored.settings.showKanjiDisplay,
+      showKanjiMarker: stored.settings.showKanjiMarker,
+      showRomajiMarker: stored.settings.showRomajiMarker,
       soundSettings: stored.settings,
       speedDisplayUnit: stored.settings.speedDisplayUnit,
       startedAt,

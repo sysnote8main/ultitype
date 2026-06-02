@@ -10,6 +10,7 @@ import {
   Timer,
   Waves,
   Zap,
+  type LucideIcon,
 } from "lucide-react";
 import type {
   ClipboardEvent,
@@ -76,14 +77,20 @@ type TypingPanelProps = {
   productionBlockReason: string;
   remainingSeconds: number;
   showFuriganaDisplay: boolean;
+  showFuriganaMarker: boolean;
   showHiraganaDisplay: boolean;
+  showHiraganaMarker: boolean;
   showKanjiDisplay: boolean;
+  showKanjiMarker: boolean;
+  showRomajiMarker: boolean;
   soundSettings: SoundSettings;
   speedDisplayUnit: SpeedDisplayUnit;
   startedAt: number | null;
   stats: RuntimeStats;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
+  sessionModeIcon?: LucideIcon | null;
+  sessionModeLabel?: string;
   onBackToModeSelect: () => void;
   onImeInput: (input: string) => void;
   onImeKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -117,14 +124,20 @@ export function TypingPanel({
   productionBlockReason,
   remainingSeconds,
   showFuriganaDisplay,
+  showFuriganaMarker,
   showHiraganaDisplay,
+  showHiraganaMarker,
   showKanjiDisplay,
+  showKanjiMarker,
+  showRomajiMarker,
   soundSettings,
   speedDisplayUnit,
   startedAt,
   stats,
   strictMistakeDisplayMode,
   strictMistakeInput,
+  sessionModeIcon,
+  sessionModeLabel,
   onBackToModeSelect,
   onImeInput,
   onImeKeyDown,
@@ -138,7 +151,8 @@ export function TypingPanel({
     rankLabel: currentRank.label,
   });
   const speedMetric = getSpeedMetric(metrics.keysPerSecond, speedDisplayUnit);
-  const SessionModeIcon = getSessionModeIcon(mode);
+  const SessionModeIcon = sessionModeIcon === undefined ? getSessionModeIcon(mode) : sessionModeIcon;
+  const visibleModeLabel = sessionModeLabel ?? mode.label;
   const showDisplayText = challengeLanguage !== "ja" || showKanjiDisplay;
 
   function handleBackToModeSelect() {
@@ -166,10 +180,10 @@ export function TypingPanel({
 
       <div className="session-head">
         <div>
-          <p className="mode-label">{mode.label}</p>
+          <p className="mode-label">{visibleModeLabel}</p>
           <h2>
             {SessionModeIcon ? (
-              <span className="session-mode-symbol" aria-label={mode.label}>
+              <span className="session-mode-symbol" aria-label={visibleModeLabel}>
                 <SessionModeIcon size={72} strokeWidth={1.6} aria-hidden="true" />
               </span>
             ) : null}
@@ -224,7 +238,10 @@ export function TypingPanel({
                   <DisplayText
                     display={currentDisplay}
                     furigana={currentFurigana}
+                    markerProgress={null}
                     showFurigana={showFuriganaDisplay}
+                    showFuriganaMarker={showFuriganaMarker}
+                    showKanjiMarker={showKanjiMarker}
                   />
                 ) : null}
                 {showHiraganaDisplay && currentReading ? (
@@ -241,7 +258,11 @@ export function TypingPanel({
                 reading={currentReading}
                 romajiTarget={currentRomajiTarget}
                 showFuriganaDisplay={showFuriganaDisplay}
+                showFuriganaMarker={showFuriganaMarker}
                 showHiraganaDisplay={showHiraganaDisplay}
+                showHiraganaMarker={showHiraganaMarker}
+                showKanjiMarker={showKanjiMarker}
+                showRomajiMarker={showRomajiMarker}
                 showDisplayText={showDisplayText}
                 strictMistakeDisplayMode={strictMistakeDisplayMode}
                 strictMistakeInput={strictMistakeInput}
@@ -571,8 +592,12 @@ function DirectChallengeView({
   reading,
   romajiTarget,
   showFuriganaDisplay,
+  showFuriganaMarker,
   showHiraganaDisplay,
+  showHiraganaMarker,
   showDisplayText,
+  showKanjiMarker,
+  showRomajiMarker,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
@@ -584,8 +609,12 @@ function DirectChallengeView({
   reading: string;
   romajiTarget: RomajiInputTarget | null;
   showFuriganaDisplay: boolean;
+  showFuriganaMarker: boolean;
   showHiraganaDisplay: boolean;
+  showHiraganaMarker: boolean;
   showDisplayText: boolean;
+  showKanjiMarker: boolean;
+  showRomajiMarker: boolean;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
@@ -597,13 +626,22 @@ function DirectChallengeView({
         <DisplayText
           display={display}
           furigana={furigana}
+          markerProgress={romajiTarget ? getRomajiInputProgress(romajiTarget, input) : null}
           showFurigana={showFuriganaDisplay}
+          showFuriganaMarker={showFuriganaMarker}
+          showKanjiMarker={showKanjiMarker}
         />
       ) : null}
       {showHiraganaDisplay && reading ? (
         <p className="reading-text">
           {romajiTarget
-            ? renderReadingGuideCharacters(reading, romajiTarget, input, mistakeFlash)
+            ? renderReadingGuideCharacters(
+                reading,
+                romajiTarget,
+                input,
+                mistakeFlash,
+                showHiraganaMarker,
+              )
             : reading}
         </p>
       ) : null}
@@ -612,20 +650,22 @@ function DirectChallengeView({
         aria-label={hasSeparateDisplay ? "romaji input target" : "input target"}
       >
         {romajiTarget
-          ? renderRomajiGuideCharacters(
-              romajiTarget,
-              input,
-              mistakeFlash,
-              strictMistakeInput,
-              strictMistakeDisplayMode,
-            )
-          : renderGuideCharacters(
-              guide,
-              input,
-              mistakeFlash,
-              strictMistakeInput,
-              strictMistakeDisplayMode,
-            )}
+            ? renderRomajiGuideCharacters(
+                romajiTarget,
+                input,
+                mistakeFlash,
+                strictMistakeInput,
+                strictMistakeDisplayMode,
+                showRomajiMarker,
+              )
+            : renderGuideCharacters(
+                guide,
+                input,
+                mistakeFlash,
+                strictMistakeInput,
+                strictMistakeDisplayMode,
+                showRomajiMarker,
+              )}
       </p>
     </>
   );
@@ -634,31 +674,218 @@ function DirectChallengeView({
 function DisplayText({
   display,
   furigana,
+  markerProgress,
   showFurigana,
+  showFuriganaMarker,
+  showKanjiMarker,
 }: {
   display: string;
   furigana: JapaneseFuriganaEntry[];
+  markerProgress: { completedTokens: number; currentTokenIndex: number } | null;
   showFurigana: boolean;
+  showFuriganaMarker: boolean;
+  showKanjiMarker: boolean;
 }) {
+  let tokenStart = 0;
+
   return (
     <p className="display-text">
       {showFurigana && furigana.length > 0 ? (
-        createJapaneseFuriganaParts(display, furigana).map((part, index) =>
-          part.ruby ? (
-            <ruby className="display-ruby" key={`${part.text}-${index}`}>
-              {part.text}
-              <rt>{part.ruby}</rt>
-            </ruby>
-          ) : (
+        createJapaneseFuriganaParts(display, furigana).map((part, index) => {
+          const partTokenStart = tokenStart;
+          const tokenCount = countJapaneseReadingTokens(part.ruby ?? part.text);
+          const tokenEnd = tokenStart + tokenCount;
+          tokenStart = tokenEnd;
+
+          if (part.ruby) {
+            const rubyClassName = getDisplayMarkerClassName(
+              "display-ruby",
+              showKanjiMarker,
+              markerProgress,
+              partTokenStart,
+              tokenEnd,
+            );
+            const rubyText =
+              showFuriganaMarker && markerProgress !== null
+                ? renderFuriganaMarkerCharacters(
+                    part.ruby,
+                    partTokenStart,
+                    markerProgress.completedTokens,
+                    markerProgress.currentTokenIndex,
+                  )
+                : part.ruby;
+
+            return (
+              <ruby className={rubyClassName} key={`${part.text}-${index}`}>
+                {part.text}
+                <rt>{rubyText}</rt>
+              </ruby>
+            );
+          }
+
+          if (showKanjiMarker && markerProgress !== null) {
+            return renderDisplayMarkerCharacters(
+              part.text,
+              partTokenStart,
+              markerProgress.completedTokens,
+              markerProgress.currentTokenIndex,
+              `display-${index}`,
+            );
+          }
+
+          return (
             <span className="display-plain" key={`${part.text}-${index}`}>
               {part.text}
             </span>
-          ),
-        )
+          );
+        })
       ) : (
         display
       )}
     </p>
+  );
+}
+
+function getDisplayMarkerClassName(
+  baseClassName: string,
+  showMarker: boolean,
+  markerProgress: { completedTokens: number; currentTokenIndex: number } | null,
+  tokenStart: number,
+  tokenEnd: number,
+) {
+  if (!showMarker || markerProgress === null) {
+    return baseClassName;
+  }
+
+  if (tokenEnd <= markerProgress.completedTokens) {
+    return `${baseClassName} kanji-marker-correct`;
+  }
+
+  if (tokenStart <= markerProgress.currentTokenIndex && markerProgress.currentTokenIndex < tokenEnd) {
+    return `${baseClassName} kanji-marker-current`;
+  }
+
+  return `${baseClassName} kanji-marker-pending`;
+}
+
+function renderFuriganaMarkerCharacters(
+  ruby: string,
+  partTokenStart: number,
+  completedTokens: number,
+  currentTokenIndex: number,
+) {
+  return createDisplayMarkerTextParts(ruby).map((part, partIndex) => {
+    if (part.kind === "visual") {
+      return part.text;
+    }
+
+    const className = getTextMarkerStateClassName(
+      "furigana-marker",
+      partTokenStart + part.tokenStart,
+      partTokenStart + part.tokenEnd,
+      completedTokens,
+      currentTokenIndex,
+    );
+
+    return (
+      <span
+        className={className}
+        key={`furigana-${partTokenStart}-${part.tokenStart}-${part.text}-${partIndex}`}
+      >
+        {part.text}
+      </span>
+    );
+  });
+}
+
+function renderDisplayMarkerCharacters(
+  text: string,
+  partTokenStart: number,
+  completedTokens: number,
+  currentTokenIndex: number,
+  keyPrefix: string,
+) {
+  return createDisplayMarkerTextParts(text).map((part, partIndex) => {
+    if (part.kind === "visual") {
+      return (
+        <span className="display-plain" key={`${keyPrefix}-visual-${partIndex}`}>
+          {part.text}
+        </span>
+      );
+    }
+
+    const className = getTextMarkerStateClassName(
+      "kanji-marker",
+      partTokenStart + part.tokenStart,
+      partTokenStart + part.tokenEnd,
+      completedTokens,
+      currentTokenIndex,
+    );
+
+    return (
+      <span
+        className={`display-plain ${className}`}
+        key={`${keyPrefix}-${part.tokenStart}-${part.text}-${partIndex}`}
+      >
+        {part.text}
+      </span>
+    );
+  });
+}
+
+function createDisplayMarkerTextParts(text: string) {
+  const parts = createJapaneseReadingGuideParts(text);
+  const markerParts: typeof parts = [];
+
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    const nextPart = parts[index + 1];
+
+    if (
+      part?.kind === "reading" &&
+      part.text === "っ" &&
+      nextPart?.kind === "reading"
+    ) {
+      markerParts.push({
+        kind: "reading",
+        text: `${part.text}${nextPart.text}`,
+        tokenStart: part.tokenStart,
+        tokenEnd: nextPart.tokenEnd,
+      });
+      index += 1;
+      continue;
+    }
+
+    if (part) {
+      markerParts.push(part);
+    }
+  }
+
+  return markerParts;
+}
+
+function getTextMarkerStateClassName(
+  baseClassName: "furigana-marker" | "kanji-marker",
+  tokenStart: number,
+  tokenEnd: number,
+  completedTokens: number,
+  currentTokenIndex: number,
+) {
+  if (tokenEnd <= completedTokens) {
+    return `${baseClassName}-correct`;
+  }
+
+  if (tokenStart <= currentTokenIndex && currentTokenIndex < tokenEnd) {
+    return `${baseClassName}-current`;
+  }
+
+  return `${baseClassName}-pending`;
+}
+
+function countJapaneseReadingTokens(reading: string) {
+  return createJapaneseReadingGuideParts(reading).reduce(
+    (tokenCount, part) => (part.kind === "reading" ? Math.max(tokenCount, part.tokenEnd) : tokenCount),
+    0,
   );
 }
 
@@ -667,6 +894,7 @@ function renderReadingGuideCharacters(
   target: RomajiInputTarget,
   input: string,
   mistakeFlash: MistakeFlash | null,
+  showMarker: boolean,
 ) {
   const progress = getRomajiInputProgress(target, input);
   const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
@@ -685,7 +913,11 @@ function renderReadingGuideCharacters(
       part.tokenStart <= progress.currentTokenIndex &&
       progress.currentTokenIndex < part.tokenEnd;
     const isMistakeFlash = flashTokenIndex !== null && isCurrent && !isCompleted;
-    const className = isCompleted ? "char correct" : isCurrent ? "char current" : "char";
+    const className = isCompleted
+      ? "char correct"
+      : isCurrent && showMarker
+        ? "char current"
+        : "char";
     const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
     const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
@@ -706,6 +938,7 @@ function renderRomajiGuideCharacters(
   mistakeFlash: MistakeFlash | null,
   strictMistakeInput: string,
   strictMistakeDisplayMode: StrictMistakeDisplayMode,
+  showMarker: boolean,
 ) {
   const progress = getRomajiInputProgress(target, input);
   const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
@@ -775,7 +1008,7 @@ function renderRomajiGuideCharacters(
         !isTypedCurrentCharacter;
       const className = isCompletedToken
         ? "char correct"
-        : isCurrentToken
+        : isCurrentToken && showMarker
           ? isTypedCurrentCharacter
             ? "char correct current"
             : "char current"
@@ -817,6 +1050,7 @@ function renderGuideCharacters(
   mistakeFlash: MistakeFlash | null,
   strictMistakeInput: string,
   strictMistakeDisplayMode: StrictMistakeDisplayMode,
+  showMarker: boolean,
 ) {
   const mistakeCharacters = getVisibleStrictMistakeCharacters(
     strictMistakeInput,
@@ -869,7 +1103,7 @@ function renderGuideCharacters(
 
     const className =
       typed === undefined
-        ? currentIndex === input.length
+        ? currentIndex === input.length && showMarker
           ? "char current"
           : "char"
         : typed === character

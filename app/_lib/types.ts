@@ -26,6 +26,10 @@ export type AppSettings = {
   showKanjiDisplay: boolean;
   showFuriganaDisplay: boolean;
   showHiraganaDisplay: boolean;
+  showKanjiMarker: boolean;
+  showFuriganaMarker: boolean;
+  showHiraganaMarker: boolean;
+  showRomajiMarker: boolean;
   showRomajiWordSpaces: boolean;
   romajiInputPreset: RomajiInputPreset;
   romajiInputSelections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;

@@ -38,8 +38,12 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     productionBlockReason: "本番モードは仮レーティング A0 以上で解放されます。",
     remainingSeconds: 120,
     showFuriganaDisplay: true,
+    showFuriganaMarker: false,
     showHiraganaDisplay: true,
+    showHiraganaMarker: true,
     showKanjiDisplay: true,
+    showKanjiMarker: false,
+    showRomajiMarker: true,
     soundSettings: initialSettings,
     speedDisplayUnit: "keysPerSecond",
     startedAt: null,
@@ -214,6 +218,165 @@ describe("TypingPanel", () => {
     expect(markup).toContain('<span class="display-plain">てから</span>');
     expect(markup).toContain('<ruby class="display-ruby">判<rt>はん</rt></ruby>');
     expect(markup).toContain('<ruby class="display-ruby">断<rt>だん</rt></ruby>');
+  });
+
+  test("can show kanji and furigana markers on the active ruby group", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "解析結果",
+      currentFurigana: [
+        { text: "解", ruby: "かい" },
+        { text: "析", ruby: "せき" },
+        { text: "結", ruby: "けっ" },
+        { text: "果", ruby: "か" },
+      ],
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせきけっか",
+      currentRomajiTarget: romajiTarget,
+      showFuriganaMarker: true,
+      showKanjiMarker: true,
+    });
+
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-current">解<rt><span class="furigana-marker-current">か</span><span class="furigana-marker-pending">い</span></rt></ruby>',
+    );
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-pending">析<rt><span class="furigana-marker-pending">せ</span><span class="furigana-marker-pending">き</span></rt></ruby>',
+    );
+  });
+
+  test("moves the furigana marker by character inside the active ruby group", () => {
+    const romajiTarget = createRomajiInputTarget("kai", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "貝",
+      currentFurigana: [{ text: "貝", ruby: "かい" }],
+      currentGuide: romajiTarget.guide,
+      currentReading: "かい",
+      currentRomajiTarget: romajiTarget,
+      input: "ka",
+      showFuriganaMarker: true,
+      showKanjiMarker: true,
+    });
+
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-current">貝<rt><span class="furigana-marker-correct">か</span><span class="furigana-marker-current">い</span></rt></ruby>',
+    );
+  });
+
+  test("colors completed and pending kanji while the kanji marker is enabled", () => {
+    const romajiTarget = createRomajiInputTarget("kaisekikekka", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "解析結果",
+      currentFurigana: [
+        { text: "解", ruby: "かい" },
+        { text: "析", ruby: "せき" },
+        { text: "結", ruby: "けっ" },
+        { text: "果", ruby: "か" },
+      ],
+      currentGuide: romajiTarget.guide,
+      currentReading: "かいせきけっか",
+      currentRomajiTarget: romajiTarget,
+      input: "kaiseki",
+      showFuriganaMarker: true,
+      showKanjiMarker: true,
+    });
+
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-correct">解<rt><span class="furigana-marker-correct">か</span><span class="furigana-marker-correct">い</span></rt></ruby>',
+    );
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-correct">析<rt><span class="furigana-marker-correct">せ</span><span class="furigana-marker-correct">き</span></rt></ruby>',
+    );
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-current">結<rt><span class="furigana-marker-current">け</span><span class="furigana-marker-pending">っ</span></rt></ruby>',
+    );
+    expect(markup).toContain(
+      '<ruby class="display-ruby kanji-marker-pending">果<rt><span class="furigana-marker-pending">か</span></rt></ruby>',
+    );
+  });
+
+  test("splits plain kana display markers by character", () => {
+    const romajiTarget = createRomajiInputTarget("mitekarakaeru", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "見てから帰る",
+      currentFurigana: [
+        { text: "見", ruby: "み" },
+        { text: "帰", ruby: "かえ" },
+      ],
+      currentGuide: romajiTarget.guide,
+      currentReading: "みてからかえる",
+      currentRomajiTarget: romajiTarget,
+      input: "mi",
+      showKanjiMarker: true,
+    });
+
+    expect(markup).toContain(
+      '<span class="display-plain kanji-marker-current">て</span><span class="display-plain kanji-marker-pending">か</span><span class="display-plain kanji-marker-pending">ら</span>',
+    );
+  });
+
+  test("keeps sokuon with the following kana for display markers", () => {
+    const romajiTarget = createRomajiInputTarget("kekkakan", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "けっか漢",
+      currentFurigana: [{ text: "漢", ruby: "かん" }],
+      currentGuide: romajiTarget.guide,
+      currentReading: "けっかかん",
+      currentRomajiTarget: romajiTarget,
+      input: "ke",
+      showKanjiMarker: true,
+    });
+
+    expect(markup).toContain(
+      '<span class="display-plain kanji-marker-correct">け</span><span class="display-plain kanji-marker-current">っか</span>',
+    );
+  });
+
+  test("can hide hiragana and romaji current markers independently", () => {
+    const romajiTarget = createRomajiInputTarget("kai", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "貝",
+      currentFurigana: [{ text: "貝", ruby: "かい" }],
+      currentGuide: romajiTarget.guide,
+      currentReading: "かい",
+      currentRomajiTarget: romajiTarget,
+      input: "k",
+      showHiraganaMarker: false,
+      showRomajiMarker: false,
+    });
+
+    expect(markup).toContain('<p class="reading-text"><span class="char">か</span><span class="char">い</span></p>');
+    expect(markup).not.toContain('<span class="char current">a</span>');
   });
 
   test("can hide furigana while keeping the Japanese display text", () => {

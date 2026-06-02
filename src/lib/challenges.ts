@@ -154,7 +154,9 @@ function readAnnotatedValue(characters: string[], startIndex: number, closingCha
   throw new Error("Invalid Japanese challenge annotation: unterminated annotation");
 }
 
-function createJapaneseDirectChallenges(challenges: JapaneseChallengeSource[]): DirectChallenge[] {
+export function createJapaneseDirectChallenges(
+  challenges: JapaneseChallengeSource[],
+): DirectChallenge[] {
   return challenges.map(({ display, furigana, reading }) => {
     const romajiSource = kanaReadingToRomaji(reading);
     const guide = createVisibleRomajiGuide(romajiSource);

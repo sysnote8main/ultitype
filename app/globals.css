@@ -739,6 +739,10 @@ h2 span {
   padding: 28px 0 42px;
 }
 
+.input-screen-settings-screen {
+  width: min(1180px, 100%);
+}
+
 .settings-head {
   display: flex;
   justify-content: space-between;
@@ -799,6 +803,31 @@ h2 span {
   font-weight: 700;
 }
 
+.settings-link-row {
+  align-items: center;
+}
+
+.settings-row-link {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--ink);
+  padding: 9px 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.settings-row-link:hover,
+.settings-row-link:focus-visible {
+  border-color: var(--accent-2);
+  background: var(--accent-2);
+  outline: none;
+}
+
 .toggle-control {
   position: relative;
   display: inline-flex;
@@ -844,6 +873,25 @@ h2 span {
 .toggle-control input:focus-visible + span {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.toggle-control.locked span {
+  opacity: 0.72;
+}
+
+.toggle-lock-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--surface) 70%, var(--line));
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--muted);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
 }
 
 .number-control {
@@ -1278,6 +1326,40 @@ h2 span {
   min-height: auto;
 }
 
+.input-screen-settings-preview {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 86%, transparent)),
+    var(--bg);
+}
+
+.input-screen-settings-preview-sticky {
+  position: relative;
+  width: 100%;
+  min-height: 1px;
+}
+
+.input-screen-settings-preview-scale {
+  width: 100%;
+  transform-origin: top center;
+  transition: transform 140ms ease;
+  will-change: transform;
+}
+
+.input-screen-settings-preview .practice-panel {
+  min-height: auto;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 88%, transparent), transparent 44%),
+    var(--panel);
+}
+
+.input-screen-settings-preview .challenge-analysis {
+  display: none;
+}
+
 .meter-row {
   display: grid;
   grid-template-columns: repeat(6, minmax(100px, 1fr));
@@ -1433,6 +1515,35 @@ h2 span {
   font-size: 0.42em;
   font-weight: 600;
   line-height: 1.1;
+}
+
+.target-view .kanji-marker-current {
+  border-bottom: 2px solid var(--accent);
+  color: var(--text);
+}
+
+.target-view .kanji-marker-correct {
+  color: var(--accent-2);
+}
+
+.target-view .kanji-marker-pending {
+  color: #6f695b;
+}
+
+.target-view .furigana-marker-current {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.target-view .furigana-marker-correct {
+  color: var(--accent-2);
+}
+
+.target-view .furigana-marker-pending {
+  color: #6f695b;
 }
 
 .target-view .reading-text {

@@ -85,6 +85,56 @@ describe("stored state persistence", () => {
     expect(stored.settings.showHiraganaDisplay).toBe(true);
   });
 
+  test("fills marker visibility settings when loading older stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        showKanjiMarker: undefined,
+        showFuriganaMarker: undefined,
+        showHiraganaMarker: undefined,
+        showRomajiMarker: undefined,
+      },
+    });
+
+    expect(stored.settings.showKanjiMarker).toBe(false);
+    expect(stored.settings.showFuriganaMarker).toBe(false);
+    expect(stored.settings.showHiraganaMarker).toBe(true);
+    expect(stored.settings.showRomajiMarker).toBe(true);
+  });
+
+  test("turns furigana display off when kanji display is off in stored settings", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        showKanjiDisplay: false,
+        showFuriganaDisplay: true,
+      },
+    });
+
+    expect(stored.settings.showKanjiDisplay).toBe(false);
+    expect(stored.settings.showFuriganaDisplay).toBe(false);
+  });
+
+  test("turns markers off when their display targets are hidden in stored settings", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        showFuriganaDisplay: false,
+        showFuriganaMarker: true,
+        showHiraganaDisplay: false,
+        showHiraganaMarker: true,
+        showKanjiDisplay: false,
+        showKanjiMarker: true,
+        showRomajiMarker: true,
+      },
+    });
+
+    expect(stored.settings.showKanjiMarker).toBe(false);
+    expect(stored.settings.showFuriganaMarker).toBe(false);
+    expect(stored.settings.showHiraganaMarker).toBe(false);
+    expect(stored.settings.showRomajiMarker).toBe(true);
+  });
+
   test("fills auto retire performance settings when loading older stored state", () => {
     const stored = normalizeStoredState({
       settings: {

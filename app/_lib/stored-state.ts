@@ -1,5 +1,5 @@
 import { initialSettings, initialStoredState, storageKey } from "./constants";
-import type { StoredState } from "./types";
+import type { AppSettings, StoredState } from "./types";
 
 let cachedStoredState: StoredState | null = null;
 
@@ -15,11 +15,23 @@ export function resetStoredStateCache() {
   cachedStoredState = null;
 }
 
+export function normalizeAppSettings(settings: AppSettings): AppSettings {
+  const showFuriganaDisplay = settings.showKanjiDisplay && settings.showFuriganaDisplay;
+
+  return {
+    ...settings,
+    showFuriganaDisplay,
+    showKanjiMarker: settings.showKanjiDisplay && settings.showKanjiMarker,
+    showFuriganaMarker: showFuriganaDisplay && settings.showFuriganaMarker,
+    showHiraganaMarker: settings.showHiraganaDisplay && settings.showHiraganaMarker,
+  };
+}
+
 export function normalizeStoredState(storedState: Partial<StoredState> | null | undefined) {
   return {
     ...initialStoredState,
     ...storedState,
-    settings: {
+    settings: normalizeAppSettings({
       ...initialSettings,
       ...storedState?.settings,
       showKanjiDisplay:
@@ -28,6 +40,14 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
         storedState?.settings?.showFuriganaDisplay ?? initialSettings.showFuriganaDisplay,
       showHiraganaDisplay:
         storedState?.settings?.showHiraganaDisplay ?? initialSettings.showHiraganaDisplay,
+      showKanjiMarker:
+        storedState?.settings?.showKanjiMarker ?? initialSettings.showKanjiMarker,
+      showFuriganaMarker:
+        storedState?.settings?.showFuriganaMarker ?? initialSettings.showFuriganaMarker,
+      showHiraganaMarker:
+        storedState?.settings?.showHiraganaMarker ?? initialSettings.showHiraganaMarker,
+      showRomajiMarker:
+        storedState?.settings?.showRomajiMarker ?? initialSettings.showRomajiMarker,
       speedDisplayUnit: storedState?.settings?.speedDisplayUnit ?? initialSettings.speedDisplayUnit,
       strictMistakeDisplayMode:
         storedState?.settings?.strictMistakeDisplayMode ??
@@ -42,7 +62,7 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
         ...initialSettings.sokuonInput,
         ...storedState?.settings?.sokuonInput,
       },
-    },
+    }),
   };
 }
 
