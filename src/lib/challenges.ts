@@ -94,6 +94,11 @@ function parseAnnotatedJapaneseChallengeLine(
           `Invalid Japanese challenge line ${lineIndex + 1}: annotation text and ruby are required`,
         );
       }
+      if (endsWithSokuon(ruby.value) && isSokuon(characters[ruby.nextIndex] ?? "")) {
+        throw new Error(
+          `Invalid Japanese challenge line ${lineIndex + 1}: ruby text must not duplicate okurigana sokuon`,
+        );
+      }
 
       displayParts.push(base.value);
       readingParts.push(normalizeKana(ruby.value));
@@ -263,6 +268,14 @@ function normalizeKana(value: string) {
         : character;
     })
     .join("");
+}
+
+function isSokuon(value: string) {
+  return normalizeKana(value) === "っ";
+}
+
+function endsWithSokuon(value: string) {
+  return normalizeKana(value).endsWith("っ");
 }
 
 function mergeAdjacentPlainFuriganaParts(parts: JapaneseFuriganaPart[]) {

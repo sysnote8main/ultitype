@@ -74,6 +74,29 @@ describe("plain text challenge data", () => {
     );
   });
 
+  test("keeps okurigana sokuon out of ruby annotations", () => {
+    expect(parseJapaneseChallengeText("[保](たも)った[姿](すがた)が[揃](そろ)った")).toEqual([
+      {
+        display: "保った姿が揃った",
+        furigana: [
+          { text: "保", ruby: "たも" },
+          { text: "姿", ruby: "すがた" },
+          { text: "揃", ruby: "そろ" },
+        ],
+        reading: "たもったすがたがそろった",
+      },
+    ]);
+  });
+
+  test("rejects generated ruby annotations that duplicate okurigana sokuon", () => {
+    expect(() => parseJapaneseChallengeText("[保](たもっ)った")).toThrow(
+      "ruby text must not duplicate okurigana sokuon",
+    );
+    expect(() => parseJapaneseChallengeText("[揃](そろっ)った")).toThrow(
+      "ruby text must not duplicate okurigana sokuon",
+    );
+  });
+
   test("maps hiragana reading units to romaji input token ranges", () => {
     expect(createJapaneseReadingGuideParts("かい しゃ")).toEqual([
       { kind: "reading", text: "か", tokenStart: 0, tokenEnd: 2 },
