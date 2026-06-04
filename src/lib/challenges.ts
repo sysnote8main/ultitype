@@ -497,6 +497,9 @@ const kanaRomaji: Record<string, string> = {
   ょ: "lyo",
   "、": ",",
   "。": ".",
+  "！": "!",
+  "・": "･",
+  "～": "~",
   "　": " ",
 };
 

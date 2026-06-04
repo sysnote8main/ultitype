@@ -179,6 +179,20 @@ describe("direct short challenges", () => {
 });
 
 describe("direct Japanese challenge romaji", () => {
+  test("normalizes Japanese punctuation to half-width romaji symbols", () => {
+    const [challenge] = createJapaneseDirectChallenges(
+      parseJapaneseChallengeText("ティータイム・じゃ～っ！"),
+    );
+
+    expect(challenge?.reading).toBe("てぃーたいむ・じゃ～っ！");
+    expect(challenge?.romajiSource).toBe("thiーtaimu･ja~^!");
+    expect(challenge?.guide).toBe("thiーtaimu･ja~xtu!");
+    expect(challenge?.input).toBe("thiーtaimu･ja~xtu!");
+    expect(challenge?.input).not.toContain("・");
+    expect(challenge?.input).not.toContain("～");
+    expect(challenge?.input).not.toContain("！");
+  });
+
   test("maps ヴァ行 katakana readings to va vi vu ve vo", () => {
     const [challenge] = createJapaneseDirectChallenges(
       parseJapaneseChallengeText("ヴァヴィヴヴェヴォ"),
