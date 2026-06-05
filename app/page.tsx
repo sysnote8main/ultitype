@@ -12,7 +12,7 @@ export default function Home() {
           challengeLanguage={session.challengeLanguage}
           productionDuration={session.productionDuration}
           productionDurations={productionDurations}
-          productionPlayable={session.productionPlayable}
+          productionPlayableModes={session.productionPlayableModes}
           productionUnlocked={session.productionUnlocked}
           soundSettings={session.settings}
           onChangeChallengeLanguage={session.changeChallengeLanguage}

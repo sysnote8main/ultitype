@@ -1,21 +1,31 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { initialSettings, productionDurations } from "../_lib/constants";
+import type { ProductionModePlayability } from "../_lib/release-gates";
 import { ModeSelectScreen } from "./ModeSelectScreen";
 
 function renderModeSelectScreen({
-  productionPlayable = true,
+  productionPlayableModes = {
+    "production-ime-off": true,
+    "production-ime-on": true,
+  },
   productionUnlocked = true,
 }: {
-  productionPlayable?: boolean;
+  productionPlayableModes?: Partial<ProductionModePlayability>;
   productionUnlocked?: boolean;
 } = {}) {
+  const playableModes = {
+    "production-ime-off": true,
+    "production-ime-on": true,
+    ...productionPlayableModes,
+  } satisfies ProductionModePlayability;
+
   return renderToStaticMarkup(
     <ModeSelectScreen
       challengeLanguage="ja"
       productionDuration={300}
       productionDurations={productionDurations}
-      productionPlayable={productionPlayable}
+      productionPlayableModes={playableModes}
       productionUnlocked={productionUnlocked}
       soundSettings={initialSettings}
       onChangeChallengeLanguage={() => undefined}
@@ -27,20 +37,40 @@ function renderModeSelectScreen({
 
 describe("ModeSelectScreen", () => {
   test("locks rating modes when the production build is alpha-gated", () => {
-    const markup = renderModeSelectScreen({ productionPlayable: false, productionUnlocked: true });
+    const markup = renderModeSelectScreen({
+      productionPlayableModes: {
+        "production-ime-off": false,
+        "production-ime-on": false,
+      },
+      productionUnlocked: true,
+    });
 
     expect(markup).toContain("Alpha");
     expect(markup.match(/class="mode-select-card locked"/g)?.length).toBe(2);
   });
 
-  test("keeps rating modes available outside the alpha production build gate", () => {
-    const markup = renderModeSelectScreen({ productionPlayable: true, productionUnlocked: true });
+  test("keeps rating modes available outside their alpha production build gates", () => {
+    const markup = renderModeSelectScreen({ productionUnlocked: true });
 
     expect(markup.match(/class="mode-select-card locked"/g)?.length ?? 0).toBe(0);
   });
 
+  test("keeps only alpha-gated rating modes locked when another rating mode is playable", () => {
+    const markup = renderModeSelectScreen({
+      productionPlayableModes: {
+        "production-ime-off": true,
+        "production-ime-on": false,
+      },
+      productionUnlocked: true,
+    });
+
+    expect(markup).toContain('href="/production/ime-off"');
+    expect(markup).not.toContain('href="/production/ime-on"');
+    expect(markup.match(/class="mode-select-card locked"/g)?.length).toBe(1);
+  });
+
   test("links unlocked modes to their dedicated pages", () => {
-    const markup = renderModeSelectScreen({ productionPlayable: true, productionUnlocked: true });
+    const markup = renderModeSelectScreen({ productionUnlocked: true });
 
     expect(markup).toContain('href="/practice/accuracy"');
     expect(markup).toContain('href="/practice/flow"');

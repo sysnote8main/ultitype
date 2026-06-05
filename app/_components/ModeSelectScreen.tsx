@@ -5,7 +5,11 @@ import Link from "next/link";
 import { modes, type ModeId, type TypingMode } from "@/src/lib/typing";
 import { challengeLanguages } from "../_lib/constants";
 import { getModePath } from "../_lib/mode-routes";
-import { ALPHA_PRODUCTION_LOCK_MESSAGE } from "../_lib/release-gates";
+import {
+  ALPHA_PRODUCTION_LOCK_MESSAGE,
+  type ProductionModeId,
+  type ProductionModePlayability,
+} from "../_lib/release-gates";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ChallengeLanguage, ProductionDuration } from "../_lib/types";
 
@@ -21,7 +25,7 @@ type ModeSelectScreenProps = {
   challengeLanguage: ChallengeLanguage;
   productionDuration: ProductionDuration;
   productionDurations: readonly ProductionDuration[];
-  productionPlayable: boolean;
+  productionPlayableModes: ProductionModePlayability;
   productionUnlocked: boolean;
   soundSettings: SoundSettings;
   onChangeChallengeLanguage: (language: ChallengeLanguage) => void;
@@ -33,7 +37,7 @@ export function ModeSelectScreen({
   challengeLanguage,
   productionDuration,
   productionDurations,
-  productionPlayable,
+  productionPlayableModes,
   productionUnlocked,
   soundSettings,
   onChangeChallengeLanguage,
@@ -54,6 +58,13 @@ export function ModeSelectScreen({
 
     onChangeChallengeLanguage(language);
   }
+
+  const productionModes = modes.filter(
+    (item): item is TypingMode & { id: ProductionModeId } => item.group === "production",
+  );
+  const hasPlayableProductionMode = productionModes.some(
+    (item) => productionPlayableModes[item.id],
+  );
 
   return (
     <section className="mode-select-screen" aria-label="mode selection">
@@ -110,7 +121,7 @@ export function ModeSelectScreen({
             <span>Rating</span>
             <small>本番モード</small>
           </div>
-          {!productionPlayable ? (
+          {!hasPlayableProductionMode ? (
             <p className="alpha-lock-note">{ALPHA_PRODUCTION_LOCK_MESSAGE}</p>
           ) : null}
           <div className="duration-block mode-select-duration">
@@ -118,10 +129,10 @@ export function ModeSelectScreen({
               {productionDurations.map((duration) => (
                 <button
                   className={productionDuration === duration ? "selected" : ""}
-                  disabled={!productionPlayable}
+                  disabled={!hasPlayableProductionMode}
                   key={duration}
                   onClick={() => onProductionDurationChange(duration)}
-                  title={!productionPlayable ? ALPHA_PRODUCTION_LOCK_MESSAGE : undefined}
+                  title={!hasPlayableProductionMode ? ALPHA_PRODUCTION_LOCK_MESSAGE : undefined}
                   type="button"
                 >
                   {duration / 60}分
@@ -130,9 +141,10 @@ export function ModeSelectScreen({
             </div>
           </div>
           <div className="mode-select-grid production-modes">
-            {modes
-              .filter((item) => item.group === "production")
-              .map((item) => (
+            {productionModes.map((item) => {
+              const productionPlayable = productionPlayableModes[item.id];
+
+              return (
                 <ModeSelectCard
                   key={item.id}
                   lockLabel={productionPlayable ? "A0" : "Alpha"}
@@ -145,7 +157,8 @@ export function ModeSelectScreen({
                   mode={item}
                   onSelect={() => handleSelectMode(item.id)}
                 />
-              ))}
+              );
+            })}
           </div>
         </div>
       </div>

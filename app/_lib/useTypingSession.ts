@@ -47,8 +47,9 @@ import {
 } from "./stored-state";
 import {
   ALPHA_PRODUCTION_LOCK_MESSAGE,
-  PRODUCTION_MODE_PLAYABLE,
+  PRODUCTION_MODE_PLAYABILITY,
   canPlayProductionMode,
+  type ProductionModeId,
 } from "./release-gates";
 import {
   createOrderedIndexes,
@@ -348,7 +349,9 @@ export function useTypingSession({
       : currentDirectChallenge.guide;
   const bestPracticeRank = getRank(stored.bestPracticeScore);
   const bestProductionRank = getRank(stored.bestProductionScore);
-  const productionPlayable = PRODUCTION_MODE_PLAYABLE;
+  const productionPlayableModes = PRODUCTION_MODE_PLAYABILITY;
+  const currentProductionPlayable =
+    mode.group === "production" ? productionPlayableModes[mode.id as ProductionModeId] : true;
 
   function randomizePracticeChallengeOrder(language: ChallengeLanguage = challengeLanguage) {
     const nextOrder = createShuffledIndexes(getDirectChallenges(language, "practice").length);
@@ -446,8 +449,8 @@ export function useTypingSession({
         : 1;
   const isProductionBlocked =
     mode.group === "production" &&
-    !canPlayProductionMode({ unlocked: productionUnlocked });
-  const productionBlockReason = productionPlayable
+    !canPlayProductionMode({ modeId: mode.id as ProductionModeId, unlocked: productionUnlocked });
+  const productionBlockReason = currentProductionPlayable
     ? "本番モードは仮レーティング A0 以上で解放されます。"
     : ALPHA_PRODUCTION_LOCK_MESSAGE;
   const progress = Math.min(100, (elapsedSeconds / durationSeconds) * 100);
@@ -642,7 +645,10 @@ export function useTypingSession({
     if (
       !nextMode ||
       (nextMode.group === "production" &&
-        !canPlayProductionMode({ unlocked: productionUnlocked }))
+        !canPlayProductionMode({
+          modeId: nextMode.id as ProductionModeId,
+          unlocked: productionUnlocked,
+        }))
     ) {
       return;
     }
@@ -904,7 +910,7 @@ export function useTypingSession({
     challengeLanguage,
     currentAccuracy,
     productionDuration,
-    productionPlayable,
+    productionPlayableModes,
     productionUnlocked,
     screen,
     settings: stored.settings,
