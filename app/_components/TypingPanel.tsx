@@ -1064,7 +1064,7 @@ function NextChallengePreviewLane({
 }) {
   return (
     <div className={`challenge-preview-lane next-lane ${lane}-lane`}>
-        {nextChallengeContent}
+      {nextChallengeContent}
     </div>
   );
 }
@@ -1372,11 +1372,11 @@ function ProductionLongDisplayText({
           const rubyText =
             showFuriganaMarker && markerProgress !== null
               ? renderFuriganaMarkerCharacters(
-                  part.ruby,
-                  partTokenStart,
-                  markerProgress.completedTokens,
-                  markerProgress.currentTokenIndex,
-                )
+                part.ruby,
+                partTokenStart,
+                markerProgress.completedTokens,
+                markerProgress.currentTokenIndex,
+              )
               : part.ruby;
 
           return (
@@ -1593,27 +1593,27 @@ function ProductionSegmentLaneContent({
         <p className="reading-text">
           {isCurrent && romajiTarget
             ? renderReadingGuideSegmentCharacters(
-                reading,
-                readingSegment,
-                romajiTarget,
-                input,
-                mistakeFlash,
-                showHiraganaMarker,
-              )
+              reading,
+              readingSegment,
+              romajiTarget,
+              input,
+              mistakeFlash,
+              showHiraganaMarker,
+            )
             : renderPlainSegmentCharacters(readingSegment.text)}
         </p>
       ) : null}
       <p className="input-target" aria-label="romaji input target">
         {isCurrent && romajiTarget
           ? renderRomajiGuideSegmentCharacters(
-              romajiTarget,
-              guideSegment,
-              input,
-              mistakeFlash,
-              strictMistakeInput,
-              strictMistakeDisplayMode,
-              showRomajiMarker,
-            )
+            romajiTarget,
+            guideSegment,
+            input,
+            mistakeFlash,
+            strictMistakeInput,
+            strictMistakeDisplayMode,
+            showRomajiMarker,
+          )
           : renderPlainSegmentCharacters(guideSegment.text)}
       </p>
     </>
@@ -2035,15 +2035,15 @@ function ContinuousChallengeTextStack({
             ) : null}
             {romajiTarget
               ? insertCenterMarker(
-                  renderReadingGuideCharacters(
-                    reading,
-                    romajiTarget,
-                    input,
-                    mistakeFlash,
-                    showHiraganaMarker,
-                  ),
-                  centerMarkerPosition,
-                )
+                renderReadingGuideCharacters(
+                  reading,
+                  romajiTarget,
+                  input,
+                  mistakeFlash,
+                  showHiraganaMarker,
+                ),
+                centerMarkerPosition,
+              )
               : renderCenterTextWithMarker(reading, centerMarkerPosition, "")}
             <span className="center-scroll-next-text">{nextChallengeReading}</span>
           </p>
@@ -2066,21 +2066,21 @@ function ContinuousChallengeTextStack({
           ) : null}
           {romajiTarget
             ? renderRomajiGuideCharacters(
-                romajiTarget,
-                input,
-                mistakeFlash,
-                strictMistakeInput,
-                strictMistakeDisplayMode,
-                showRomajiMarker,
-              )
+              romajiTarget,
+              input,
+              mistakeFlash,
+              strictMistakeInput,
+              strictMistakeDisplayMode,
+              showRomajiMarker,
+            )
             : renderGuideCharacters(
-                guide,
-                input,
-                mistakeFlash,
-                strictMistakeInput,
-                strictMistakeDisplayMode,
-                showRomajiMarker,
-              )}
+              guide,
+              input,
+              mistakeFlash,
+              strictMistakeInput,
+              strictMistakeDisplayMode,
+              showRomajiMarker,
+            )}
           <span className="center-scroll-next-text">
             {renderGuideCharacters(nextChallengeGuide, "", null, "", "none", false)}
           </span>
@@ -2189,17 +2189,17 @@ function PreviousCenterDisplayText({
     <span className="center-scroll-previous-text">
       {showFurigana && furigana.length > 0
         ? createJapaneseFuriganaParts(display, furigana).map((part, index) =>
-            part.ruby ? (
-              <ruby className="display-ruby" key={`previous-display-ruby-${part.text}-${index}`}>
-                {part.text}
-                <rt>{part.ruby}</rt>
-              </ruby>
-            ) : (
-              <span className="display-plain" key={`previous-display-plain-${part.text}-${index}`}>
-                {part.text}
-              </span>
-            ),
-          )
+          part.ruby ? (
+            <ruby className="display-ruby" key={`previous-display-ruby-${part.text}-${index}`}>
+              {part.text}
+              <rt>{part.ruby}</rt>
+            </ruby>
+          ) : (
+            <span className="display-plain" key={`previous-display-plain-${part.text}-${index}`}>
+              {part.text}
+            </span>
+          ),
+        )
         : display}
     </span>
   );
@@ -2276,11 +2276,11 @@ function renderCenterDisplayText(
       );
       const rubyText = showFuriganaMarker
         ? renderFuriganaMarkerCharacters(
-            part.ruby,
-            partTokenStart,
-            currentTokenIndex,
-            currentTokenIndex,
-          )
+          part.ruby,
+          partTokenStart,
+          currentTokenIndex,
+          currentTokenIndex,
+        )
         : part.ruby;
 
       content.push(
@@ -2433,12 +2433,12 @@ function ChallengeTextStack({
         <p className="reading-text">
           {romajiTarget && renderMarkers
             ? renderReadingGuideCharacters(
-                reading,
-                romajiTarget,
-                input,
-                mistakeFlash,
-                showHiraganaMarker,
-              )
+              reading,
+              romajiTarget,
+              input,
+              mistakeFlash,
+              showHiraganaMarker,
+            )
             : reading}
         </p>
       ) : null}
@@ -2449,22 +2449,22 @@ function ChallengeTextStack({
         {romajiTarget
           ? renderMarkers
             ? renderRomajiGuideCharacters(
-                romajiTarget,
-                input,
-                mistakeFlash,
-                strictMistakeInput,
-                strictMistakeDisplayMode,
-                showRomajiMarker,
-              )
-            : renderGuideCharacters(guide, "", null, "", "none", false)
-          : renderGuideCharacters(
-              guide,
+              romajiTarget,
               input,
               mistakeFlash,
               strictMistakeInput,
               strictMistakeDisplayMode,
               showRomajiMarker,
-            )}
+            )
+            : renderGuideCharacters(guide, "", null, "", "none", false)
+          : renderGuideCharacters(
+            guide,
+            input,
+            mistakeFlash,
+            strictMistakeInput,
+            strictMistakeDisplayMode,
+            showRomajiMarker,
+          )}
       </p>
     </>
   );
@@ -2507,11 +2507,11 @@ function DisplayText({
             const rubyText =
               showFuriganaMarker && markerProgress !== null
                 ? renderFuriganaMarkerCharacters(
-                    part.ruby,
-                    partTokenStart,
-                    markerProgress.completedTokens,
-                    markerProgress.currentTokenIndex,
-                  )
+                  part.ruby,
+                  partTokenStart,
+                  markerProgress.completedTokens,
+                  markerProgress.currentTokenIndex,
+                )
                 : part.ruby;
 
             return (

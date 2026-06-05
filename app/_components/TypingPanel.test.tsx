@@ -169,7 +169,6 @@ describe("TypingPanel", () => {
     expect(markup).not.toContain("session-mode-symbol");
   });
 
-
   test("marks projected in-progress score as approximate", () => {
     const markup = renderTypingPanel({
       currentRank: getRank(1234),
@@ -241,6 +240,7 @@ describe("TypingPanel", () => {
     expect(actualMarkup).not.toContain("concealed");
     expect(projectedMarkup).toContain(">A?</span>");
   });
+
   test("renders a direct-mode keyboard capture field that asks browsers not to use IME", () => {
     const markup = renderTypingPanel({
       acceptsTextInput: false,
