@@ -3,7 +3,11 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRomajiInputTarget, getRank, modes } from "@/src/lib/typing";
 import { initialSettings, initialStats } from "../_lib/constants";
-import { TypingPanel, calculateProductionLongScrollLines } from "./TypingPanel";
+import {
+  TypingPanel,
+  calculateProductionLongScrollLines,
+  getDirectInputFocusRetryDelays,
+} from "./TypingPanel";
 
 type TypingPanelProps = Parameters<typeof TypingPanel>[0];
 
@@ -162,6 +166,66 @@ describe("TypingPanel", () => {
     });
 
     expect(markup).not.toContain("session-mode-symbol");
+  });
+
+  test("renders a direct-mode keyboard capture field that asks browsers not to use IME", () => {
+    const markup = renderTypingPanel({
+      acceptsTextInput: false,
+      mode: modes.find((mode) => mode.id === "production-ime-off")!,
+    });
+
+    expect(markup).toContain('class="direct-input-guard"');
+    expect(markup).toContain('aria-label="direct keyboard capture"');
+    expect(markup).toContain('inputMode="none"');
+    expect(markup).toContain('readOnly=""');
+    expect(markup).toContain('tabindex="-1"');
+    expect(markup).not.toContain('class="typing-input"');
+  });
+
+  test("keeps the visible IME textarea only in IME-on mode", () => {
+    const markup = renderTypingPanel({
+      acceptsTextInput: true,
+      mode: modes.find((mode) => mode.id === "production-ime-on")!,
+    });
+
+    expect(markup).toContain('class="typing-input"');
+    expect(markup).not.toContain('class="direct-input-guard"');
+  });
+
+  test("schedules direct input focus retries only during development direct typing", () => {
+    expect(
+      getDirectInputFocusRetryDelays({
+        acceptsTextInput: false,
+        autoFocusDirectInput: true,
+        isDevelopment: true,
+        isProductionBlocked: false,
+      }),
+    ).toEqual([50, 150, 300, 600]);
+
+    expect(
+      getDirectInputFocusRetryDelays({
+        acceptsTextInput: true,
+        autoFocusDirectInput: true,
+        isDevelopment: true,
+        isProductionBlocked: false,
+      }),
+    ).toEqual([]);
+    expect(
+      getDirectInputFocusRetryDelays({
+        acceptsTextInput: false,
+        autoFocusDirectInput: true,
+        isDevelopment: false,
+        isProductionBlocked: false,
+      }),
+    ).toEqual([]);
+    expect(
+      getDirectInputFocusRetryDelays({
+        acceptsTextInput: false,
+        autoFocusDirectInput: true,
+        isDevelopment: true,
+        isProductionBlocked: true,
+      }),
+    ).toEqual([]);
   });
 
   test("applies configured input screen font sizes to the target view", () => {

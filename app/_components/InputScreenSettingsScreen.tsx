@@ -278,6 +278,7 @@ export function InputScreenSettingsScreen({
           >
             <TypingPanel
               acceptsTextInput={false}
+              autoFocusDirectInput={false}
               challengeLanguage="ja"
               correctionDebt={0}
               currentAccuracy={1}

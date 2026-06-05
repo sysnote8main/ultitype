@@ -556,14 +556,7 @@ export function useTypingSession({
     setImeError("");
     setMistakeFlash(null);
     window.requestAnimationFrame(() => {
-      if (acceptsTextInput) {
-        inputRef.current?.focus();
-        return;
-      }
-
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
+      inputRef.current?.focus({ preventScroll: true });
     });
   }
 

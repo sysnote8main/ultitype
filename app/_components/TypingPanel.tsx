@@ -120,6 +120,7 @@ type TypingPanelProps = {
   sessionModeLabel?: string;
   prepareActionIcon?: LucideIcon;
   prepareActionTitle?: string;
+  autoFocusDirectInput?: boolean;
   topDisplayMetricIds: TopDisplayMetricId[];
   onBackToModeSelect: () => void;
   onImeInput: (input: string) => void;
@@ -128,6 +129,26 @@ type TypingPanelProps = {
   onPreventDirectTextInput: (event: BlockableTextEvent) => void;
   onResetSession: () => void;
 };
+
+type DirectInputFocusRetryInput = {
+  acceptsTextInput: boolean;
+  autoFocusDirectInput: boolean;
+  isDevelopment: boolean;
+  isProductionBlocked: boolean;
+};
+
+export function getDirectInputFocusRetryDelays({
+  acceptsTextInput,
+  autoFocusDirectInput,
+  isDevelopment,
+  isProductionBlocked,
+}: DirectInputFocusRetryInput) {
+  if (!isDevelopment || !autoFocusDirectInput || acceptsTextInput || isProductionBlocked) {
+    return [];
+  }
+
+  return [50, 150, 300, 600];
+}
 
 export function TypingPanel({
   acceptsTextInput,
@@ -193,6 +214,7 @@ export function TypingPanel({
   sessionModeLabel,
   prepareActionIcon,
   prepareActionTitle,
+  autoFocusDirectInput = true,
   topDisplayMetricIds,
   onBackToModeSelect,
   onImeInput,
@@ -233,6 +255,40 @@ export function TypingPanel({
     "--target-romaji-margin-bottom": `${romajiMarginBottom}px`,
     "--target-production-long-lines": `${productionLongTextLineCount}`,
   } as CSSProperties;
+
+  useLayoutEffect(() => {
+    if (!autoFocusDirectInput || acceptsTextInput || isProductionBlocked) {
+      return;
+    }
+
+    const focusDirectInput = () => {
+      window.requestAnimationFrame(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      });
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        focusDirectInput();
+      }
+    };
+
+    const retryTimers = getDirectInputFocusRetryDelays({
+      acceptsTextInput,
+      autoFocusDirectInput,
+      isDevelopment: process.env.NODE_ENV === "development",
+      isProductionBlocked,
+    }).map((delay) => window.setTimeout(focusDirectInput, delay));
+
+    focusDirectInput();
+    window.addEventListener("focus", focusDirectInput);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      retryTimers.forEach((timer) => window.clearTimeout(timer));
+      window.removeEventListener("focus", focusDirectInput);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [acceptsTextInput, autoFocusDirectInput, inputRef, isProductionBlocked, mode.id]);
 
   function handleBackToModeSelect() {
     playTypingSound("back");
@@ -396,7 +452,24 @@ export function TypingPanel({
               ref={inputRef}
               value={input}
             />
-          ) : null}
+          ) : (
+            <textarea
+              aria-label="direct keyboard capture"
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="direct-input-guard"
+              inputMode="none"
+              onBeforeInput={onPreventDirectTextInput}
+              onCompositionStart={onPreventDirectTextInput}
+              onDrop={onPreventDirectTextInput}
+              onPaste={onPreventDirectTextInput}
+              readOnly
+              ref={inputRef}
+              spellCheck={false}
+              tabIndex={-1}
+              value=""
+            />
+          )}
           {imeError ? <p className="error-line">{imeError}</p> : null}
         </>
       )}

@@ -2313,6 +2313,24 @@ h2 span {
   color: var(--soft);
 }
 
+.direct-input-guard {
+  position: fixed;
+  inset: auto auto 0 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  overflow: hidden;
+  resize: none;
+  pointer-events: none;
+  color: transparent;
+  background: transparent;
+  caret-color: transparent;
+  ime-mode: disabled;
+}
+
 .error-line {
   margin: 10px 0 0;
   color: var(--warn);
