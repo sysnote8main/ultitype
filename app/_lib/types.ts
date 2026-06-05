@@ -57,6 +57,7 @@ export type AppSettings = {
   hiraganaMarginBottom: number;
   romajiLineHeight: number;
   romajiMarginBottom: number;
+  productionLongTextLineCount: number;
   romajiInputPreset: RomajiInputPreset;
   romajiInputSelections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
   allowSplitYoon: boolean;

@@ -73,6 +73,10 @@ export function normalizeAppSettings(settings: AppSettings): AppSettings {
       settings.romajiMarginBottom,
       initialSettings.romajiMarginBottom,
     ),
+    productionLongTextLineCount: normalizeProductionLongTextLineCount(
+      settings.productionLongTextLineCount,
+      initialSettings.productionLongTextLineCount,
+    ),
     nextChallengePreviewLength: normalizePreviewLength(
       settings.nextChallengePreviewLength,
       initialSettings.nextChallengePreviewLength,
@@ -133,6 +137,9 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
         storedSettings?.romajiLineHeight ?? initialSettings.romajiLineHeight,
       romajiMarginBottom:
         storedSettings?.romajiMarginBottom ?? initialSettings.romajiMarginBottom,
+      productionLongTextLineCount:
+        storedSettings?.productionLongTextLineCount ??
+        initialSettings.productionLongTextLineCount,
       strictMistakeDisplayMode:
         storedSettings?.strictMistakeDisplayMode ??
         initialSettings.strictMistakeDisplayMode,
@@ -191,6 +198,14 @@ function normalizeSpacing(value: number, fallback: number) {
   }
 
   return Math.min(48, Math.max(0, Math.round(value)));
+}
+
+function normalizeProductionLongTextLineCount(value: number, fallback: number) {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.min(12, Math.max(3, Math.round(value)));
 }
 
 function normalizePreviewLength(value: number, fallback: number) {

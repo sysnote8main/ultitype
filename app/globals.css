@@ -1896,6 +1896,59 @@ h2 span {
   min-width: 0;
 }
 
+.production-direct-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.production-long-body {
+  position: relative;
+  height: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * var(--target-production-long-lines, 5));
+  overflow: hidden;
+}
+
+.production-long-body::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * 1.25);
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(18 24 32 / 0), var(--panel) 88%);
+}
+
+.production-long-body .display-text {
+  margin-bottom: 0;
+}
+
+.production-long-scroll-content {
+  transform: translateY(calc(-1 * var(--production-long-scroll-lines, 0) * var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45)));
+}
+
+.production-long-display-text {
+  overflow-wrap: anywhere;
+}
+
+.production-long-next-spacer {
+  margin-top: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * 0.5);
+  color: var(--soft);
+}
+
+.production-long-next-spacer .display-text {
+  color: var(--soft);
+}
+
+.production-direct-inputs {
+  padding-top: 2px;
+}
+
+.production-segmented-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
 .challenge-preview-lane {
   min-width: 0;
 }

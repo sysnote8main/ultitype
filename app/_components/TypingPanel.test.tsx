@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRomajiInputTarget, getRank, modes } from "@/src/lib/typing";
 import { initialSettings, initialStats } from "../_lib/constants";
-import { TypingPanel } from "./TypingPanel";
+import { TypingPanel, calculateProductionLongScrollLines } from "./TypingPanel";
 
 type TypingPanelProps = Parameters<typeof TypingPanel>[0];
 
@@ -68,6 +68,7 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     hiraganaMarginBottom: initialSettings.hiraganaMarginBottom,
     romajiLineHeight: initialSettings.romajiLineHeight,
     romajiMarginBottom: initialSettings.romajiMarginBottom,
+    productionLongTextLineCount: initialSettings.productionLongTextLineCount,
     soundSettings: initialSettings,
     startedAt: null,
     stats: initialStats,
@@ -226,6 +227,131 @@ describe("TypingPanel", () => {
     expect(targetMarkup).toContain('<p class="reading-text">つぎぶん</p>');
     expect(targetMarkup).toContain('<p class="input-target" aria-label="romaji input target"><span class="char">t</span>');
     expect(targetMarkup).not.toContain("<strong>次文</strong>");
+  });
+
+  test("uses a production long-form body while center scrolling only hiragana and romaji", () => {
+    const currentRomajiTarget = createTestRomajiTarget("honbunichi.honbunni.");
+    const nextRomajiTarget = createTestRomajiTarget("tsugi.");
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "本文一。本文二。",
+      currentFurigana: [{ text: "本", ruby: "ほん" }],
+      currentGuide: currentRomajiTarget.guide,
+      currentReading: "ほんぶんいち。ほんぶんに。",
+      currentRomajiTarget,
+      mode: modes.find((mode) => mode.id === "production-ime-off")!,
+      nextChallengeDisplay: "次本文。",
+      nextChallengeFurigana: [{ text: "次", ruby: "つぎ" }],
+      nextChallengeGuide: nextRomajiTarget.guide,
+      nextChallengePreviewMode: "center-scroll",
+      nextChallengeReading: "つぎ。",
+      nextChallengeRomajiTarget: nextRomajiTarget,
+    });
+
+    expect(markup).toContain('class="production-direct-layout"');
+    expect(markup).toContain('class="production-long-body"');
+    expect(markup).toContain('class="production-long-scroll-content"');
+    expect(markup).toContain("--production-long-scroll-lines:0");
+    expect(markup).toContain('class="production-long-scroll-target"');
+    expect(markup).not.toContain("production-long-scroll-marker");
+    expect(markup).toContain('class="production-long-next-spacer"');
+    expect(markup).toContain("<ruby class=\"display-ruby\">本<rt>ほん</rt></ruby>");
+    expect(markup).toContain("文一。本文二。");
+    expect(markup).toContain("<ruby class=\"display-ruby\">次<rt>つぎ</rt></ruby>");
+    expect(markup).toContain("本文。");
+    expect(markup).not.toContain("production-long-scroll-anchor");
+    expect(markup).toContain('class="challenge-preview-layout center-scroll production-direct-inputs"');
+    expect(markup).toContain('class="reading-text center-continuous-line"');
+    expect(markup).toContain('class="input-target center-continuous-line"');
+    expect(markup).not.toContain('class="display-text center-continuous-line"');
+  });
+
+  test("centers production direct hiragana and romaji from the start after the first challenge", () => {
+    const currentRomajiTarget = createTestRomajiTarget("tsugi.");
+    const nextRomajiTarget = createTestRomajiTarget("sonoato.");
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "次本文。",
+      currentGuide: currentRomajiTarget.guide,
+      currentReading: "つぎ。",
+      currentRomajiTarget,
+      mode: modes.find((mode) => mode.id === "production-ime-off")!,
+      nextChallengeDisplay: "その後。",
+      nextChallengeGuide: nextRomajiTarget.guide,
+      nextChallengePreviewMode: "center-scroll",
+      nextChallengeReading: "そのあと。",
+      nextChallengeRomajiTarget: nextRomajiTarget,
+      previousChallengeGuide: "mae.",
+      previousChallengeReading: "まえ。",
+      stats: {
+        ...initialStats,
+        completedPrompts: 1,
+      },
+    });
+
+    expect(markup).toContain('class="challenge-preview-layout center-scroll production-direct-inputs"');
+    expect(markup).toContain("--center-marker-position:0ch");
+    expect(
+      markup.match(
+        /--center-marker-translate:calc\(8ch - var\(--center-marker-position\)\)/g,
+      )?.length,
+    ).toBe(2);
+    expect(markup).not.toContain(
+      "--center-marker-translate:calc(-1 * max(0ch, var(--center-marker-position) - 8ch))",
+    );
+    expect(markup).toContain('class="center-scroll-previous-text">まえ。</span>');
+    expect(markup).toContain(
+      'class="center-scroll-previous-text"><span class="char">m</span><span class="char">a</span><span class="char">e</span><span class="char">.</span></span>',
+    );
+  });
+
+  test("splits production slide hiragana and romaji by punctuation units", () => {
+    const currentRomajiTarget = createTestRomajiTarget("aiu,eo.");
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "本文。",
+      currentGuide: currentRomajiTarget.guide,
+      currentReading: "あいう、えお。",
+      currentRomajiTarget,
+      mode: modes.find((mode) => mode.id === "production-ime-off")!,
+      nextChallengePreviewMode: "split-slide",
+    });
+
+    expect(markup).toContain('class="production-segmented-stack split-slide"');
+    expect(markup).toContain('class="challenge-preview-lane current-lane top-lane active-lane"');
+    expect(markup).toContain('class="challenge-preview-lane next-lane bottom-lane"');
+    expect(markup).toContain('<p class="reading-text"><span class="char current">あ</span>');
+    expect(markup).toContain("あ</span><span");
+    expect(markup).toContain(">、</span></p>");
+    expect(markup).toContain(">え</span><span");
+    expect(markup).toContain(">。</span></p>");
+    expect(markup).toContain('aria-label="romaji input target"><span class="char current">a</span>');
+    expect(markup).toContain('<span class="char">e</span><span class="char">o</span><span class="char">.</span>');
+  });
+
+  test("alternates production segmented input lanes after a punctuation unit is completed", () => {
+    const currentRomajiTarget = createTestRomajiTarget("aiu,eo.");
+    const nextRomajiTarget = createTestRomajiTarget("tsugi.");
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "本文。",
+      currentGuide: currentRomajiTarget.guide,
+      currentReading: "あいう、えお。",
+      currentRomajiTarget,
+      input: "aiu,",
+      mode: modes.find((mode) => mode.id === "production-ime-off")!,
+      nextChallengeDisplay: "次。",
+      nextChallengeGuide: nextRomajiTarget.guide,
+      nextChallengePreviewMode: "split-alternate",
+      nextChallengeReading: "つぎ。",
+      nextChallengeRomajiTarget: nextRomajiTarget,
+    });
+
+    expect(markup).toContain('class="production-segmented-stack split-alternate"');
+    expect(markup).toContain('class="challenge-preview-lane next-lane top-lane"');
+    expect(markup).toContain('class="challenge-preview-lane current-lane bottom-lane active-lane"');
+    expect(markup).toContain('<p class="reading-text"><span class="char current">え</span>');
+    expect(markup).toContain('<span class="char">つ</span><span class="char">ぎ</span><span class="char">。</span>');
   });
 
   test("shows split alternate next challenge with the same text stack on the opposite lane", () => {
@@ -517,6 +643,52 @@ describe("TypingPanel", () => {
     );
 
     expect(centerScrollRule?.groups?.body).toContain("transition: none");
+  });
+
+  test("calculates production long body scroll lines from the current marker offset", () => {
+    expect(calculateProductionLongScrollLines(-1, 46.4)).toBe(0);
+    expect(calculateProductionLongScrollLines(0, 46.4)).toBe(0);
+    expect(calculateProductionLongScrollLines(46.3, 46.4)).toBe(0);
+    expect(calculateProductionLongScrollLines(46.4, 46.4)).toBe(1);
+    expect(calculateProductionLongScrollLines(100, 46.4)).toBe(2);
+    expect(calculateProductionLongScrollLines(100, 0)).toBe(0);
+  });
+
+  test("clips and fades the production long body at the configured line count", () => {
+    const css = readFileSync("app/globals.css", "utf8");
+    const longBodyRule = css.match(
+      /\.production-long-body \{(?<body>[\s\S]+?)\n\}/,
+    );
+    const longBodyFadeRule = css.match(
+      /\.production-long-body::after \{(?<body>[\s\S]+?)\n\}/,
+    );
+    const longBodyContentRule = css.match(
+      /\.production-long-scroll-content \{(?<body>[\s\S]+?)\n\}/,
+    );
+    const nextSpacerRule = css.match(
+      /\.production-long-next-spacer \{(?<body>[\s\S]+?)\n\}/,
+    );
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "長い漢字文",
+      mode: modes[2]!,
+      productionLongTextLineCount: 7,
+    });
+
+    expect(longBodyRule?.groups?.body).toContain(
+      "height: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * var(--target-production-long-lines, 5))",
+    );
+    expect(longBodyRule?.groups?.body).toContain("overflow: hidden");
+    expect(longBodyRule?.groups?.body).not.toContain("overflow-y: auto");
+    expect(longBodyFadeRule?.groups?.body).toContain("linear-gradient");
+    expect(longBodyContentRule?.groups?.body).toContain(
+      "transform: translateY(calc(-1 * var(--production-long-scroll-lines, 0) * var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45)))",
+    );
+    expect(css).not.toContain(".production-long-scroll-marker");
+    expect(nextSpacerRule?.groups?.body).toContain(
+      "margin-top: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * 0.5)",
+    );
+    expect(markup).toContain("--target-production-long-lines:7");
   });
 
   test("uses the full next challenge in center scroll instead of the preview length", () => {

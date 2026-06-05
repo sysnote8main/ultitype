@@ -95,6 +95,7 @@ export const initialSettings: AppSettings = {
   hiraganaMarginBottom: 10,
   romajiLineHeight: 1.45,
   romajiMarginBottom: 0,
+  productionLongTextLineCount: 5,
   romajiInputPreset: "hepburn",
   romajiInputSelections: {},
   allowSplitYoon: true,

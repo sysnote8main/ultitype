@@ -466,6 +466,10 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
     onChange({ [key]: clampInteger(value, 0, 48) } as Partial<AppSettings>);
   }
 
+  function updateProductionLongTextLineCount(value: string) {
+    onChange({ productionLongTextLineCount: clampInteger(value, 3, 12) });
+  }
+
   return (
     <>
       <section className="settings-category" aria-labelledby="top-display-settings">
@@ -1018,6 +1022,19 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   ))}
                 </div>
               </section>
+              <NumericSettingRow
+                ariaLabel="long text kanji area height"
+                defaultValue={initialSettings.productionLongTextLineCount}
+                description="本番（IMEなし）の漢字文を表示する行数"
+                id="production-long-text-line-count-setting"
+                label="長文モードの漢字文エリアの高さ"
+                max={12}
+                min={3}
+                onChange={updateProductionLongTextLineCount}
+                step={1}
+                unit="行"
+                value={settings.productionLongTextLineCount}
+              />
               <section className="settings-row" aria-labelledby="strict-mistake-display-setting">
                 <div>
                   <h4 id="strict-mistake-display-setting">正確無比の誤入力表示</h4>

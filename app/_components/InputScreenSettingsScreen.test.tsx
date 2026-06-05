@@ -285,11 +285,14 @@ describe("InputScreenSettingsScreen", () => {
     const markup = renderInputScreenSettingsScreen();
     const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
 
-    expect(Array.from(inputScreenMarkup.matchAll(/class="number-control/g))).toHaveLength(12);
-    expect(Array.from(inputScreenMarkup.matchAll(/class="number-stepper"/g))).toHaveLength(12);
+    expect(Array.from(inputScreenMarkup.matchAll(/class="number-control/g))).toHaveLength(13);
+    expect(Array.from(inputScreenMarkup.matchAll(/class="number-stepper"/g))).toHaveLength(13);
     expect(inputScreenMarkup).toContain('aria-label="kanji font size を増やす"');
     expect(inputScreenMarkup).toContain('aria-label="furigana font scale を減らす"');
     expect(inputScreenMarkup).toContain('aria-label="romaji bottom spacing を増やす"');
+    expect(inputScreenMarkup).toContain(
+      'aria-label="long text kanji area height を増やす"',
+    );
   });
 
   test("adds default reset buttons to every ratio and pixel number control", () => {
@@ -311,7 +314,7 @@ describe("InputScreenSettingsScreen", () => {
     );
 
     expect(Array.from(inputScreenMarkup.matchAll(/class="number-reset-button"/g))).toHaveLength(
-      12,
+      13,
     );
     expect(kanjiFontSizeMarkup).toContain('aria-label="kanji font size を初期値に戻す"');
     expect(kanjiFontSizeMarkup).not.toContain('class="number-reset-button" disabled=""');
@@ -332,7 +335,28 @@ describe("InputScreenSettingsScreen", () => {
 
     expect(otherMarkup).toContain("その他の設定");
     expect(otherMarkup).toContain("次の課題の表示方式");
+    expect(otherMarkup).toContain("長文モードの漢字文エリアの高さ");
     expect(otherMarkup).toContain("正確無比の誤入力表示");
+  });
+
+  test("shows the production long kanji area height under other settings", () => {
+    const markup = renderInputScreenSettingsScreen({
+      ...initialSettings,
+      productionLongTextLineCount: 6,
+    });
+    const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
+    const rowMarkup = getSettingRowMarkup(
+      inputScreenMarkup,
+      "production-long-text-line-count-setting",
+    );
+    const previewMarkup = getPreviewMarkup(markup);
+
+    expect(rowMarkup).toContain("長文モードの漢字文エリアの高さ");
+    expect(rowMarkup).toContain("本番（IMEなし）の漢字文を表示する行数");
+    expect(rowMarkup).toContain('aria-label="long text kanji area height"');
+    expect(rowMarkup).toContain('value="6"');
+    expect(rowMarkup).toContain("<span>行</span>");
+    expect(previewMarkup).toContain("--target-production-long-lines:6");
   });
 
   test("shows next challenge preview mode choices with split slide selected by default", () => {

@@ -79,3 +79,22 @@ export function getNextOrderedChallengeIndex(
 
   return getOrderedChallengeIndex(nextPosition, challengeCount, nextOrder);
 }
+
+export function getModeChallengeIndex(
+  _group: ModeGroup,
+  position: number,
+  challengeCount: number,
+  order: number[],
+) {
+  return getOrderedChallengeIndex(position, challengeCount, order);
+}
+
+export function getNextModeChallengeIndex(
+  _group: ModeGroup,
+  position: number,
+  challengeCount: number,
+  order: number[],
+  upcomingOrder: number[],
+) {
+  return getNextOrderedChallengeIndex(position, challengeCount, order, upcomingOrder);
+}

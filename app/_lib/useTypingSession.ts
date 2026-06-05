@@ -55,8 +55,8 @@ import {
   createShuffledIndexes,
   estimateImeKeystrokes,
   getDirectChallenges,
-  getNextOrderedChallengeIndex,
-  getOrderedChallengeIndex,
+  getModeChallengeIndex,
+  getNextModeChallengeIndex,
 } from "./challenge-utils";
 import type {
   AppSettings,
@@ -222,6 +222,9 @@ export function useTypingSession({
   const initialPracticeChallengeOrder = createOrderedIndexes(
     getDirectChallenges("ja", "practice").length,
   );
+  const initialProductionChallengeOrder = createOrderedIndexes(
+    getDirectChallenges("ja", "production").length,
+  );
   const [stored, setStored] = useState<StoredState>(getInitialStoredState);
   const [modeId, setModeId] = useState<ModeId>(initialModeId);
   const [screen, setScreen] = useState<Screen>(initialScreen);
@@ -233,6 +236,12 @@ export function useTypingSession({
   );
   const [nextPracticeChallengeOrder, setNextPracticeChallengeOrder] = useState(() =>
     initialPracticeChallengeOrder,
+  );
+  const [productionChallengeOrder, setProductionChallengeOrder] = useState(
+    () => initialProductionChallengeOrder,
+  );
+  const [nextProductionChallengeOrder, setNextProductionChallengeOrder] = useState(() =>
+    initialProductionChallengeOrder,
   );
   const [input, setInput] = useState("");
   const [stats, setStats] = useState<RuntimeStats>(initialStats);
@@ -256,10 +265,16 @@ export function useTypingSession({
   const remainingSeconds = durationSeconds - elapsedSeconds;
   const productionUnlocked = isProductionUnlocked(stored.bestPracticeScore);
   const directChallenges = getDirectChallenges(challengeLanguage, mode.group);
-  const directChallengeIndex =
-    mode.group === "practice"
-      ? getOrderedChallengeIndex(challengeIndex, directChallenges.length, practiceChallengeOrder)
-      : getOrderedChallengeIndex(challengeIndex, directChallenges.length, []);
+  const directChallengeOrder =
+    mode.group === "practice" ? practiceChallengeOrder : productionChallengeOrder;
+  const nextDirectChallengeOrder =
+    mode.group === "practice" ? nextPracticeChallengeOrder : nextProductionChallengeOrder;
+  const directChallengeIndex = getModeChallengeIndex(
+    mode.group,
+    challengeIndex,
+    directChallenges.length,
+    directChallengeOrder,
+  );
   const currentDirectChallenge =
     directChallenges[directChallengeIndex] ??
     ({
@@ -267,18 +282,16 @@ export function useTypingSession({
       guide: "",
       input: "",
     } satisfies DirectChallenge);
-  const nextDirectChallengeIndex =
-    mode.group === "practice"
-      ? getNextOrderedChallengeIndex(
-          challengeIndex,
-          directChallenges.length,
-          practiceChallengeOrder,
-          nextPracticeChallengeOrder,
-        )
-      : getOrderedChallengeIndex(challengeIndex + 1, directChallenges.length, []);
+  const nextDirectChallengeIndex = getNextModeChallengeIndex(
+    mode.group,
+    challengeIndex,
+    directChallenges.length,
+    directChallengeOrder,
+    nextDirectChallengeOrder,
+  );
   const nextDirectChallenge = directChallenges[nextDirectChallengeIndex] ?? null;
   const imeChallenges = challengeLanguage === "ja" ? longChallenges : englishLongChallenges;
-  const currentImeChallenge = imeChallenges[challengeIndex % imeChallenges.length] ?? "";
+  const currentImeChallenge = imeChallenges[directChallengeIndex] ?? "";
   const currentDirectGuideSource = currentDirectChallenge.guide ?? currentDirectChallenge.input;
   const currentDirectRomajiSource =
     currentDirectChallenge.romajiSource ?? currentDirectGuideSource;
@@ -312,13 +325,13 @@ export function useTypingSession({
   const currentFurigana =
     challengeLanguage === "ja"
       ? mode.requiresIme
-        ? (longChallengeFurigana[challengeIndex % longChallengeFurigana.length] ?? [])
+        ? (longChallengeFurigana[directChallengeIndex % longChallengeFurigana.length] ?? [])
         : (currentDirectChallenge.furigana ?? [])
       : [];
   const currentRawReading =
     challengeLanguage === "ja"
       ? mode.requiresIme
-        ? (longChallengeReadings[challengeIndex % longChallengeReadings.length] ?? "")
+        ? (longChallengeReadings[directChallengeIndex % longChallengeReadings.length] ?? "")
         : (currentDirectChallenge.reading ?? "")
       : "";
   const currentReading = currentRawReading;
@@ -346,6 +359,20 @@ export function useTypingSession({
     );
   }
 
+  function randomizeProductionChallengeOrder(language: ChallengeLanguage = challengeLanguage) {
+    const nextOrder = createShuffledIndexes(getDirectChallenges(language, "production").length);
+
+    setProductionChallengeOrder(nextOrder);
+    setNextProductionChallengeOrder(
+      createShuffledIndexes(nextOrder.length, Math.random, nextOrder.at(-1)),
+    );
+  }
+
+  function randomizeChallengeOrders(language: ChallengeLanguage = challengeLanguage) {
+    randomizePracticeChallengeOrder(language);
+    randomizeProductionChallengeOrder(language);
+  }
+
   function advanceChallenge() {
     const nextChallengeIndex = challengeIndex + 1;
 
@@ -360,20 +387,24 @@ export function useTypingSession({
         : null,
     );
 
-    if (
-      mode.group === "practice" &&
-      directChallenges.length > 0 &&
-      nextChallengeIndex % directChallenges.length === 0
-    ) {
+    if (directChallenges.length > 0 && nextChallengeIndex % directChallenges.length === 0) {
       const nextOrder =
-        nextPracticeChallengeOrder.length === directChallenges.length
-          ? nextPracticeChallengeOrder
+        nextDirectChallengeOrder.length === directChallenges.length
+          ? nextDirectChallengeOrder
           : createShuffledIndexes(directChallenges.length, Math.random, directChallengeIndex);
-
-      setPracticeChallengeOrder(nextOrder);
-      setNextPracticeChallengeOrder(
-        createShuffledIndexes(directChallenges.length, Math.random, nextOrder.at(-1)),
+      const upcomingOrder = createShuffledIndexes(
+        directChallenges.length,
+        Math.random,
+        nextOrder.at(-1),
       );
+
+      if (mode.group === "practice") {
+        setPracticeChallengeOrder(nextOrder);
+        setNextPracticeChallengeOrder(upcomingOrder);
+      } else {
+        setProductionChallengeOrder(nextOrder);
+        setNextProductionChallengeOrder(upcomingOrder);
+      }
     }
 
     setChallengeIndex(nextChallengeIndex);
@@ -517,7 +548,7 @@ export function useTypingSession({
     setInput("");
     setChallengeIndex(0);
     setPreviousDirectChallenge(null);
-    randomizePracticeChallengeOrder();
+    randomizeChallengeOrders();
     setStartedAt(null);
     setNow(Date.now());
     setIsFinished(false);
@@ -548,7 +579,7 @@ export function useTypingSession({
     setInput("");
     setChallengeIndex(0);
     setPreviousDirectChallenge(null);
-    randomizePracticeChallengeOrder(language);
+    randomizeChallengeOrders(language);
     setStartedAt(null);
     setNow(Date.now());
     setIsFinished(false);
@@ -931,6 +962,7 @@ export function useTypingSession({
       hiraganaMarginBottom: stored.settings.hiraganaMarginBottom,
       romajiLineHeight: stored.settings.romajiLineHeight,
       romajiMarginBottom: stored.settings.romajiMarginBottom,
+      productionLongTextLineCount: stored.settings.productionLongTextLineCount,
       soundSettings: stored.settings,
       startedAt,
       stats,

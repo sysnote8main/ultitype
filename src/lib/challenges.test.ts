@@ -11,17 +11,81 @@ import {
   parseJapaneseChallengeText,
 } from "./challenges";
 
-describe("plain text challenge data", () => {
-  test("parses English challenges as one sentence per line", () => {
-    expect(parseEnglishChallengeText("Alpha line.\n\nBeta line.\n")).toEqual([
+function shortChallengeText(body: string) {
+  return `---
+type: "ultitype_sentence_short"
+---
+
+${body}`;
+}
+
+function longChallengeText(body: string) {
+  return `---
+type: "ultitype_sentence_long"
+---
+
+${body}`;
+}
+
+describe("frontmatter challenge data", () => {
+  test("parses English short challenges as one sentence per line", () => {
+    expect(parseEnglishChallengeText(shortChallengeText("Alpha line.\n\nBeta line.\n"))).toEqual([
       "Alpha line.",
       "Beta line.",
     ]);
   });
 
+  test("parses English long challenges as blank-line separated paragraphs", () => {
+    expect(
+      parseEnglishChallengeText(
+        longChallengeText("Alpha line wraps\nonto the next line.\n\nBeta line."),
+      ),
+    ).toEqual(["Alpha line wraps onto the next line.", "Beta line."]);
+  });
+
+  test("parses Japanese long challenges by joining wrapped lines without spaces", () => {
+    expect(
+      parseJapaneseChallengeText(
+        longChallengeText(
+          "[入](にゅう)[力](りょく)する。\n[文](ぶん)[章](しょう)です。\n\n[別](べつ)の[文](ぶん)です。",
+        ),
+      ),
+    ).toEqual([
+      {
+        display: "入力する。文章です。",
+        furigana: [
+          { text: "入", ruby: "にゅう" },
+          { text: "力", ruby: "りょく" },
+          { text: "文", ruby: "ぶん" },
+          { text: "章", ruby: "しょう" },
+        ],
+        reading: "にゅうりょくする。ぶんしょうです。",
+      },
+      {
+        display: "別の文です。",
+        furigana: [
+          { text: "別", ruby: "べつ" },
+          { text: "文", ruby: "ぶん" },
+        ],
+        reading: "べつのぶんです。",
+      },
+    ]);
+  });
+
+  test("rejects missing or unsupported challenge frontmatter", () => {
+    expect(() => parseEnglishChallengeText("Alpha line.")).toThrow("frontmatter");
+    expect(() =>
+      parseJapaneseChallengeText(`---
+type: "unknown"
+---
+
+[文](ぶん)です。`),
+    ).toThrow("Unsupported challenge data type");
+  });
+
   test("parses Japanese challenges as one annotated display line per challenge", () => {
     expect(
-      parseJapaneseChallengeText("[解](かい)[析](せき)[結](けっ)[果](か)を[見](み)る。\n"),
+      parseJapaneseChallengeText(shortChallengeText("[解](かい)[析](せき)[結](けっ)[果](か)を[見](み)る。\n")),
     ).toEqual([
       {
         display: "解析結果を見る。",
@@ -39,7 +103,7 @@ describe("plain text challenge data", () => {
 
   test("derives display, reading, and ruby groups from one annotated line", () => {
     expect(
-      parseJapaneseChallengeText("[結](けっ)[果](か)を[見](み)てから[今日](きょう)は[帰](かえ)る"),
+      parseJapaneseChallengeText(shortChallengeText("[結](けっ)[果](か)を[見](み)てから[今日](きょう)は[帰](かえ)る")),
     ).toEqual([
       {
         display: "結果を見てから今日は帰る",
@@ -56,7 +120,7 @@ describe("plain text challenge data", () => {
   });
 
   test("supports escaping markdown-style annotation characters", () => {
-    expect(parseJapaneseChallengeText("\\[Ctrl\\]\\(A\\)と[結](けっ)[果](か)")).toEqual([
+    expect(parseJapaneseChallengeText(shortChallengeText("\\[Ctrl\\]\\(A\\)と[結](けっ)[果](か)"))).toEqual([
       {
         display: "[Ctrl](A)と結果",
         furigana: [
@@ -69,13 +133,13 @@ describe("plain text challenge data", () => {
   });
 
   test("requires unescaped kanji to have ruby annotations", () => {
-    expect(() => parseJapaneseChallengeText("解析結果を見る。")).toThrow(
+    expect(() => parseJapaneseChallengeText(shortChallengeText("解析結果を見る。"))).toThrow(
       "unannotated kanji requires ruby annotation",
     );
   });
 
   test("keeps okurigana sokuon out of ruby annotations", () => {
-    expect(parseJapaneseChallengeText("[保](たも)った[姿](すがた)が[揃](そろ)った")).toEqual([
+    expect(parseJapaneseChallengeText(shortChallengeText("[保](たも)った[姿](すがた)が[揃](そろ)った"))).toEqual([
       {
         display: "保った姿が揃った",
         furigana: [
@@ -89,10 +153,10 @@ describe("plain text challenge data", () => {
   });
 
   test("rejects generated ruby annotations that duplicate okurigana sokuon", () => {
-    expect(() => parseJapaneseChallengeText("[保](たもっ)った")).toThrow(
+    expect(() => parseJapaneseChallengeText(shortChallengeText("[保](たもっ)った"))).toThrow(
       "ruby text must not duplicate okurigana sokuon",
     );
-    expect(() => parseJapaneseChallengeText("[揃](そろっ)った")).toThrow(
+    expect(() => parseJapaneseChallengeText(shortChallengeText("[揃](そろっ)った"))).toThrow(
       "ruby text must not duplicate okurigana sokuon",
     );
   });
@@ -187,6 +251,7 @@ describe("plain text challenge data", () => {
 describe("direct short challenges", () => {
   test("show Japanese prompts and do not leak generated control labels", () => {
     expect(directShortChallenges).toHaveLength(50);
+    expect(directLongChallenges).toHaveLength(20);
     expect(directShortChallenges[0].display).toContain("解析結果");
     expect(directShortChallenges[0].furigana).toContainEqual({ text: "結", ruby: "けっ" });
     expect(directShortChallenges[0].furigana).toContainEqual({ text: "果", ruby: "か" });
@@ -204,21 +269,32 @@ describe("direct short challenges", () => {
 describe("direct Japanese challenge romaji", () => {
   test("normalizes Japanese punctuation to half-width romaji symbols", () => {
     const [challenge] = createJapaneseDirectChallenges(
-      parseJapaneseChallengeText("ティータイム・じゃ～っ！"),
+      parseJapaneseChallengeText(shortChallengeText("ティータイム・じゃ～っ！")),
     );
 
     expect(challenge?.reading).toBe("てぃーたいむ・じゃ～っ！");
-    expect(challenge?.romajiSource).toBe("thiーtaimu･ja~^!");
-    expect(challenge?.guide).toBe("thiーtaimu･ja~xtu!");
-    expect(challenge?.input).toBe("thiーtaimu･ja~xtu!");
+    expect(challenge?.romajiSource).toBe("thi-taimu･ja~^!");
+    expect(challenge?.guide).toBe("thi-taimu･ja~xtu!");
+    expect(challenge?.input).toBe("thi-taimu･ja~xtu!");
     expect(challenge?.input).not.toContain("・");
     expect(challenge?.input).not.toContain("～");
     expect(challenge?.input).not.toContain("！");
+    expect(challenge?.input).not.toContain("ー");
+  });
+
+  test("maps long vowel marks in production prompts to hyphen input", () => {
+    const challenge = directLongChallenges.find((item) => item.display.startsWith("レーティングは"));
+
+    expect(challenge?.reading).toStartWith("れーてぃんぐは");
+    expect(challenge?.romajiSource).toStartWith("re-thinguha");
+    expect(challenge?.guide).toStartWith("re-thinguha");
+    expect(challenge?.input).toStartWith("re-thinguha");
+    expect(challenge?.input).not.toContain("ー");
   });
 
   test("maps ヴァ行 katakana readings to va vi vu ve vo", () => {
     const [challenge] = createJapaneseDirectChallenges(
-      parseJapaneseChallengeText("ヴァヴィヴヴェヴォ"),
+      parseJapaneseChallengeText(shortChallengeText("ヴァヴィヴヴェヴォ")),
     );
 
     expect(challenge?.reading).toBe("ゔぁゔぃゔゔぇゔぉ");

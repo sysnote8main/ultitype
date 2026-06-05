@@ -187,6 +187,31 @@ describe("stored state persistence", () => {
     expect(stored.settings.romajiMarginBottom).toBe(0);
   });
 
+  test("fills and clamps the production long text line count when loading stored state", () => {
+    const migrated = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        productionLongTextLineCount: undefined,
+      },
+    });
+    const clampedLow = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        productionLongTextLineCount: 1,
+      },
+    });
+    const clampedHigh = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        productionLongTextLineCount: 99,
+      },
+    });
+
+    expect(migrated.settings.productionLongTextLineCount).toBe(5);
+    expect(clampedLow.settings.productionLongTextLineCount).toBe(3);
+    expect(clampedHigh.settings.productionLongTextLineCount).toBe(12);
+  });
+
   test("turns furigana display off when kanji display is off in stored settings", () => {
     const stored = normalizeStoredState({
       settings: {

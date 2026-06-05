@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   createOrderedIndexes,
   createShuffledIndexes,
+  getModeChallengeIndex,
+  getNextModeChallengeIndex,
   getNextOrderedChallengeIndex,
   getOrderedChallengeIndex,
 } from "./challenge-utils";
@@ -42,5 +44,13 @@ describe("practice challenge order", () => {
 
     expect(getNextOrderedChallengeIndex(0, 3, currentOrder, upcomingOrder)).toBe(0);
     expect(getNextOrderedChallengeIndex(2, 3, currentOrder, upcomingOrder)).toBe(0);
+  });
+
+  test("uses shuffled order for production challenge indexes too", () => {
+    const order = [2, 0, 1];
+    const upcomingOrder = [1, 2, 0];
+
+    expect(getModeChallengeIndex("production", 0, 3, order)).toBe(2);
+    expect(getNextModeChallengeIndex("production", 2, 3, order, upcomingOrder)).toBe(1);
   });
 });

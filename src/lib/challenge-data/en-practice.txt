@@ -1,3 +1,7 @@
+---
+type: "ultitype_sentence_short"
+---
+
 Stable rhythm reduces recovery cost after every mistake.
 Accuracy under pressure is measured by the next decision.
 Fast typing depends on vision, posture, and relaxed fingers.

@@ -110,6 +110,7 @@ type TypingPanelProps = {
   hiraganaMarginBottom: number;
   romajiLineHeight: number;
   romajiMarginBottom: number;
+  productionLongTextLineCount: number;
   soundSettings: SoundSettings;
   startedAt: number | null;
   stats: RuntimeStats;
@@ -182,6 +183,7 @@ export function TypingPanel({
   hiraganaMarginBottom,
   romajiLineHeight,
   romajiMarginBottom,
+  productionLongTextLineCount,
   soundSettings,
   startedAt,
   stats,
@@ -229,6 +231,7 @@ export function TypingPanel({
     "--target-hiragana-margin-bottom": `${hiraganaMarginBottom}px`,
     "--target-romaji-line-height": `${romajiLineHeight}`,
     "--target-romaji-margin-bottom": `${romajiMarginBottom}px`,
+    "--target-production-long-lines": `${productionLongTextLineCount}`,
   } as CSSProperties;
 
   function handleBackToModeSelect() {
@@ -353,6 +356,7 @@ export function TypingPanel({
                 showKanjiMarker={showKanjiMarker}
                 showRomajiMarker={showRomajiMarker}
                 showDisplayText={showDisplayText}
+                isProductionDirect={mode.group === "production"}
                 currentChallengeLane={stats.completedPrompts % 2 === 0 ? "top" : "bottom"}
                 completedPrompts={stats.completedPrompts}
                 strictMistakeDisplayMode={strictMistakeDisplayMode}
@@ -785,6 +789,7 @@ function DirectChallengeView({
   showHiraganaDisplay,
   showHiraganaMarker,
   showDisplayText,
+  isProductionDirect,
   currentChallengeLane,
   completedPrompts,
   showKanjiMarker,
@@ -815,6 +820,7 @@ function DirectChallengeView({
   showHiraganaDisplay: boolean;
   showHiraganaMarker: boolean;
   showDisplayText: boolean;
+  isProductionDirect: boolean;
   currentChallengeLane: "top" | "bottom";
   completedPrompts: number;
   showKanjiMarker: boolean;
@@ -864,6 +870,38 @@ function DirectChallengeView({
       strictMistakeInput=""
     />
   );
+
+  if (isProductionDirect) {
+    return (
+      <ProductionDirectChallengeView
+        display={display}
+        furigana={furigana}
+        guide={guide}
+        input={input}
+        mistakeFlash={mistakeFlash}
+        nextChallengeDisplay={nextChallengeDisplay}
+        nextChallengeFurigana={nextChallengeFurigana}
+        nextChallengeGuide={nextChallengeRomajiTarget?.guide ?? nextChallengeGuide}
+        nextChallengePreviewMode={nextChallengePreviewMode}
+        nextChallengeReading={nextChallengeReading}
+        nextChallengeRomajiTarget={nextChallengeRomajiTarget}
+        completedPrompts={completedPrompts}
+        previousChallengeGuide={previousChallengeGuide}
+        previousChallengeReading={previousChallengeReading}
+        reading={reading}
+        romajiTarget={romajiTarget}
+        showDisplayText={showDisplayText}
+        showFuriganaDisplay={showFuriganaDisplay}
+        showFuriganaMarker={showFuriganaMarker}
+        showHiraganaDisplay={showHiraganaDisplay}
+        showHiraganaMarker={showHiraganaMarker}
+        showKanjiMarker={showKanjiMarker}
+        showRomajiMarker={showRomajiMarker}
+        strictMistakeDisplayMode={strictMistakeDisplayMode}
+        strictMistakeInput={strictMistakeInput}
+      />
+    );
+  }
 
   if (!nextChallengePreview || nextChallengePreviewMode === "none") {
     return challengeContent;
@@ -949,6 +987,871 @@ function NextChallengePreviewLane({
         {nextChallengeContent}
     </div>
   );
+}
+
+function ProductionDirectChallengeView({
+  display,
+  furigana,
+  guide,
+  input,
+  mistakeFlash,
+  nextChallengeDisplay,
+  nextChallengeFurigana,
+  nextChallengeGuide,
+  nextChallengePreviewMode,
+  nextChallengeReading,
+  nextChallengeRomajiTarget,
+  completedPrompts,
+  previousChallengeGuide,
+  previousChallengeReading,
+  reading,
+  romajiTarget,
+  showDisplayText,
+  showFuriganaDisplay,
+  showFuriganaMarker,
+  showHiraganaDisplay,
+  showHiraganaMarker,
+  showKanjiMarker,
+  showRomajiMarker,
+  strictMistakeDisplayMode,
+  strictMistakeInput,
+}: {
+  display: string;
+  furigana: JapaneseFuriganaEntry[];
+  guide: string;
+  input: string;
+  mistakeFlash: MistakeFlash | null;
+  nextChallengeDisplay: string;
+  nextChallengeFurigana: JapaneseFuriganaEntry[];
+  nextChallengeGuide: string;
+  nextChallengePreviewMode: NextChallengePreviewMode;
+  nextChallengeReading: string;
+  nextChallengeRomajiTarget: RomajiInputTarget | null;
+  completedPrompts: number;
+  previousChallengeGuide: string;
+  previousChallengeReading: string;
+  reading: string;
+  romajiTarget: RomajiInputTarget | null;
+  showDisplayText: boolean;
+  showFuriganaDisplay: boolean;
+  showFuriganaMarker: boolean;
+  showHiraganaDisplay: boolean;
+  showHiraganaMarker: boolean;
+  showKanjiMarker: boolean;
+  showRomajiMarker: boolean;
+  strictMistakeDisplayMode: StrictMistakeDisplayMode;
+  strictMistakeInput: string;
+}) {
+  return (
+    <div className="production-direct-layout">
+      {showDisplayText ? (
+        <ProductionLongDisplay
+          display={display}
+          furigana={furigana}
+          input={input}
+          nextChallengeDisplay={nextChallengeDisplay}
+          nextChallengeFurigana={nextChallengeFurigana}
+          romajiTarget={romajiTarget}
+          showFurigana={showFuriganaDisplay}
+          showFuriganaMarker={showFuriganaMarker}
+          showKanjiMarker={showKanjiMarker}
+        />
+      ) : null}
+      {nextChallengePreviewMode === "center-scroll" ? (
+        <div className="challenge-preview-layout center-scroll production-direct-inputs">
+          <ContinuousChallengeTextStack
+            display=""
+            furigana={[]}
+            guide={guide}
+            input={input}
+            mistakeFlash={mistakeFlash}
+            nextChallengeDisplay=""
+            nextChallengeFurigana={[]}
+            nextChallengeGuide={nextChallengeGuide}
+            nextChallengeReading={nextChallengeReading}
+            previousChallengeDisplay=""
+            previousChallengeFurigana={[]}
+            previousChallengeGuide={previousChallengeGuide}
+            previousChallengeReading={previousChallengeReading}
+            reading={reading}
+            romajiTarget={romajiTarget}
+            showDisplayText={false}
+            showFuriganaDisplay={false}
+            showFuriganaMarker={false}
+            showHiraganaDisplay={showHiraganaDisplay}
+            showHiraganaMarker={showHiraganaMarker}
+            showKanjiMarker={false}
+            showRomajiMarker={showRomajiMarker}
+            startsAtLeft={completedPrompts === 0}
+            strictMistakeDisplayMode={strictMistakeDisplayMode}
+            strictMistakeInput={strictMistakeInput}
+          />
+        </div>
+      ) : (
+        <ProductionSegmentedInputStack
+          guide={guide}
+          input={input}
+          mistakeFlash={mistakeFlash}
+          nextChallengeGuide={nextChallengeGuide}
+          nextChallengeReading={nextChallengeReading}
+          nextChallengeRomajiTarget={nextChallengeRomajiTarget}
+          previewMode={nextChallengePreviewMode}
+          reading={reading}
+          romajiTarget={romajiTarget}
+          showHiraganaDisplay={showHiraganaDisplay}
+          showHiraganaMarker={showHiraganaMarker}
+          showRomajiMarker={showRomajiMarker}
+          strictMistakeDisplayMode={strictMistakeDisplayMode}
+          strictMistakeInput={strictMistakeInput}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductionLongDisplay({
+  display,
+  furigana,
+  input,
+  nextChallengeDisplay,
+  nextChallengeFurigana,
+  romajiTarget,
+  showFurigana,
+  showFuriganaMarker,
+  showKanjiMarker,
+}: {
+  display: string;
+  furigana: JapaneseFuriganaEntry[];
+  input: string;
+  nextChallengeDisplay: string;
+  nextChallengeFurigana: JapaneseFuriganaEntry[];
+  romajiTarget: RomajiInputTarget | null;
+  showFurigana: boolean;
+  showFuriganaMarker: boolean;
+  showKanjiMarker: boolean;
+}) {
+  const markerProgress = romajiTarget ? getRomajiInputProgress(romajiTarget, input) : null;
+  const markerKey = `${markerProgress?.currentTokenIndex ?? 0}-${markerProgress?.completedTokens ?? 0}`;
+  const { bodyRef, scrollLines } = useProductionLongBodyScroll(markerKey);
+  const scrollStyle = {
+    "--production-long-scroll-lines": `${scrollLines}`,
+  } as CSSProperties;
+
+  return (
+    <div className="production-long-body" ref={bodyRef}>
+      <div className="production-long-scroll-content" style={scrollStyle}>
+        <ProductionLongDisplayText
+          display={display}
+          furigana={furigana}
+          markerProgress={showKanjiMarker || showFuriganaMarker ? markerProgress : null}
+          scrollMarkerProgress={markerProgress}
+          showFurigana={showFurigana}
+          showFuriganaMarker={showFuriganaMarker}
+          showKanjiMarker={showKanjiMarker}
+        />
+        {nextChallengeDisplay ? (
+          <div className="production-long-next-spacer">
+            <ProductionLongDisplayText
+              display={nextChallengeDisplay}
+              furigana={nextChallengeFurigana}
+              markerProgress={null}
+              scrollMarkerProgress={null}
+              showFurigana={showFurigana}
+              showFuriganaMarker={false}
+              showKanjiMarker={false}
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function useProductionLongBodyScroll(markerKey: string) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const [scrollLines, setScrollLines] = useState(0);
+
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!body) {
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+
+    const updateScrollLines = () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      animationFrameId = window.requestAnimationFrame(() => {
+        const content = body.querySelector<HTMLElement>(".production-long-scroll-content");
+        const textLine = content?.querySelector<HTMLElement>(".production-long-display-text");
+        const marker = content?.querySelector<HTMLElement>(".production-long-scroll-target");
+
+        if (!content || !textLine || !marker) {
+          setScrollLines(0);
+          animationFrameId = null;
+          return;
+        }
+
+        const lineHeight = getProductionLongLineHeight(textLine);
+        const markerTop = marker.getBoundingClientRect().top - content.getBoundingClientRect().top;
+        const nextScrollLines = calculateProductionLongScrollLines(markerTop, lineHeight);
+        setScrollLines((current) => (current === nextScrollLines ? current : nextScrollLines));
+        animationFrameId = null;
+      });
+    };
+
+    updateScrollLines();
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateScrollLines);
+    const content = body.querySelector<HTMLElement>(".production-long-scroll-content");
+    resizeObserver?.observe(body);
+    if (content) {
+      resizeObserver?.observe(content);
+    }
+    window.addEventListener("resize", updateScrollLines);
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateScrollLines);
+    };
+  }, [markerKey]);
+
+  return { bodyRef, scrollLines };
+}
+
+function getProductionLongLineHeight(element: HTMLElement) {
+  const style = window.getComputedStyle(element);
+  const lineHeight = Number.parseFloat(style.lineHeight);
+  if (Number.isFinite(lineHeight) && lineHeight > 0) {
+    return lineHeight;
+  }
+
+  const fontSize = Number.parseFloat(style.fontSize);
+  return Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.45 : 0;
+}
+
+export function calculateProductionLongScrollLines(markerTop: number, lineHeight: number) {
+  if (!Number.isFinite(markerTop) || !Number.isFinite(lineHeight) || markerTop <= 0 || lineHeight <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(markerTop / lineHeight));
+}
+
+function ProductionLongDisplayText({
+  display,
+  furigana,
+  markerProgress,
+  scrollMarkerProgress,
+  showFurigana,
+  showFuriganaMarker,
+  showKanjiMarker,
+}: {
+  display: string;
+  furigana: JapaneseFuriganaEntry[];
+  markerProgress: { completedTokens: number; currentTokenIndex: number } | null;
+  scrollMarkerProgress: { completedTokens: number; currentTokenIndex: number } | null;
+  showFurigana: boolean;
+  showFuriganaMarker: boolean;
+  showKanjiMarker: boolean;
+}) {
+  if (furigana.length === 0) {
+    return <p className="display-text production-long-display-text">{display}</p>;
+  }
+
+  let tokenStart = 0;
+
+  return (
+    <p className="display-text production-long-display-text">
+      {createJapaneseFuriganaParts(display, furigana).map((part, index) => {
+        const partTokenStart = tokenStart;
+        const tokenCount = countJapaneseReadingTokens(part.ruby ?? part.text);
+        const tokenEnd = tokenStart + tokenCount;
+        tokenStart = tokenEnd;
+        const isScrollTarget = shouldPlaceProductionLongScrollTarget(
+          scrollMarkerProgress,
+          partTokenStart,
+          tokenEnd,
+        );
+
+        if (part.ruby && showFurigana) {
+          const rubyClassName = getDisplayMarkerClassName(
+            "display-ruby",
+            showKanjiMarker,
+            markerProgress,
+            partTokenStart,
+            tokenEnd,
+          );
+          const rubyText =
+            showFuriganaMarker && markerProgress !== null
+              ? renderFuriganaMarkerCharacters(
+                  part.ruby,
+                  partTokenStart,
+                  markerProgress.completedTokens,
+                  markerProgress.currentTokenIndex,
+                )
+              : part.ruby;
+
+          return (
+            <span
+              className={isScrollTarget ? "production-long-scroll-target" : undefined}
+              key={`production-display-ruby-wrapper-${part.text}-${index}`}
+            >
+              <ruby className={rubyClassName}>
+                {part.text}
+                <rt>{rubyText}</rt>
+              </ruby>
+            </span>
+          );
+        }
+
+        if (showKanjiMarker && markerProgress !== null) {
+          return (
+            <span
+              className={isScrollTarget ? "production-long-scroll-target" : undefined}
+              key={`production-display-marker-wrapper-${part.text}-${index}`}
+            >
+              {renderDisplayMarkerCharacters(
+                part.text,
+                partTokenStart,
+                markerProgress.completedTokens,
+                markerProgress.currentTokenIndex,
+                `production-display-${index}`,
+              )}
+            </span>
+          );
+        }
+
+        return (
+          <span
+            className={isScrollTarget ? "display-plain production-long-scroll-target" : "display-plain"}
+            key={`production-display-plain-${part.text}-${index}`}
+          >
+            {part.text}
+          </span>
+        );
+      })}
+    </p>
+  );
+}
+
+function shouldPlaceProductionLongScrollTarget(
+  markerProgress: { completedTokens: number; currentTokenIndex: number } | null,
+  tokenStart: number,
+  tokenEnd: number,
+) {
+  return (
+    markerProgress !== null &&
+    tokenStart <= markerProgress.currentTokenIndex &&
+    markerProgress.currentTokenIndex < tokenEnd
+  );
+}
+
+type ProductionTextSegment = {
+  text: string;
+  tokenStart: number;
+  tokenEnd: number;
+};
+
+function ProductionSegmentedInputStack({
+  guide,
+  input,
+  mistakeFlash,
+  nextChallengeGuide,
+  nextChallengeReading,
+  nextChallengeRomajiTarget,
+  previewMode,
+  reading,
+  romajiTarget,
+  showHiraganaDisplay,
+  showHiraganaMarker,
+  showRomajiMarker,
+  strictMistakeDisplayMode,
+  strictMistakeInput,
+}: {
+  guide: string;
+  input: string;
+  mistakeFlash: MistakeFlash | null;
+  nextChallengeGuide: string;
+  nextChallengeReading: string;
+  nextChallengeRomajiTarget: RomajiInputTarget | null;
+  previewMode: NextChallengePreviewMode;
+  reading: string;
+  romajiTarget: RomajiInputTarget | null;
+  showHiraganaDisplay: boolean;
+  showHiraganaMarker: boolean;
+  showRomajiMarker: boolean;
+  strictMistakeDisplayMode: StrictMistakeDisplayMode;
+  strictMistakeInput: string;
+}) {
+  const readingSegments = createReadingPunctuationSegments(reading);
+  const guideSegments = createRomajiPunctuationSegments(romajiTarget, guide);
+  const currentTokenIndex = romajiTarget
+    ? getRomajiInputProgress(romajiTarget, input).currentTokenIndex
+    : Array.from(input).length;
+  const activeIndex = getActiveProductionSegmentIndex(guideSegments, currentTokenIndex);
+  const nextReadingSegments = createReadingPunctuationSegments(nextChallengeReading);
+  const nextGuideSegments = createRomajiPunctuationSegments(nextChallengeRomajiTarget, nextChallengeGuide);
+  const currentSegment = {
+    reading: readingSegments[activeIndex] ?? createFallbackSegment(reading),
+    guide: guideSegments[activeIndex] ?? createFallbackSegment(guide),
+  };
+  const nextSegment = {
+    reading:
+      readingSegments[activeIndex + 1] ??
+      nextReadingSegments[0] ??
+      createFallbackSegment(nextChallengeReading),
+    guide:
+      guideSegments[activeIndex + 1] ??
+      nextGuideSegments[0] ??
+      createFallbackSegment(nextChallengeGuide),
+  };
+  const currentLane = previewMode === "split-alternate" && activeIndex % 2 === 1 ? "bottom" : "top";
+  const nextLane = currentLane === "top" ? "bottom" : "top";
+  const currentContent = (
+    <ProductionSegmentLaneContent
+      guideSegment={currentSegment.guide}
+      input={input}
+      isCurrent
+      mistakeFlash={mistakeFlash}
+      reading={reading}
+      readingSegment={currentSegment.reading}
+      romajiTarget={romajiTarget}
+      showHiraganaDisplay={showHiraganaDisplay}
+      showHiraganaMarker={showHiraganaMarker}
+      showRomajiMarker={showRomajiMarker}
+      strictMistakeDisplayMode={strictMistakeDisplayMode}
+      strictMistakeInput={strictMistakeInput}
+    />
+  );
+  const nextContent = (
+    <ProductionSegmentLaneContent
+      guideSegment={nextSegment.guide}
+      input=""
+      isCurrent={false}
+      mistakeFlash={null}
+      reading={
+        readingSegments[activeIndex + 1] ? reading : nextChallengeReading
+      }
+      readingSegment={nextSegment.reading}
+      romajiTarget={guideSegments[activeIndex + 1] ? romajiTarget : nextChallengeRomajiTarget}
+      showHiraganaDisplay={showHiraganaDisplay}
+      showHiraganaMarker={false}
+      showRomajiMarker={false}
+      strictMistakeDisplayMode="none"
+      strictMistakeInput=""
+    />
+  );
+
+  if (previewMode === "none") {
+    return (
+      <div className="production-segmented-stack">
+        <div className="challenge-preview-lane current-lane top-lane active-lane">
+          {currentContent}
+        </div>
+      </div>
+    );
+  }
+
+  const currentLaneContent = (
+    <div className={`challenge-preview-lane current-lane ${currentLane}-lane active-lane`}>
+      {currentContent}
+    </div>
+  );
+  const nextLaneContent = (
+    <div className={`challenge-preview-lane next-lane ${nextLane}-lane`}>
+      {nextContent}
+    </div>
+  );
+
+  return (
+    <div className={`production-segmented-stack ${previewMode}`}>
+      {currentLane === "top" ? currentLaneContent : nextLaneContent}
+      <div className="challenge-preview-separator" aria-hidden="true" />
+      {currentLane === "top" ? nextLaneContent : currentLaneContent}
+    </div>
+  );
+}
+
+function ProductionSegmentLaneContent({
+  guideSegment,
+  input,
+  isCurrent,
+  mistakeFlash,
+  reading,
+  readingSegment,
+  romajiTarget,
+  showHiraganaDisplay,
+  showHiraganaMarker,
+  showRomajiMarker,
+  strictMistakeDisplayMode,
+  strictMistakeInput,
+}: {
+  guideSegment: ProductionTextSegment;
+  input: string;
+  isCurrent: boolean;
+  mistakeFlash: MistakeFlash | null;
+  reading: string;
+  readingSegment: ProductionTextSegment;
+  romajiTarget: RomajiInputTarget | null;
+  showHiraganaDisplay: boolean;
+  showHiraganaMarker: boolean;
+  showRomajiMarker: boolean;
+  strictMistakeDisplayMode: StrictMistakeDisplayMode;
+  strictMistakeInput: string;
+}) {
+  return (
+    <>
+      {showHiraganaDisplay && readingSegment.text ? (
+        <p className="reading-text">
+          {isCurrent && romajiTarget
+            ? renderReadingGuideSegmentCharacters(
+                reading,
+                readingSegment,
+                romajiTarget,
+                input,
+                mistakeFlash,
+                showHiraganaMarker,
+              )
+            : renderPlainSegmentCharacters(readingSegment.text)}
+        </p>
+      ) : null}
+      <p className="input-target" aria-label="romaji input target">
+        {isCurrent && romajiTarget
+          ? renderRomajiGuideSegmentCharacters(
+              romajiTarget,
+              guideSegment,
+              input,
+              mistakeFlash,
+              strictMistakeInput,
+              strictMistakeDisplayMode,
+              showRomajiMarker,
+            )
+          : renderPlainSegmentCharacters(guideSegment.text)}
+      </p>
+    </>
+  );
+}
+
+function createFallbackSegment(text: string): ProductionTextSegment {
+  return {
+    text,
+    tokenStart: 0,
+    tokenEnd: Math.max(0, Array.from(text).length),
+  };
+}
+
+function createReadingPunctuationSegments(reading: string): ProductionTextSegment[] {
+  const parts = createJapaneseReadingGuideParts(reading);
+  const segments: ProductionTextSegment[] = [];
+  let text = "";
+  let tokenStart: number | null = null;
+  let tokenEnd = 0;
+
+  parts.forEach((part) => {
+    if (part.kind === "reading") {
+      tokenStart ??= part.tokenStart;
+      tokenEnd = part.tokenEnd;
+    }
+
+    text += part.text;
+
+    if (isProductionSegmentPunctuation(part.text)) {
+      segments.push({
+        text,
+        tokenStart: tokenStart ?? tokenEnd,
+        tokenEnd,
+      });
+      text = "";
+      tokenStart = null;
+    }
+  });
+
+  if (text) {
+    segments.push({
+      text,
+      tokenStart: tokenStart ?? tokenEnd,
+      tokenEnd,
+    });
+  }
+
+  return segments.length > 0 ? segments : [createFallbackSegment(reading)];
+}
+
+function createRomajiPunctuationSegments(
+  target: RomajiInputTarget | null,
+  guide: string,
+): ProductionTextSegment[] {
+  if (!target) {
+    return splitPlainTextPunctuationSegments(guide);
+  }
+
+  const segments: ProductionTextSegment[] = [];
+  let text = "";
+  let tokenStart: number | null = null;
+  let tokenEnd = 0;
+
+  target.parts.forEach((part) => {
+    if (part.kind === "input") {
+      tokenStart ??= part.tokenIndex;
+      tokenEnd = part.tokenIndex + 1;
+    }
+
+    text += part.text;
+
+    if (isProductionSegmentPunctuation(part.text)) {
+      segments.push({
+        text,
+        tokenStart: tokenStart ?? tokenEnd,
+        tokenEnd,
+      });
+      text = "";
+      tokenStart = null;
+    }
+  });
+
+  if (text) {
+    segments.push({
+      text,
+      tokenStart: tokenStart ?? tokenEnd,
+      tokenEnd,
+    });
+  }
+
+  return segments.length > 0 ? segments : [createFallbackSegment(guide)];
+}
+
+function splitPlainTextPunctuationSegments(text: string): ProductionTextSegment[] {
+  const segments: ProductionTextSegment[] = [];
+  let segment = "";
+  let tokenStart = 0;
+  let tokenEnd = 0;
+
+  Array.from(text).forEach((character) => {
+    segment += character;
+    tokenEnd += 1;
+    if (isProductionSegmentPunctuation(character)) {
+      segments.push({ text: segment, tokenStart, tokenEnd });
+      segment = "";
+      tokenStart = tokenEnd;
+    }
+  });
+
+  if (segment) {
+    segments.push({ text: segment, tokenStart, tokenEnd });
+  }
+
+  return segments.length > 0 ? segments : [createFallbackSegment(text)];
+}
+
+function getActiveProductionSegmentIndex(
+  segments: ProductionTextSegment[],
+  currentTokenIndex: number,
+) {
+  const activeIndex = segments.findIndex(
+    (segment) =>
+      segment.tokenStart <= currentTokenIndex && currentTokenIndex < segment.tokenEnd,
+  );
+
+  if (activeIndex >= 0) {
+    return activeIndex;
+  }
+
+  if (segments.length === 0) {
+    return 0;
+  }
+
+  return currentTokenIndex >= (segments.at(-1)?.tokenEnd ?? 0) ? segments.length - 1 : 0;
+}
+
+function isProductionSegmentPunctuation(text: string) {
+  return /[、。,.!?！？]/u.test(text);
+}
+
+function renderPlainSegmentCharacters(text: string) {
+  return Array.from(text).map((character, index) => (
+    <span className="char" key={`segment-plain-${character}-${index}`}>
+      {character}
+    </span>
+  ));
+}
+
+function renderReadingGuideSegmentCharacters(
+  reading: string,
+  segment: ProductionTextSegment,
+  target: RomajiInputTarget,
+  input: string,
+  mistakeFlash: MistakeFlash | null,
+  showMarker: boolean,
+) {
+  const progress = getRomajiInputProgress(target, input);
+  const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
+
+  return createJapaneseReadingGuideParts(reading)
+    .filter(
+      (part) =>
+        part.kind === "visual" ||
+        (segment.tokenStart <= part.tokenStart && part.tokenEnd <= segment.tokenEnd),
+    )
+    .map((part, partIndex) => {
+      if (part.kind === "visual") {
+        return (
+          <span className="visual-space" key={`segment-reading-space-${partIndex}`} aria-hidden="true">
+            {part.text}
+          </span>
+        );
+      }
+
+      const isCompleted = part.tokenEnd <= progress.completedTokens;
+      const isCurrent =
+        part.tokenStart <= progress.currentTokenIndex &&
+        progress.currentTokenIndex < part.tokenEnd;
+      const isMistakeFlash = flashTokenIndex !== null && isCurrent && !isCompleted;
+      const className = isCompleted
+        ? "char correct"
+        : isCurrent && showMarker
+          ? "char current"
+          : "char";
+      const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+      const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
+
+      return (
+        <span
+          className={flashClassName}
+          key={`segment-reading-${part.tokenStart}-${part.text}-${partIndex}-${flashKey}`}
+        >
+          {part.text}
+        </span>
+      );
+    });
+}
+
+function renderRomajiGuideSegmentCharacters(
+  target: RomajiInputTarget,
+  segment: ProductionTextSegment,
+  input: string,
+  mistakeFlash: MistakeFlash | null,
+  strictMistakeInput: string,
+  strictMistakeDisplayMode: StrictMistakeDisplayMode,
+  showMarker: boolean,
+) {
+  const progress = getRomajiInputProgress(target, input);
+  const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
+  const flashCharacterIndex =
+    mistakeFlash && progress.currentOption ? progress.currentOptionOffset : 0;
+  const mistakeCharacters = getVisibleStrictMistakeCharacters(
+    strictMistakeInput,
+    strictMistakeDisplayMode,
+  );
+  const elements: ReactNode[] = [];
+  let inputCharacterIndex = 0;
+  let insertedMistakes = false;
+
+  target.parts.forEach((part, partIndex) => {
+    if (part.kind === "visual") {
+      if (segment.text.includes(part.text)) {
+        elements.push(
+          <span className="visual-space" key={`segment-romaji-space-${partIndex}`} aria-hidden="true">
+            {part.text}
+          </span>,
+        );
+      }
+      return;
+    }
+
+    const text =
+      progress.currentTokenIndex === part.tokenIndex && progress.currentOption
+        ? progress.currentOption
+        : (progress.selectedOptions[part.tokenIndex] ?? part.text);
+    const isInSegment = segment.tokenStart <= part.tokenIndex && part.tokenIndex < segment.tokenEnd;
+
+    Array.from(text).forEach((character, characterIndex) => {
+      if (!isInSegment) {
+        inputCharacterIndex += 1;
+        return;
+      }
+
+      if (
+        strictMistakeDisplayMode === "insert" &&
+        !insertedMistakes &&
+        inputCharacterIndex === input.length
+      ) {
+        elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "segment-romaji-insert"));
+        insertedMistakes = true;
+      }
+
+      const overwriteMistake = getOverwriteMistakeCharacter(
+        mistakeCharacters,
+        inputCharacterIndex,
+        input.length,
+        strictMistakeDisplayMode,
+      );
+      if (overwriteMistake) {
+        elements.push(
+          <span
+            className="char wrong"
+            key={`segment-romaji-overwrite-${part.tokenIndex}-${characterIndex}`}
+          >
+            {overwriteMistake}
+          </span>,
+        );
+        inputCharacterIndex += 1;
+        return;
+      }
+
+      const isCompletedToken = part.tokenIndex < progress.completedTokens;
+      const isCurrentToken = part.tokenIndex === progress.currentTokenIndex;
+      const isTypedCurrentCharacter =
+        isCurrentToken &&
+        progress.currentOption !== null &&
+        characterIndex < progress.currentOptionOffset;
+      const isMistakeFlash =
+        flashTokenIndex === part.tokenIndex &&
+        characterIndex === flashCharacterIndex &&
+        !isTypedCurrentCharacter;
+      const className = isCompletedToken
+        ? "char correct"
+        : isCurrentToken && showMarker
+          ? isTypedCurrentCharacter
+            ? "char correct current"
+            : "char current"
+          : "char";
+      const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+      const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
+
+      elements.push(
+        <span
+          className={flashClassName}
+          key={`segment-romaji-${part.tokenIndex}-${character}-${characterIndex}-${flashKey}`}
+        >
+          {character}
+        </span>,
+      );
+      inputCharacterIndex += 1;
+    });
+  });
+
+  if (strictMistakeDisplayMode === "insert" && !insertedMistakes) {
+    elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "segment-romaji-insert"));
+  }
+
+  if (strictMistakeDisplayMode === "overwrite") {
+    elements.push(
+      ...renderStrictMistakeCharacters(
+        mistakeCharacters.slice(Math.max(0, inputCharacterIndex - input.length)),
+        "segment-romaji-overwrite-tail",
+      ),
+    );
+  }
+
+  return elements;
 }
 
 function ContinuousChallengeTextStack({

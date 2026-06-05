@@ -20,9 +20,15 @@ type InputScreenSettingsScreenProps = {
   onChange: (settings: Partial<AppSettings>) => void;
 };
 
+const fallbackMockJapaneseText = `---
+type: "ultitype_sentence_short"
+---
+
+[例](れい)[文](ぶん)です。`;
+
 const mockChallenge =
   createJapaneseDirectChallenges(parseJapaneseChallengeText(mockJapaneseText))[0] ??
-  createJapaneseDirectChallenges(parseJapaneseChallengeText("[例](れい)[文](ぶん)です。"))[0]!;
+  createJapaneseDirectChallenges(parseJapaneseChallengeText(fallbackMockJapaneseText))[0]!;
 
 const mockChallenges = createJapaneseDirectChallenges(parseJapaneseChallengeText(mockJapaneseText));
 const availableMockChallenges = mockChallenges.length > 0 ? mockChallenges : [mockChallenge];
@@ -330,6 +336,7 @@ export function InputScreenSettingsScreen({
               hiraganaMarginBottom={settings.hiraganaMarginBottom}
               romajiLineHeight={settings.romajiLineHeight}
               romajiMarginBottom={settings.romajiMarginBottom}
+              productionLongTextLineCount={settings.productionLongTextLineCount}
               soundSettings={settings}
               startedAt={Date.now() - 16000}
               sessionModeIcon={Wrench}

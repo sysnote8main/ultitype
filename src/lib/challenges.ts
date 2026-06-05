@@ -41,19 +41,77 @@ export type JapaneseFuriganaEntry = {
   ruby: string;
 };
 
+type ChallengeDataType = "ultitype_sentence_short" | "ultitype_sentence_long";
+
+type ChallengeDataDocument = {
+  body: string;
+  type: ChallengeDataType;
+};
+
 export function parseEnglishChallengeText(source: string): string[] {
-  return source
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  return parseChallengeTextEntries(source, " ");
 }
 
 export function parseJapaneseChallengeText(source: string): JapaneseChallengeSource[] {
-  return source
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+  return parseChallengeTextEntries(source, "")
     .map((line, index) => parseAnnotatedJapaneseChallengeLine(line, index));
+}
+
+function parseChallengeTextEntries(source: string, longLineJoiner: string): string[] {
+  const document = parseChallengeDataDocument(source);
+
+  if (document.type === "ultitype_sentence_short") {
+    return document.body
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  return document.body
+    .split(/\n[ \t]*\n+/)
+    .map((paragraph) =>
+      paragraph
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join(longLineJoiner)
+        .trim(),
+    )
+    .filter(Boolean);
+}
+
+function parseChallengeDataDocument(source: string): ChallengeDataDocument {
+  const normalizedSource = source.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const lines = normalizedSource.split("\n");
+
+  if (lines[0] !== "---") {
+    throw new Error("Invalid challenge data frontmatter: expected opening ---");
+  }
+
+  const closingIndex = lines.findIndex((line, index) => index > 0 && line === "---");
+  if (closingIndex === -1) {
+    throw new Error("Invalid challenge data frontmatter: expected closing ---");
+  }
+
+  const type = parseChallengeDataType(lines.slice(1, closingIndex));
+  const body = lines.slice(closingIndex + 1).join("\n").replace(/^\n+/, "");
+
+  return { body, type };
+}
+
+function parseChallengeDataType(frontmatterLines: string[]): ChallengeDataType {
+  const typeLine = frontmatterLines.find((line) => line.trim().startsWith("type:"));
+  if (!typeLine) {
+    throw new Error("Invalid challenge data frontmatter: missing type");
+  }
+
+  const match = typeLine.match(/^type:\s*["']?([^"']+)["']?\s*$/);
+  const type = match?.[1];
+  if (type === "ultitype_sentence_short" || type === "ultitype_sentence_long") {
+    return type;
+  }
+
+  throw new Error(`Unsupported challenge data type: ${type ?? ""}`);
 }
 
 function parseAnnotatedJapaneseChallengeLine(
@@ -311,6 +369,11 @@ function createJapaneseReadingSourceParts(reading: string): JapaneseReadingSourc
       continue;
     }
 
+    if (isLongVowelMark(character)) {
+      parts.push({ kind: "reading", source: "-", text: character });
+      continue;
+    }
+
     if (character === "っ") {
       parts.push({ kind: "reading", source: sokuonSourceMarker, text: character });
       continue;
@@ -333,10 +396,15 @@ function createJapaneseReadingSourceParts(reading: string): JapaneseReadingSourc
       continue;
     }
 
-    parts.push({ kind: "reading", source: kanaRomaji[character] ?? character, text: character });
+    const source = kanaRomaji[character] ?? character;
+    parts.push({ kind: "reading", source, text: character });
   }
 
   return parts;
+}
+
+function isLongVowelMark(character: string) {
+  return character === "ー" || character === "ｰ";
 }
 
 function countRomajiInputTokens(source: string): number {
