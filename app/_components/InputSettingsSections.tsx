@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronUp, Lock, RotateCcw } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   romajiVariantOptions,
   sokuonInputOptions,
@@ -138,18 +139,44 @@ function NumberControl({
   value,
   onChange,
 }: NumberControlProps) {
+  const formattedValue = formatNumberControlValue(value, step);
+  const [draftValue, setDraftValue] = useState(formattedValue);
+  const [isEditing, setIsEditing] = useState(false);
   const canIncrease = !disabled && value < max;
   const canDecrease = !disabled && value > min;
   const formattedDefaultValue = formatNumberControlValue(defaultValue, step);
   const canReset =
-    !disabled && formatNumberControlValue(value, step) !== formattedDefaultValue;
+    !disabled && formattedValue !== formattedDefaultValue;
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraftValue(formattedValue);
+    }
+  }, [formattedValue, isEditing]);
+
+  function handleDraftChange(nextDraftValue: string) {
+    setDraftValue(nextDraftValue);
+
+    if (shouldPropagateNumberControlDraft(nextDraftValue, min, max)) {
+      onChange(formatNumberControlValue(Number(nextDraftValue), step));
+    }
+  }
+
+  function commitDraft() {
+    const committedValue = commitNumberControlDraft(draftValue, min, max, step);
+    setIsEditing(false);
+    setDraftValue(committedValue);
+    onChange(committedValue);
+  }
 
   function changeBy(delta: number) {
     const nextValue = Math.min(max, Math.max(min, value + delta));
+    setDraftValue(formatNumberControlValue(nextValue, step));
     onChange(formatNumberControlValue(nextValue, step));
   }
 
   function resetToDefault() {
+    setDraftValue(formattedDefaultValue);
     onChange(formattedDefaultValue);
   }
 
@@ -160,10 +187,12 @@ function NumberControl({
         disabled={disabled}
         min={min}
         max={max}
-        onChange={(event) => onChange(event.currentTarget.value)}
+        onBlur={commitDraft}
+        onChange={(event) => handleDraftChange(event.currentTarget.value)}
+        onFocus={() => setIsEditing(true)}
         step={step}
         type="number"
-        value={value}
+        value={isEditing ? draftValue : formattedValue}
       />
       <span>{unit}</span>
       {disabled && lockLabel ? (
@@ -203,7 +232,30 @@ function NumberControl({
   );
 }
 
-function formatNumberControlValue(value: number, step: number) {
+export function shouldPropagateNumberControlDraft(value: string, min: number, max: number) {
+  const parsed = parseNumberControlDraft(value);
+
+  return parsed !== null && parsed >= min && parsed <= max;
+}
+
+export function commitNumberControlDraft(value: string, min: number, max: number, step: number) {
+  const parsed = parseNumberControlDraft(value);
+  const nextValue = parsed === null ? min : Math.min(max, Math.max(min, parsed));
+
+  return formatNumberControlValue(nextValue, step);
+}
+
+function parseNumberControlDraft(value: string) {
+  if (value.trim() === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function formatNumberControlValue(value: number, step: number) {
   const fractionDigits = Math.max(0, `${step}`.split(".")[1]?.length ?? 0);
   return Number(value.toFixed(fractionDigits)).toString();
 }
