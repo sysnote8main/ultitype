@@ -62,7 +62,7 @@ export const modes: TypingMode[] = [
     accuracyExponent: 3,
     lockMistakes: false,
     requiresIme: false,
-    description: "5分の本番測定。変換なしで長文を連続処理する。",
+    description: "5分/10分の本番測定。変換なしで長文を連続処理する。",
   },
   {
     id: "production-ime-on",
@@ -231,15 +231,15 @@ type RomajiInputToken = {
 
 export type RomajiGuidePart =
   | {
-      kind: "visual";
-      text: string;
-    }
+    kind: "visual";
+    text: string;
+  }
   | {
-      kind: "input";
-      text: string;
-      tokenIndex: number;
-      variantId?: RomajiVariantId;
-    };
+    kind: "input";
+    text: string;
+    tokenIndex: number;
+    variantId?: RomajiVariantId;
+  };
 
 export type RomajiInputTarget = {
   guide: string;
@@ -525,11 +525,11 @@ export function getRomajiInputProgress(target: RomajiInputTarget, input: string)
           nextStates.push(
             nextOffset >= state.option.length
               ? {
-                  tokenIndex: state.tokenIndex + 1,
-                  option: null,
-                  offset: 0,
-                  selectedOptions,
-                }
+                tokenIndex: state.tokenIndex + 1,
+                option: null,
+                offset: 0,
+                selectedOptions,
+              }
               : { ...state, offset: nextOffset, selectedOptions },
           );
         }
@@ -549,15 +549,15 @@ export function getRomajiInputProgress(target: RomajiInputTarget, input: string)
         nextStates.push(
           option.length === 1
             ? {
-                tokenIndex: state.tokenIndex + 1,
-                option: null,
-                offset: 0,
-                selectedOptions: selectRomajiOption(
-                  state.selectedOptions,
-                  state.tokenIndex,
-                  option,
-                ),
-              }
+              tokenIndex: state.tokenIndex + 1,
+              option: null,
+              offset: 0,
+              selectedOptions: selectRomajiOption(
+                state.selectedOptions,
+                state.tokenIndex,
+                option,
+              ),
+            }
             : { tokenIndex: state.tokenIndex, option, offset: 1, selectedOptions: state.selectedOptions },
         );
       }
@@ -623,8 +623,8 @@ export function isDirectKeyCorrect({
   const match =
     typeof target === "string"
       ? {
-          accepted: key === (target[state.input.length] ?? ""),
-        }
+        accepted: key === (target[state.input.length] ?? ""),
+      }
       : getRomajiInputProgress(target, nextInput);
 
   return match.accepted;
@@ -680,9 +680,9 @@ export function applyDirectKey({
   const match =
     typeof target === "string"
       ? {
-          accepted: key === (target[state.input.length] ?? ""),
-          completed: nextInput.length >= target.length,
-        }
+        accepted: key === (target[state.input.length] ?? ""),
+        completed: nextInput.length >= target.length,
+      }
       : getRomajiInputProgress(target, nextInput);
   const isCorrect = match.accepted;
 
