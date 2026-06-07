@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { css } from "../_lib/css-module";
@@ -7,6 +8,16 @@ import styles from "./MobileViewportWarning.module.css";
 
 export const mobileViewportWarningStorageKey = "ultitype:mobile-viewport-warning-dismissed";
 export const mobileViewportWarningMediaQuery = "(max-width: 519px)";
+export const mobileViewportWarningInset = 14;
+export const mobileViewportWarningMaxWidth = 420;
+
+type MobileViewportWarningBounds = {
+  offsetLeft: number;
+  offsetTop: number;
+  width: number;
+  height: number;
+  layoutHeight: number;
+};
 
 export function shouldShowMobileViewportWarning({
   dismissed,
@@ -18,25 +29,70 @@ export function shouldShowMobileViewportWarning({
   return isNarrowViewport && !dismissed;
 }
 
+export function calculateMobileViewportWarningStyle({
+  offsetLeft,
+  offsetTop,
+  width,
+  height,
+  layoutHeight,
+}: MobileViewportWarningBounds) {
+  const warningWidth = Math.max(
+    0,
+    Math.min(mobileViewportWarningMaxWidth, width - mobileViewportWarningInset * 2),
+  );
+  const left = offsetLeft + width - warningWidth - mobileViewportWarningInset;
+  const minLeft = offsetLeft + mobileViewportWarningInset;
+  const bottom = layoutHeight - offsetTop - height + mobileViewportWarningInset;
+
+  return {
+    "--mobile-viewport-warning-left": `${Math.max(minLeft, left)}px`,
+    "--mobile-viewport-warning-bottom": `${Math.max(mobileViewportWarningInset, bottom)}px`,
+    "--mobile-viewport-warning-width": `${warningWidth}px`,
+  } as CSSProperties;
+}
+
 export function MobileViewportWarning() {
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [dismissOnClose, setDismissOnClose] = useState(false);
+  const [viewportStyle, setViewportStyle] = useState<CSSProperties>({});
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(mobileViewportWarningMediaQuery);
 
+    function updateViewportStyle() {
+      const viewport = window.visualViewport;
+
+      setViewportStyle(
+        calculateMobileViewportWarningStyle({
+          offsetLeft: viewport?.offsetLeft ?? 0,
+          offsetTop: viewport?.offsetTop ?? 0,
+          width: viewport?.width ?? window.innerWidth,
+          height: viewport?.height ?? window.innerHeight,
+          layoutHeight: window.innerHeight,
+        }),
+      );
+    }
+
+    updateViewportStyle();
     setIsNarrowViewport(mediaQuery.matches);
     setDismissed(window.localStorage.getItem(mobileViewportWarningStorageKey) === "true");
 
     const handleViewportChange = (event: MediaQueryListEvent) => {
       setIsNarrowViewport(event.matches);
+      updateViewportStyle();
     };
 
     mediaQuery.addEventListener("change", handleViewportChange);
+    window.addEventListener("resize", updateViewportStyle);
+    window.visualViewport?.addEventListener("resize", updateViewportStyle);
+    window.visualViewport?.addEventListener("scroll", updateViewportStyle);
 
     return () => {
       mediaQuery.removeEventListener("change", handleViewportChange);
+      window.removeEventListener("resize", updateViewportStyle);
+      window.visualViewport?.removeEventListener("resize", updateViewportStyle);
+      window.visualViewport?.removeEventListener("scroll", updateViewportStyle);
     };
   }, []);
 
@@ -54,7 +110,12 @@ export function MobileViewportWarning() {
   }
 
   return (
-    <aside className={css(styles, "mobile-viewport-warning")} role="status" aria-live="polite">
+    <aside
+      className={css(styles, "mobile-viewport-warning")}
+      role="status"
+      aria-live="polite"
+      style={viewportStyle}
+    >
       <div className={css(styles, "mobile-viewport-warning-icon")} aria-hidden="true">
         <AlertTriangle size={20} />
       </div>
