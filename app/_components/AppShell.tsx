@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { cx, css } from "../_lib/css-module";
 import { AppHeader } from "./AppHeader";
 import { MobileViewportWarning } from "./MobileViewportWarning";
+import styles from "./AppShell.module.css";
 import {
   type UseTypingSessionOptions,
   useTypingSession,
@@ -14,11 +16,11 @@ type AppShellProps = {
   sessionOptions?: UseTypingSessionOptions;
 };
 
-export function AppShell({ children, className = "shell", sessionOptions }: AppShellProps) {
+export function AppShell({ children, className, sessionOptions }: AppShellProps) {
   const session = useTypingSession(sessionOptions);
 
   return (
-    <main className={className}>
+    <main className={cx(css(styles, "shell"), className)}>
       <AppHeader
         bestPracticeRank={session.bestPracticeRank}
         bestPracticeScore={session.bestPracticeScore}

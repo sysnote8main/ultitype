@@ -9,10 +9,12 @@ import {
 } from "@/src/lib/challenges";
 import { createRomajiInputTarget, getRank, modes } from "@/src/lib/typing";
 import { removeRomajiVisualSpaces } from "../_lib/challenge-utils";
+import { css } from "../_lib/css-module";
 import { initialStats } from "../_lib/constants";
 import type { AppSettings } from "../_lib/types";
 import { InputSettingsSections } from "./InputSettingsSections";
 import { TypingPanel } from "./TypingPanel";
+import styles from "./SettingsScreen.module.css";
 
 type InputScreenSettingsScreenProps = {
   settings: AppSettings;
@@ -153,7 +155,8 @@ export function InputScreenSettingsScreen({
       preset: settings.romajiInputPreset,
       selections: settings.romajiInputSelections,
       allowSplitYoon: settings.allowSplitYoon,
-      allowSplitSpecialYoon: settings.allowSplitSpecialYoon,
+      specialPreset: settings.specialRomajiInputPreset,
+      specialSelections: settings.specialRomajiInputSelections,
       sokuon: settings.sokuonInput,
     });
 
@@ -255,24 +258,24 @@ export function InputScreenSettingsScreen({
   }, []);
 
   return (
-    <section className="settings-screen input-screen-settings-screen" aria-label="input screen settings">
-      <div className="settings-head">
+    <section className={css(styles, "settings-screen input-screen-settings-screen")} aria-label="input screen settings">
+      <div className={css(styles, "settings-head")}>
         <div>
-          <div className="panel-heading">
+          <div className={css(styles, "panel-heading")}>
             <MonitorCog size={18} />
             <span>Screen Settings</span>
           </div>
           <h2>入力画面設定</h2>
         </div>
-        <button className="icon-button" onClick={onBack} title="戻る" type="button">
+        <button className={css(styles, "icon-button")} onClick={onBack} title="戻る" type="button">
           <ArrowLeft size={18} />
         </button>
       </div>
 
-      <section className="input-screen-settings-preview" aria-label="input screen mock">
-        <div className="input-screen-settings-preview-sticky" style={stickyPreviewStyle}>
+      <section className={css(styles, "input-screen-settings-preview")} aria-label="input screen mock">
+        <div className={css(styles, "input-screen-settings-preview-sticky")} style={stickyPreviewStyle}>
           <div
-            className="input-screen-settings-preview-scale"
+            className={css(styles, "input-screen-settings-preview-scale")}
             ref={previewContentRef}
             style={previewScaleStyle}
           >
@@ -294,6 +297,7 @@ export function InputScreenSettingsScreen({
               input={visibleMockInput}
               inputRef={{ current: null }}
               isFinished={false}
+              isPreview
               isProductionBlocked={false}
               mistakeFlash={null}
               metrics={{
@@ -325,6 +329,7 @@ export function InputScreenSettingsScreen({
               showKanjiDisplay={settings.showKanjiDisplay}
               showKanjiMarker={settings.showKanjiMarker}
               showRomajiMarker={settings.showRomajiMarker}
+              romajiMarkerMode={settings.romajiMarkerMode}
               kanjiFontSize={settings.kanjiFontSize}
               furiganaFontScale={settings.furiganaFontScale}
               hiraganaFontSize={settings.hiraganaFontSize}
@@ -368,7 +373,7 @@ export function InputScreenSettingsScreen({
         </div>
       </section>
 
-      <div className="settings-list">
+      <div className={css(styles, "settings-list")}>
         <InputSettingsSections settings={settings} onChange={onChange} />
       </div>
     </section>

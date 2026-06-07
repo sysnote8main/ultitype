@@ -11,9 +11,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { clampInteger } from "../_lib/challenge-utils";
+import { css } from "../_lib/css-module";
 import { useChromeActiveTabMuted, useTypingSounds } from "../_lib/typing-sounds";
 import type { AppSettings } from "../_lib/types";
 import { SelectSoundLink } from "./SelectSoundLink";
+import styles from "./SettingsScreen.module.css";
 
 type SettingsScreenProps = {
   browserTabMuted?: boolean | null;
@@ -76,35 +78,35 @@ export function SettingsScreen({
   }
 
   return (
-    <section className="settings-screen" aria-label="settings">
-      <div className="settings-head">
+    <section className={css(styles, "settings-screen")} aria-label="settings">
+      <div className={css(styles, "settings-head")}>
         <div>
-          <div className="panel-heading">
+          <div className={css(styles, "panel-heading")}>
             <Settings size={18} />
             <span>Settings</span>
           </div>
           <h2>設定</h2>
         </div>
-        <button className="icon-button" onClick={handleBack} title="戻る" type="button">
+        <button className={css(styles, "icon-button")} onClick={handleBack} title="戻る" type="button">
           <ArrowLeft size={18} />
         </button>
       </div>
 
-      <div className="settings-list">
-        <section className="settings-category" aria-labelledby="screen-settings">
-          <h3 className="settings-category-title" id="screen-settings">
+      <div className={css(styles, "settings-list")}>
+        <section className={css(styles, "settings-category")} aria-labelledby="screen-settings">
+          <h3 className={css(styles, "settings-category-title")} id="screen-settings">
             画面
           </h3>
-          <div className="settings-category-list">
-            <section className="settings-row" aria-labelledby="theme-setting">
+          <div className={css(styles, "settings-category-list")}>
+            <section className={css(styles, "settings-row")} aria-labelledby="theme-setting">
               <div>
                 <h4 id="theme-setting">テーマ</h4>
                 <p>表示テーマを切り替える</p>
               </div>
-              <div className="theme-segmented" role="group" aria-label="theme">
+              <div className={css(styles, "theme-segmented")} role="group" aria-label="theme">
                 <button
                   aria-pressed={settings.theme === "dark"}
-                  className={settings.theme === "dark" ? "selected" : ""}
+                  className={settings.theme === "dark" ? css(styles, "selected") : ""}
                   onClick={() => onChange({ theme: "dark" })}
                   type="button"
                 >
@@ -113,7 +115,7 @@ export function SettingsScreen({
                 </button>
                 <button
                   aria-pressed={settings.theme === "light"}
-                  className={settings.theme === "light" ? "selected" : ""}
+                  className={settings.theme === "light" ? css(styles, "selected") : ""}
                   onClick={() => onChange({ theme: "light" })}
                   type="button"
                 >
@@ -123,14 +125,14 @@ export function SettingsScreen({
               </div>
             </section>
 
-            <section className="settings-row settings-link-row" aria-labelledby="screen-preview-setting">
+            <section className={css(styles, "settings-row settings-link-row")} aria-labelledby="screen-preview-setting">
               <div>
                 <h4 id="screen-preview-setting">入力画面と入力方式</h4>
                 <p>練習画面のモックを見ながら入力方式と表示を調整する</p>
               </div>
               <SelectSoundLink
                 aria-label="入力画面と入力方式"
-                className="settings-row-link"
+                className={css(styles, "settings-row-link")}
                 href="/settings/screen"
                 soundSettings={settings}
               >
@@ -141,18 +143,18 @@ export function SettingsScreen({
           </div>
         </section>
 
-        <section className="settings-category" aria-labelledby="sound-settings">
-          <h3 className="settings-category-title" id="sound-settings">
+        <section className={css(styles, "settings-category")} aria-labelledby="sound-settings">
+          <h3 className={css(styles, "settings-category-title")} id="sound-settings">
             サウンド
           </h3>
-          <div className="settings-category-list">
-            <section className="settings-row sound-settings-row" aria-labelledby="sound-setting">
+          <div className={css(styles, "settings-category-list")}>
+            <section className={css(styles, "settings-row sound-settings-row")} aria-labelledby="sound-setting">
               <div>
                 <h4 id="sound-setting">サウンド</h4>
                 <p>タイプ音とUI/結果音の音量、カテゴリ別のON/OFFを調整します。</p>
               </div>
-              <div className="sound-settings-controls" aria-disabled={soundControlsDisabled}>
-                <label className="sound-volume-control">
+              <div className={css(styles, "sound-settings-controls")} aria-disabled={soundControlsDisabled}>
+                <label className={css(styles, "sound-volume-control")}>
                   <span>音量</span>
                   <input
                     aria-label="音量"
@@ -166,10 +168,10 @@ export function SettingsScreen({
                   />
                   <strong>{Math.round(settings.soundVolume * 100)}%</strong>
                 </label>
-                <div className="sound-toggle-list">
-                  <label className="sound-toggle-item">
+                <div className={css(styles, "sound-toggle-list")}>
+                  <label className={css(styles, "sound-toggle-item")}>
                     <span>タイプ音</span>
-                    <span className="toggle-control">
+                    <span className={css(styles, "toggle-control")}>
                       <input
                         checked={settings.typingSoundEnabled}
                         disabled={soundControlsDisabled}
@@ -181,9 +183,9 @@ export function SettingsScreen({
                       <span aria-hidden="true" />
                     </span>
                   </label>
-                  <label className="sound-toggle-item">
+                  <label className={css(styles, "sound-toggle-item")}>
                     <span>UI/結果音</span>
-                    <span className="toggle-control">
+                    <span className={css(styles, "toggle-control")}>
                       <input
                         checked={settings.uiSoundEnabled}
                         disabled={soundControlsDisabled}
@@ -201,17 +203,17 @@ export function SettingsScreen({
           </div>
         </section>
 
-        <section className="settings-category" aria-labelledby="auto-retire-settings">
-          <h3 className="settings-category-title" id="auto-retire-settings">
+        <section className={css(styles, "settings-category")} aria-labelledby="auto-retire-settings">
+          <h3 className={css(styles, "settings-category-title")} id="auto-retire-settings">
             自動リタイア
           </h3>
-          <div className="settings-category-list">
-            <section className="settings-row" aria-labelledby="idle-retire-setting">
+          <div className={css(styles, "settings-category-list")}>
+            <section className={css(styles, "settings-row")} aria-labelledby="idle-retire-setting">
               <div>
                 <h4 id="idle-retire-setting">無入力リタイア</h4>
                 <p>0 秒で無効</p>
               </div>
-              <div className="number-control">
+              <div className={css(styles, "number-control")}>
                 <input
                   aria-label="無入力リタイア秒数"
                   min={0}
@@ -226,7 +228,7 @@ export function SettingsScreen({
                   value={settings.idleRetireSeconds}
                 />
                 <span>秒</span>
-                <div className="number-stepper" aria-label="秒数を調整">
+                <div className={css(styles, "number-stepper")} aria-label="秒数を調整">
                   <button
                     aria-label="1秒増やす"
                     onClick={() => updateIdleRetireSeconds(settings.idleRetireSeconds + 1)}
@@ -247,14 +249,14 @@ export function SettingsScreen({
             </section>
 
             <section
-              className="settings-row"
+              className={css(styles, "settings-row")}
               aria-labelledby="consecutive-mistype-retire-setting"
             >
               <div>
                 <h4 id="consecutive-mistype-retire-setting">連続誤打鍵リタイア</h4>
                 <p>0 打鍵で無効</p>
               </div>
-              <div className="number-control">
+              <div className={css(styles, "number-control")}>
                 <input
                   aria-label="連続誤打鍵数"
                   min={0}
@@ -272,12 +274,12 @@ export function SettingsScreen({
               </div>
             </section>
 
-            <section className="settings-row" aria-labelledby="accuracy-retire-border-setting">
+            <section className={css(styles, "settings-row")} aria-labelledby="accuracy-retire-border-setting">
               <div>
                 <h4 id="accuracy-retire-border-setting">正誤率ボーダー</h4>
                 <p>0% で無効</p>
               </div>
-              <div className="number-control">
+              <div className={css(styles, "number-control")}>
                 <input
                   aria-label="正誤率ボーダー"
                   min={0}
@@ -297,17 +299,17 @@ export function SettingsScreen({
           </div>
         </section>
 
-        <section className="settings-category" aria-labelledby="other-settings">
-          <h3 className="settings-category-title" id="other-settings">
+        <section className={css(styles, "settings-category")} aria-labelledby="other-settings">
+          <h3 className={css(styles, "settings-category-title")} id="other-settings">
             その他の設定
           </h3>
-          <div className="settings-category-list">
-            <section className="settings-row" aria-labelledby="next-challenge-preview-setting">
+          <div className={css(styles, "settings-category-list")}>
+            <section className={css(styles, "settings-row")} aria-labelledby="next-challenge-preview-setting">
               <div>
                 <h4 id="next-challenge-preview-setting">次の課題の表示文字数</h4>
                 <p>短文練習モードで次に出る課題文の冒頭を表示する。0文字で非表示</p>
               </div>
-              <div className="number-control">
+              <div className={css(styles, "number-control")}>
                 <input
                   aria-label="次の課題の表示文字数"
                   min={0}
@@ -326,7 +328,7 @@ export function SettingsScreen({
                   value={settings.nextChallengePreviewLength}
                 />
                 <span>文字</span>
-                <div className="number-stepper" aria-label="次の課題の表示文字数を調整">
+                <div className={css(styles, "number-stepper")} aria-label="次の課題の表示文字数を調整">
                   <button
                     aria-label="次の課題の表示文字数を増やす"
                     disabled={settings.nextChallengePreviewLength >= 40}
@@ -357,17 +359,17 @@ export function SettingsScreen({
           </div>
         </section>
 
-        <section className="settings-category" aria-labelledby="danger-settings">
-          <h3 className="settings-category-title" id="danger-settings">
+        <section className={css(styles, "settings-category")} aria-labelledby="danger-settings">
+          <h3 className={css(styles, "settings-category-title")} id="danger-settings">
             危険な操作
           </h3>
-          <div className="settings-category-list">
-            <section className="settings-row danger-row" aria-labelledby="clear-local-data-setting">
+          <div className={css(styles, "settings-category-list")}>
+            <section className={css(styles, "settings-row danger-row")} aria-labelledby="clear-local-data-setting">
               <div>
                 <h4 id="clear-local-data-setting">ローカルデータをすべて削除</h4>
                 <p>スコア、履歴、設定をこのブラウザから削除する</p>
               </div>
-              <button className="danger-button" onClick={handleClearLocalData} type="button">
+              <button className={css(styles, "danger-button")} onClick={handleClearLocalData} type="button">
                 <Trash2 size={17} />
                 削除
               </button>

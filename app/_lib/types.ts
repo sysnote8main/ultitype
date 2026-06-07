@@ -1,14 +1,17 @@
 import type {
   ModeId,
   RomajiInputPreset,
+  SpecialRomajiInputPreset,
+  SpecialRomajiVariantId,
   SokuonInputSelection,
-  RomajiVariantId,
+  StandardRomajiVariantId,
   RomajiVariantSelection,
 } from "@/src/lib/typing";
 
 export type ChallengeLanguage = "ja" | "en";
 export type Theme = "dark" | "light";
 export type StrictMistakeDisplayMode = "overwrite" | "insert" | "none";
+export type RomajiMarkerMode = "character" | "token";
 export type NextChallengePreviewMode =
   | "none"
   | "split-slide"
@@ -46,6 +49,7 @@ export type AppSettings = {
   showFuriganaMarker: boolean;
   showHiraganaMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   kanjiFontSize: number;
   furiganaFontScale: number;
   hiraganaFontSize: number;
@@ -60,9 +64,11 @@ export type AppSettings = {
   romajiMarginBottom: number;
   productionLongTextLineCount: number;
   romajiInputPreset: RomajiInputPreset;
-  romajiInputSelections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
+  romajiInputSelections: Partial<Record<StandardRomajiVariantId, RomajiVariantSelection>>;
   allowSplitYoon: boolean;
   allowSplitSpecialYoon: boolean;
+  specialRomajiInputPreset: SpecialRomajiInputPreset;
+  specialRomajiInputSelections: Partial<Record<SpecialRomajiVariantId, RomajiVariantSelection>>;
   sokuonInput: SokuonInputSelection;
   idleRetireSeconds: number;
   consecutiveMistypeRetireCount: number;

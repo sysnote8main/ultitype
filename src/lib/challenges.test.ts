@@ -303,6 +303,35 @@ describe("direct Japanese challenge romaji", () => {
     expect(challenge?.input).toBe("vavivuvevo");
   });
 
+  test("maps ウィ and ディ katakana pairs in ウィキペディア", () => {
+    const [challenge] = createJapaneseDirectChallenges(
+      parseJapaneseChallengeText(shortChallengeText("ウィキペディア")),
+    );
+
+    expect(challenge?.reading).toBe("うぃきぺでぃあ");
+    expect(challenge?.romajiSource).toBe("wikipedhia");
+    expect(challenge?.guide).toBe("wikipedhia");
+    expect(challenge?.input).toBe("wikipedhia");
+    expect(createJapaneseReadingGuideParts(challenge?.reading ?? "")).toEqual([
+      { kind: "reading", text: "うぃ", tokenStart: 0, tokenEnd: 1 },
+      { kind: "reading", text: "き", tokenStart: 1, tokenEnd: 3 },
+      { kind: "reading", text: "ぺ", tokenStart: 3, tokenEnd: 5 },
+      { kind: "reading", text: "でぃ", tokenStart: 5, tokenEnd: 6 },
+      { kind: "reading", text: "あ", tokenStart: 6, tokenEnd: 7 },
+    ]);
+  });
+
+  test("maps additional foreign katakana pairs such as ウェ, デュ, and ドゥ", () => {
+    const [challenge] = createJapaneseDirectChallenges(
+      parseJapaneseChallengeText(shortChallengeText("ヴィティヴェウェデュドゥウォテュトゥフィフェフォ")),
+    );
+
+    expect(challenge?.reading).toBe("ゔぃてぃゔぇうぇでゅどぅうぉてゅとぅふぃふぇふぉ");
+    expect(challenge?.romajiSource).toBe("vithivewedhudwuwhothutwufifefo");
+    expect(challenge?.guide).toBe("vithivewedhudwuwhothutwufifefo");
+    expect(challenge?.input).toBe("vithivewedhudwuwhothutwufifefo");
+  });
+
   test("maps づ to du instead of zu", () => {
     expect(directLongChallenges.some((challenge) => challenge.guide?.includes("tsudukereba"))).toBe(
       true,

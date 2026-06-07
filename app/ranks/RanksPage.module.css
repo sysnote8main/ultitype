@@ -1,0 +1,74 @@
+.panelHeading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.iconLink {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.iconLink:hover,
+.iconLink:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.rankGuidePage {
+  display: grid;
+  gap: 18px;
+}
+
+.rankGuidePageHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0 20px;
+}
+
+.rankGuidePageHead h1 {
+  margin-top: 6px;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.rankGuidePageHead p {
+  max-width: 680px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+.modeSelectHeading .panelHeading {
+  justify-content: flex-start;
+  margin-bottom: 0;
+}
+
+.panelHeading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}

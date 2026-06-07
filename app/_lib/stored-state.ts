@@ -34,6 +34,7 @@ export function normalizeAppSettings(settings: AppSettings): AppSettings {
     showKanjiMarker: settings.showKanjiDisplay && settings.showKanjiMarker,
     showFuriganaMarker: showFuriganaDisplay && settings.showFuriganaMarker,
     showHiraganaMarker: settings.showHiraganaDisplay && settings.showHiraganaMarker,
+    romajiMarkerMode: normalizeRomajiMarkerMode(settings.romajiMarkerMode),
     kanjiFontSize: normalizeFontSize(settings.kanjiFontSize, initialSettings.kanjiFontSize),
     furiganaFontScale: normalizeFontScale(
       settings.furiganaFontScale,
@@ -85,6 +86,9 @@ export function normalizeAppSettings(settings: AppSettings): AppSettings {
       settings.nextChallengePreviewMode,
     ),
     rankCalculationMode: normalizeRankCalculationMode(settings.rankCalculationMode),
+    specialRomajiInputPreset: normalizeSpecialRomajiInputPreset(
+      settings.specialRomajiInputPreset,
+    ),
     topDisplayMetricIds: normalizeTopDisplayMetricIds(settings.topDisplayMetricIds),
   };
 }
@@ -113,6 +117,8 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
         storedSettings?.showHiraganaMarker ?? initialSettings.showHiraganaMarker,
       showRomajiMarker:
         storedSettings?.showRomajiMarker ?? initialSettings.showRomajiMarker,
+      romajiMarkerMode:
+        storedSettings?.romajiMarkerMode ?? initialSettings.romajiMarkerMode,
       kanjiFontSize,
       furiganaFontScale:
         storedSettings?.furiganaFontScale ??
@@ -155,6 +161,12 @@ export function normalizeStoredState(storedState: Partial<StoredState> | null | 
       allowSplitSpecialYoon:
         storedSettings?.allowSplitSpecialYoon ??
         initialSettings.allowSplitSpecialYoon,
+      specialRomajiInputPreset:
+        storedSettings?.specialRomajiInputPreset ??
+        (storedSettings?.allowSplitSpecialYoon ? "split" : initialSettings.specialRomajiInputPreset),
+      specialRomajiInputSelections:
+        storedSettings?.specialRomajiInputSelections ??
+        initialSettings.specialRomajiInputSelections,
       topDisplayMetricIds:
         storedSettings?.topDisplayMetricIds ?? [...defaultTopDisplayMetricIds],
       consecutiveMistypeRetireCount:
@@ -236,6 +248,18 @@ function normalizeRankCalculationMode(value: AppSettings["rankCalculationMode"])
   return value === "actual" || value === "projected"
     ? value
     : initialSettings.rankCalculationMode;
+}
+
+function normalizeRomajiMarkerMode(value: AppSettings["romajiMarkerMode"]) {
+  return value === "token" || value === "character"
+    ? value
+    : initialSettings.romajiMarkerMode;
+}
+
+function normalizeSpecialRomajiInputPreset(value: AppSettings["specialRomajiInputPreset"]) {
+  return value === "split" || value === "integrated" || value === "custom"
+    ? value
+    : initialSettings.specialRomajiInputPreset;
 }
 
 function getLegacyFuriganaFontScale(settings: LegacyAppSettings | undefined, kanjiFontSize: number) {

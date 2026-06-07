@@ -1,0 +1,146 @@
+.brandBlock h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.appHeader {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 14px;
+}
+
+.brandTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.appVersion {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.brandBlock p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.headerStatus {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.rankStrip {
+  display: flex;
+  gap: 8px;
+}
+
+.rankBadge {
+  min-width: 92px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 8px 10px 9px;
+}
+
+.rankBadge span,
+.rankBadge small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rankBadgeCanvas,
+.rankLinkCanvas,
+.rankGuideCurrentCanvas,
+.rankGuideBandCanvas,
+.historyRankCanvas {
+  display: block;
+}
+
+.rankBadgeCanvas {
+  margin: 5px 0 4px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rankGuideLink {
+  display: flex;
+  min-width: 92px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.rankGuideLink:hover,
+.rankGuideLink:focus-visible {
+  border-color: var(--gold);
+  color: var(--gold);
+  outline: none;
+}
+
+.settingsButton {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+
+@media (max-width: 1100px) {
+  .appHeader {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+  .headerStatus {
+      width: 100%;
+      align-items: stretch;
+      flex-direction: column-reverse;
+    }
+
+  .headerActions {
+      justify-content: space-between;
+    }
+}
+
+@media (max-width: 720px) {
+  .rankStrip {
+      width: 100%;
+    }
+
+  .rankBadge {
+      flex: 1;
+    }
+
+  .rankGuideLink {
+      min-width: 64px;
+      padding: 0 9px;
+    }
+}

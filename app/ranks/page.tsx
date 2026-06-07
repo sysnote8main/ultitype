@@ -1,18 +1,20 @@
 "use client";
 
 import { ArrowLeft, Star } from "lucide-react";
+import { css } from "../_lib/css-module";
 import { AppShell } from "../_components/AppShell";
 import { RankGuide } from "../_components/RankGuide";
 import { SelectSoundLink } from "../_components/SelectSoundLink";
+import styles from "./RanksPage.module.css";
 
 export default function RanksPage() {
   return (
-    <AppShell className="shell rank-guide-page">
+    <AppShell className={css(styles, "rank-guide-page")}>
       {() => (
         <>
-          <header className="rank-guide-page-head">
+          <header className={css(styles, "rank-guide-page-head")}>
             <div>
-              <div className="panel-heading">
+              <div className={css(styles, "panel-heading")}>
                 <Star size={18} fill="currentColor" />
                 <span>Rank Guide</span>
               </div>
@@ -22,7 +24,7 @@ export default function RanksPage() {
               </p>
             </div>
             <SelectSoundLink
-              className="icon-link"
+              className={css(styles, "icon-link")}
               href="/"
               aria-label="戻る"
               soundKind="back"

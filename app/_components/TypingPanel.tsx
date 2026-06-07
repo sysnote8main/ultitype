@@ -36,6 +36,7 @@ import {
   type JapaneseFuriganaEntry,
   createJapaneseReadingGuideParts,
 } from "@/src/lib/challenges";
+import { css, cx } from "../_lib/css-module";
 import { topDisplayMetricOptions } from "../_lib/constants";
 import { getVisibleSessionRank } from "../_lib/session-rank-visibility";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
@@ -46,10 +47,12 @@ import type {
   MistakeFlash,
   NextChallengePreviewMode,
   RankCalculationMode,
+  RomajiMarkerMode,
   RuntimeStats,
   StrictMistakeDisplayMode,
   TopDisplayMetricId,
 } from "../_lib/types";
+import styles from "./TypingPanel.module.css";
 
 type BlockableTextEvent =
   | FormEvent<HTMLTextAreaElement>
@@ -99,6 +102,7 @@ type TypingPanelProps = {
   showKanjiDisplay: boolean;
   showKanjiMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   kanjiFontSize: number;
   furiganaFontScale: number;
   hiraganaFontSize: number;
@@ -123,6 +127,7 @@ type TypingPanelProps = {
   prepareActionIcon?: LucideIcon;
   prepareActionTitle?: string;
   autoFocusDirectInput?: boolean;
+  isPreview?: boolean;
   topDisplayMetricIds: TopDisplayMetricId[];
   onBackToModeSelect: () => void;
   onImeInput: (input: string) => void;
@@ -138,6 +143,14 @@ type DirectInputFocusRetryInput = {
   isDevelopment: boolean;
   isProductionBlocked: boolean;
 };
+
+function cssSelector(...classNames: string[]) {
+  return css(styles, ...classNames)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((className) => `.${className}`)
+    .join("");
+}
 
 export function getDirectInputFocusRetryDelays({
   acceptsTextInput,
@@ -194,6 +207,7 @@ export function TypingPanel({
   showKanjiDisplay,
   showKanjiMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   kanjiFontSize,
   furiganaFontScale,
   hiraganaFontSize,
@@ -218,6 +232,7 @@ export function TypingPanel({
   prepareActionIcon,
   prepareActionTitle,
   autoFocusDirectInput = true,
+  isPreview = false,
   topDisplayMetricIds,
   onBackToModeSelect,
   onImeInput,
@@ -304,10 +319,10 @@ export function TypingPanel({
 
   return (
     <section
-      className={`practice-panel ${acceptsTextInput ? "ime-panel" : "direct-panel"}`}
+      className={css(styles, "practice-panel", acceptsTextInput ? "ime-panel" : "direct-panel", isPreview ? "preview-panel" : "")}
       aria-label="typing practice"
     >
-      <div className="meter-row">
+      <div className={css(styles, "meter-row")}>
         {topDisplayMetrics.map((metric) => (
           <Metric
             icon={metric.id === "remainingTime" ? <Timer size={17} /> : undefined}
@@ -318,31 +333,31 @@ export function TypingPanel({
         ))}
       </div>
 
-      <div className="progress-track" aria-hidden="true">
+      <div className={css(styles, "progress-track")} aria-hidden="true">
         <span style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="session-head">
+      <div className={css(styles, "session-head")}>
         <div>
-          <p className="mode-label">{visibleModeLabel}</p>
-          <h2>
+          <p className={css(styles, "mode-label")}>{visibleModeLabel}</p>
+          <h2 className={css(styles, "session-title")}>
             {SessionModeIcon ? (
-              <span className="session-mode-symbol" aria-label={visibleModeLabel}>
+              <span className={css(styles, "session-mode-symbol")} aria-label={visibleModeLabel}>
                 <SessionModeIcon size={72} strokeWidth={1.6} aria-hidden="true" />
               </span>
             ) : null}
             <span
               aria-label={visibleRank.isConcealed ? "Rank hidden for the first 30 seconds" : undefined}
-              className={`session-rank-value ${visibleRank.isConcealed ? "concealed" : ""}`}
+              className={css(styles, "session-rank-value", visibleRank.isConcealed ? "concealed" : "")}
             >
               {visibleRank.label}
             </span>
             <span>{scoreLabel}</span>
           </h2>
         </div>
-        <div className="actions">
+        <div className={css(styles, "actions")}>
           <button
-            className="icon-button"
+            className={css(styles, "icon-button")}
             onClick={handleBackToModeSelect}
             title="モード選択"
             type="button"
@@ -350,7 +365,7 @@ export function TypingPanel({
             <ArrowLeft size={18} />
           </button>
           <button
-            className="icon-button primary"
+            className={css(styles, "icon-button primary")}
             onClick={onPrepareSession}
             title={visiblePrepareActionTitle}
             type="button"
@@ -358,7 +373,7 @@ export function TypingPanel({
             <PrepareActionIcon size={18} />
           </button>
           <button
-            className="icon-button"
+            className={css(styles, "icon-button")}
             onClick={onResetSession}
             title="リセット"
             type="button"
@@ -369,13 +384,13 @@ export function TypingPanel({
       </div>
 
       {isProductionBlocked ? (
-        <div className="locked-panel">
+        <div className={css(styles, "locked-panel")}>
           <Lock size={28} />
           <p>{productionBlockReason}</p>
         </div>
       ) : (
         <>
-          <div className="target-view" aria-label="current challenge" style={targetViewStyle}>
+          <div className={css(styles, "target-view")} aria-label="current challenge" style={targetViewStyle}>
             {mode.requiresIme ? (
               <>
                 {showDisplayText ? (
@@ -389,7 +404,7 @@ export function TypingPanel({
                   />
                 ) : null}
                 {showHiraganaDisplay && currentReading ? (
-                  <p className="reading-text">{currentReading}</p>
+                  <p className={css(styles, "reading-text")}>{currentReading}</p>
                 ) : null}
               </>
             ) : (
@@ -418,6 +433,7 @@ export function TypingPanel({
                 showHiraganaMarker={showHiraganaMarker}
                 showKanjiMarker={showKanjiMarker}
                 showRomajiMarker={showRomajiMarker}
+                romajiMarkerMode={romajiMarkerMode}
                 showDisplayText={showDisplayText}
                 isProductionDirect={mode.group === "production"}
                 currentChallengeLane={stats.completedPrompts % 2 === 0 ? "top" : "bottom"}
@@ -442,7 +458,7 @@ export function TypingPanel({
           {acceptsTextInput ? (
             <textarea
               aria-label="typing input"
-              className="typing-input"
+              className={css(styles, "typing-input")}
               onChange={(event) => onImeInput(event.target.value)}
               onBeforeInput={onPreventDirectTextInput}
               onCompositionStart={onPreventDirectTextInput}
@@ -464,7 +480,7 @@ export function TypingPanel({
               aria-label="direct keyboard capture"
               autoCapitalize="none"
               autoCorrect="off"
-              className="direct-input-guard"
+              className={css(styles, "direct-input-guard")}
               inputMode="none"
               onBeforeInput={onPreventDirectTextInput}
               onCompositionStart={onPreventDirectTextInput}
@@ -477,12 +493,12 @@ export function TypingPanel({
               value=""
             />
           )}
-          {imeError ? <p className="error-line">{imeError}</p> : null}
+          {imeError ? <p className={css(styles, "error-line")}>{imeError}</p> : null}
         </>
       )}
 
       {isFinished ? (
-        <div className={`result-band ${finishReason === "retired" ? "retired" : ""}`}>
+        <div className={css(styles, "result-band", finishReason === "retired" ? "retired" : "")}>
           <CheckCircle2 size={20} />
           <span>
             {finishReason === "retired"
@@ -517,20 +533,20 @@ function ChallengeAnalysis({
   const driftMs = getAverageAbsoluteDrift(stats.keyStabilityHistory, metrics.paceMs);
 
   return (
-    <section className="challenge-analysis" aria-label="Live Analysis">
-      <div className="challenge-analysis-title">Live Analysis</div>
-      <div className="analysis-column correctness-column">
-        <div className="analysis-heading">
+    <section className={css(styles, "challenge-analysis")} aria-label="Live Analysis">
+      <div className={css(styles, "challenge-analysis-title")}>Live Analysis</div>
+      <div className={css(styles, "analysis-column correctness-column")}>
+        <div className={css(styles, "analysis-heading")}>
           <span>正誤率</span>
           <strong>{(currentAccuracy * 100).toFixed(1)}%</strong>
           <small>ミス {stats.mistakes}</small>
         </div>
-        <div className="correctness-tiles" aria-label="正誤履歴">
+        <div className={css(styles, "correctness-tiles")} aria-label="正誤履歴">
           {tiles.length === 0 ? (
-            <span className="analysis-empty">入力待ち</span>
+            <span className={css(styles, "analysis-empty")}>入力待ち</span>
           ) : (
             tiles.map((tile) => (
-              <span className={`correctness-tile ${tile.state}`} key={tile.id} title={tile.title}>
+              <span className={css(styles, "correctness-tile", tile.state)} key={tile.id} title={tile.title}>
                 {tile.label}
               </span>
             ))
@@ -538,13 +554,13 @@ function ChallengeAnalysis({
         </div>
       </div>
 
-      <div className="analysis-column stability-column">
-        <div className="analysis-heading">
+      <div className={css(styles, "analysis-column stability-column")}>
+        <div className={css(styles, "analysis-heading")}>
           <span>安定度</span>
           <strong>{(metrics.consistency * 100).toFixed(0)}%</strong>
           <small>{speedMetric.label} {speedMetric.value}</small>
         </div>
-        <div className="analysis-metrics">
+        <div className={css(styles, "analysis-metrics")}>
           <div>
             <span>平均打鍵間隔</span>
             <strong>{metrics.paceMs ? `${metrics.paceMs.toFixed(0)} ms` : "--"}</strong>
@@ -558,9 +574,9 @@ function ChallengeAnalysis({
             <strong>{stats.physicalKeystrokes}</strong>
           </div>
         </div>
-        <div className="stability-mini-chart" aria-label="打鍵間隔の安定度グラフ">
+        <div className={css(styles, "stability-mini-chart")} aria-label="打鍵間隔の安定度グラフ">
           {stats.keyStabilityHistory.slice(-48).length === 0 ? (
-            <span className="analysis-empty">入力待ち</span>
+            <span className={css(styles, "analysis-empty")}>入力待ち</span>
           ) : (
             stats.keyStabilityHistory.slice(-48).map((sample) => (
               <span
@@ -602,10 +618,10 @@ function CorrectionDebtIndicator({ debt }: { debt: number }) {
   const visibleDots = Math.min(debt, 12);
 
   return (
-    <div aria-live="polite" className="correction-debt" role="status">
-      <span className="keycap">Backspace</span>
-      <span className="debt-count">あと {debt} 回</span>
-      <span className="debt-dots" aria-hidden="true">
+    <div aria-live="polite" className={css(styles, "correction-debt")} role="status">
+      <span className={css(styles, "keycap")}>Backspace</span>
+      <span className={css(styles, "debt-count")}>あと {debt} 回</span>
+      <span className={css(styles, "debt-dots")} aria-hidden="true">
         {Array.from({ length: visibleDots }, (_, index) => (
           <span key={index} />
         ))}
@@ -764,25 +780,25 @@ function getAverageAbsoluteDrift(history: KeyStabilitySample[], averageMs: numbe
 
 function getStabilityBarClass(sample: KeyStabilitySample, averageMs: number) {
   if (!sample.isCorrect) {
-    return "stability-mini-bar wrong";
+    return css(styles, "stability-mini-bar wrong");
   }
 
   if (sample.kind === "correction") {
-    return "stability-mini-bar correction";
+    return css(styles, "stability-mini-bar correction");
   }
 
   if (sample.intervalMs === null || averageMs === 0) {
-    return "stability-mini-bar neutral";
+    return css(styles, "stability-mini-bar neutral");
   }
 
   const ratio = sample.intervalMs / averageMs;
   if (ratio < 0.72) {
-    return "stability-mini-bar fast";
+    return css(styles, "stability-mini-bar fast");
   }
   if (ratio > 1.42) {
-    return "stability-mini-bar slow";
+    return css(styles, "stability-mini-bar slow");
   }
-  return "stability-mini-bar stable";
+  return css(styles, "stability-mini-bar stable");
 }
 
 function getBarHeight(intervalMs: number | null, averageMs: number) {
@@ -825,7 +841,7 @@ function Metric({
   icon?: ReactNode;
 }) {
   return (
-    <div className="metric">
+    <div className={css(styles, "metric")}>
       <span>
         {icon}
         {label}
@@ -837,7 +853,7 @@ function Metric({
 
 function MetricSplitValue({ left, right }: { left: number; right: number }) {
   return (
-    <span className="metric-split-value">
+    <span className={css(styles, "metric-split-value")}>
       <span>{left.toLocaleString()}</span>
       <span>/</span>
       <span>{right.toLocaleString()}</span>
@@ -874,6 +890,7 @@ function DirectChallengeView({
   completedPrompts,
   showKanjiMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
@@ -905,6 +922,7 @@ function DirectChallengeView({
   completedPrompts: number;
   showKanjiMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
@@ -925,6 +943,7 @@ function DirectChallengeView({
       showHiraganaMarker={showHiraganaMarker}
       showKanjiMarker={showKanjiMarker}
       showRomajiMarker={showRomajiMarker}
+      romajiMarkerMode={romajiMarkerMode}
       strictMistakeDisplayMode={strictMistakeDisplayMode}
       strictMistakeInput={strictMistakeInput}
     />
@@ -946,6 +965,7 @@ function DirectChallengeView({
       showHiraganaMarker={false}
       showKanjiMarker={false}
       showRomajiMarker={false}
+      romajiMarkerMode={romajiMarkerMode}
       strictMistakeDisplayMode="none"
       strictMistakeInput=""
     />
@@ -977,6 +997,7 @@ function DirectChallengeView({
         showHiraganaMarker={showHiraganaMarker}
         showKanjiMarker={showKanjiMarker}
         showRomajiMarker={showRomajiMarker}
+        romajiMarkerMode={romajiMarkerMode}
         strictMistakeDisplayMode={strictMistakeDisplayMode}
         strictMistakeInput={strictMistakeInput}
       />
@@ -989,7 +1010,7 @@ function DirectChallengeView({
 
   if (nextChallengePreviewMode === "center-scroll") {
     return (
-      <div className="challenge-preview-layout center-scroll">
+      <div className={css(styles, "challenge-preview-layout center-scroll")}>
         <ContinuousChallengeTextStack
           display={display}
           furigana={furigana}
@@ -1013,6 +1034,7 @@ function DirectChallengeView({
           showHiraganaMarker={showHiraganaMarker}
           showKanjiMarker={showKanjiMarker}
           showRomajiMarker={showRomajiMarker}
+          romajiMarkerMode={romajiMarkerMode}
           startsAtLeft={completedPrompts === 0}
           strictMistakeDisplayMode={strictMistakeDisplayMode}
           strictMistakeInput={strictMistakeInput}
@@ -1025,7 +1047,7 @@ function DirectChallengeView({
     const nextChallengeLane = currentChallengeLane === "top" ? "bottom" : "top";
     const currentLaneContent = (
       <div
-        className={`challenge-preview-lane current-lane ${currentChallengeLane}-lane active-lane`}
+        className={css(styles, "challenge-preview-lane current-lane", `${currentChallengeLane}-lane`, "active-lane")}
       >
         {challengeContent}
       </div>
@@ -1038,18 +1060,18 @@ function DirectChallengeView({
     );
 
     return (
-      <div className="challenge-preview-layout split-alternate">
+      <div className={css(styles, "challenge-preview-layout split-alternate")}>
         {currentChallengeLane === "top" ? currentLaneContent : nextLaneContent}
-        <div className="challenge-preview-separator" aria-hidden="true" />
+        <div className={css(styles, "challenge-preview-separator")} aria-hidden="true" />
         {currentChallengeLane === "top" ? nextLaneContent : currentLaneContent}
       </div>
     );
   }
 
   return (
-    <div className="challenge-preview-layout split-slide">
-      <div className="challenge-preview-lane current-lane top-lane">{challengeContent}</div>
-      <div className="challenge-preview-separator" aria-hidden="true" />
+    <div className={css(styles, "challenge-preview-layout split-slide")}>
+      <div className={css(styles, "challenge-preview-lane current-lane top-lane")}>{challengeContent}</div>
+      <div className={css(styles, "challenge-preview-separator")} aria-hidden="true" />
       <NextChallengePreviewLane lane="bottom" nextChallengeContent={nextChallengeContent} />
     </div>
   );
@@ -1063,7 +1085,7 @@ function NextChallengePreviewLane({
   nextChallengeContent: ReactNode;
 }) {
   return (
-    <div className={`challenge-preview-lane next-lane ${lane}-lane`}>
+    <div className={css(styles, "challenge-preview-lane next-lane", `${lane}-lane`)}>
       {nextChallengeContent}
     </div>
   );
@@ -1093,6 +1115,7 @@ function ProductionDirectChallengeView({
   showHiraganaMarker,
   showKanjiMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
@@ -1119,11 +1142,12 @@ function ProductionDirectChallengeView({
   showHiraganaMarker: boolean;
   showKanjiMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
   return (
-    <div className="production-direct-layout">
+    <div className={css(styles, "production-direct-layout")}>
       {showDisplayText ? (
         <ProductionLongDisplay
           display={display}
@@ -1138,7 +1162,7 @@ function ProductionDirectChallengeView({
         />
       ) : null}
       {nextChallengePreviewMode === "center-scroll" ? (
-        <div className="challenge-preview-layout center-scroll production-direct-inputs">
+        <div className={css(styles, "challenge-preview-layout center-scroll production-direct-inputs")}>
           <ContinuousChallengeTextStack
             display=""
             furigana={[]}
@@ -1162,6 +1186,7 @@ function ProductionDirectChallengeView({
             showHiraganaMarker={showHiraganaMarker}
             showKanjiMarker={false}
             showRomajiMarker={showRomajiMarker}
+            romajiMarkerMode={romajiMarkerMode}
             startsAtLeft={completedPrompts === 0}
             strictMistakeDisplayMode={strictMistakeDisplayMode}
             strictMistakeInput={strictMistakeInput}
@@ -1181,6 +1206,7 @@ function ProductionDirectChallengeView({
           showHiraganaDisplay={showHiraganaDisplay}
           showHiraganaMarker={showHiraganaMarker}
           showRomajiMarker={showRomajiMarker}
+          romajiMarkerMode={romajiMarkerMode}
           strictMistakeDisplayMode={strictMistakeDisplayMode}
           strictMistakeInput={strictMistakeInput}
         />
@@ -1218,8 +1244,8 @@ function ProductionLongDisplay({
   } as CSSProperties;
 
   return (
-    <div className="production-long-body" ref={bodyRef}>
-      <div className="production-long-scroll-content" style={scrollStyle}>
+    <div className={css(styles, "production-long-body")} ref={bodyRef}>
+      <div className={css(styles, "production-long-scroll-content")} style={scrollStyle}>
         <ProductionLongDisplayText
           display={display}
           furigana={furigana}
@@ -1230,7 +1256,7 @@ function ProductionLongDisplay({
           showKanjiMarker={showKanjiMarker}
         />
         {nextChallengeDisplay ? (
-          <div className="production-long-next-spacer">
+          <div className={css(styles, "production-long-next-spacer")}>
             <ProductionLongDisplayText
               display={nextChallengeDisplay}
               furigana={nextChallengeFurigana}
@@ -1265,9 +1291,13 @@ function useProductionLongBodyScroll(markerKey: string) {
       }
 
       animationFrameId = window.requestAnimationFrame(() => {
-        const content = body.querySelector<HTMLElement>(".production-long-scroll-content");
-        const textLine = content?.querySelector<HTMLElement>(".production-long-display-text");
-        const marker = content?.querySelector<HTMLElement>(".production-long-scroll-target");
+        const content = body.querySelector<HTMLElement>(cssSelector("production-long-scroll-content"));
+        const textLine = content?.querySelector<HTMLElement>(
+          cssSelector("production-long-display-text"),
+        );
+        const marker = content?.querySelector<HTMLElement>(
+          cssSelector("production-long-scroll-target"),
+        );
 
         if (!content || !textLine || !marker) {
           setScrollLines(0);
@@ -1343,13 +1373,13 @@ function ProductionLongDisplayText({
   showKanjiMarker: boolean;
 }) {
   if (furigana.length === 0) {
-    return <p className="display-text production-long-display-text">{display}</p>;
+    return <p className={css(styles, "display-text production-long-display-text")}>{display}</p>;
   }
 
   let tokenStart = 0;
 
   return (
-    <p className="display-text production-long-display-text">
+    <p className={css(styles, "display-text production-long-display-text")}>
       {createJapaneseFuriganaParts(display, furigana).map((part, index) => {
         const partTokenStart = tokenStart;
         const tokenCount = countJapaneseReadingTokens(part.ruby ?? part.text);
@@ -1381,7 +1411,7 @@ function ProductionLongDisplayText({
 
           return (
             <span
-              className={isScrollTarget ? "production-long-scroll-target" : undefined}
+              className={isScrollTarget ? css(styles, "production-long-scroll-target") : undefined}
               key={`production-display-ruby-wrapper-${part.text}-${index}`}
             >
               <ruby className={rubyClassName}>
@@ -1395,7 +1425,7 @@ function ProductionLongDisplayText({
         if (showKanjiMarker && markerProgress !== null) {
           return (
             <span
-              className={isScrollTarget ? "production-long-scroll-target" : undefined}
+              className={isScrollTarget ? css(styles, "production-long-scroll-target") : undefined}
               key={`production-display-marker-wrapper-${part.text}-${index}`}
             >
               {renderDisplayMarkerCharacters(
@@ -1411,7 +1441,7 @@ function ProductionLongDisplayText({
 
         return (
           <span
-            className={isScrollTarget ? "display-plain production-long-scroll-target" : "display-plain"}
+            className={css(styles, "display-plain", isScrollTarget ? "production-long-scroll-target" : "")}
             key={`production-display-plain-${part.text}-${index}`}
           >
             {part.text}
@@ -1453,6 +1483,7 @@ function ProductionSegmentedInputStack({
   showHiraganaDisplay,
   showHiraganaMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
@@ -1468,6 +1499,7 @@ function ProductionSegmentedInputStack({
   showHiraganaDisplay: boolean;
   showHiraganaMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
@@ -1507,6 +1539,7 @@ function ProductionSegmentedInputStack({
       showHiraganaDisplay={showHiraganaDisplay}
       showHiraganaMarker={showHiraganaMarker}
       showRomajiMarker={showRomajiMarker}
+      romajiMarkerMode={romajiMarkerMode}
       strictMistakeDisplayMode={strictMistakeDisplayMode}
       strictMistakeInput={strictMistakeInput}
     />
@@ -1525,6 +1558,7 @@ function ProductionSegmentedInputStack({
       showHiraganaDisplay={showHiraganaDisplay}
       showHiraganaMarker={false}
       showRomajiMarker={false}
+      romajiMarkerMode={romajiMarkerMode}
       strictMistakeDisplayMode="none"
       strictMistakeInput=""
     />
@@ -1532,8 +1566,8 @@ function ProductionSegmentedInputStack({
 
   if (previewMode === "none") {
     return (
-      <div className="production-segmented-stack">
-        <div className="challenge-preview-lane current-lane top-lane active-lane">
+      <div className={css(styles, "production-segmented-stack")}>
+        <div className={css(styles, "challenge-preview-lane current-lane top-lane active-lane")}>
           {currentContent}
         </div>
       </div>
@@ -1541,20 +1575,20 @@ function ProductionSegmentedInputStack({
   }
 
   const currentLaneContent = (
-    <div className={`challenge-preview-lane current-lane ${currentLane}-lane active-lane`}>
+    <div className={css(styles, "challenge-preview-lane current-lane", `${currentLane}-lane`, "active-lane")}>
       {currentContent}
     </div>
   );
   const nextLaneContent = (
-    <div className={`challenge-preview-lane next-lane ${nextLane}-lane`}>
+    <div className={css(styles, "challenge-preview-lane next-lane", `${nextLane}-lane`)}>
       {nextContent}
     </div>
   );
 
   return (
-    <div className={`production-segmented-stack ${previewMode}`}>
+    <div className={css(styles, "production-segmented-stack", previewMode)}>
       {currentLane === "top" ? currentLaneContent : nextLaneContent}
-      <div className="challenge-preview-separator" aria-hidden="true" />
+      <div className={css(styles, "challenge-preview-separator")} aria-hidden="true" />
       {currentLane === "top" ? nextLaneContent : currentLaneContent}
     </div>
   );
@@ -1571,6 +1605,7 @@ function ProductionSegmentLaneContent({
   showHiraganaDisplay,
   showHiraganaMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
@@ -1584,13 +1619,14 @@ function ProductionSegmentLaneContent({
   showHiraganaDisplay: boolean;
   showHiraganaMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
   return (
     <>
       {showHiraganaDisplay && readingSegment.text ? (
-        <p className="reading-text">
+        <p className={css(styles, "reading-text")}>
           {isCurrent && romajiTarget
             ? renderReadingGuideSegmentCharacters(
               reading,
@@ -1603,7 +1639,7 @@ function ProductionSegmentLaneContent({
             : renderPlainSegmentCharacters(readingSegment.text)}
         </p>
       ) : null}
-      <p className="input-target" aria-label="romaji input target">
+      <p className={css(styles, "input-target")} aria-label="romaji input target">
         {isCurrent && romajiTarget
           ? renderRomajiGuideSegmentCharacters(
             romajiTarget,
@@ -1613,6 +1649,7 @@ function ProductionSegmentLaneContent({
             strictMistakeInput,
             strictMistakeDisplayMode,
             showRomajiMarker,
+            romajiMarkerMode,
           )
           : renderPlainSegmentCharacters(guideSegment.text)}
       </p>
@@ -1757,7 +1794,7 @@ function isProductionSegmentPunctuation(text: string) {
 
 function renderPlainSegmentCharacters(text: string) {
   return Array.from(text).map((character, index) => (
-    <span className="char" key={`segment-plain-${character}-${index}`}>
+    <span className={css(styles, "char")} key={`segment-plain-${character}-${index}`}>
       {character}
     </span>
   ));
@@ -1783,7 +1820,7 @@ function renderReadingGuideSegmentCharacters(
     .map((part, partIndex) => {
       if (part.kind === "visual") {
         return (
-          <span className="visual-space" key={`segment-reading-space-${partIndex}`} aria-hidden="true">
+          <span className={css(styles, "visual-space")} key={`segment-reading-space-${partIndex}`} aria-hidden="true">
             {part.text}
           </span>
         );
@@ -1795,11 +1832,11 @@ function renderReadingGuideSegmentCharacters(
         progress.currentTokenIndex < part.tokenEnd;
       const isMistakeFlash = flashTokenIndex !== null && isCurrent && !isCompleted;
       const className = isCompleted
-        ? "char correct"
+        ? css(styles, "char correct")
         : isCurrent && showMarker
-          ? "char current"
-          : "char";
-      const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+          ? css(styles, "char current")
+          : css(styles, "char");
+      const flashClassName = isMistakeFlash ? cx(className, css(styles, "mistake-flash")) : className;
       const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
       return (
@@ -1821,7 +1858,20 @@ function renderRomajiGuideSegmentCharacters(
   strictMistakeInput: string,
   strictMistakeDisplayMode: StrictMistakeDisplayMode,
   showMarker: boolean,
+  markerMode: RomajiMarkerMode,
 ) {
+  if (markerMode === "token") {
+    return renderRomajiGuideTokenUnits(
+      target,
+      input,
+      mistakeFlash,
+      strictMistakeInput,
+      strictMistakeDisplayMode,
+      showMarker,
+      segment,
+    );
+  }
+
   const progress = getRomajiInputProgress(target, input);
   const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
   const flashCharacterIndex =
@@ -1838,7 +1888,7 @@ function renderRomajiGuideSegmentCharacters(
     if (part.kind === "visual") {
       if (segment.text.includes(part.text)) {
         elements.push(
-          <span className="visual-space" key={`segment-romaji-space-${partIndex}`} aria-hidden="true">
+          <span className={css(styles, "visual-space")} key={`segment-romaji-space-${partIndex}`} aria-hidden="true">
             {part.text}
           </span>,
         );
@@ -1876,7 +1926,7 @@ function renderRomajiGuideSegmentCharacters(
       if (overwriteMistake) {
         elements.push(
           <span
-            className="char wrong"
+            className={css(styles, "char wrong")}
             key={`segment-romaji-overwrite-${part.tokenIndex}-${characterIndex}`}
           >
             {overwriteMistake}
@@ -1892,18 +1942,21 @@ function renderRomajiGuideSegmentCharacters(
         isCurrentToken &&
         progress.currentOption !== null &&
         characterIndex < progress.currentOptionOffset;
+      const isNextCurrentCharacter =
+        isCurrentToken &&
+        characterIndex === (progress.currentOption ? progress.currentOptionOffset : 0);
       const isMistakeFlash =
         flashTokenIndex === part.tokenIndex &&
         characterIndex === flashCharacterIndex &&
         !isTypedCurrentCharacter;
       const className = isCompletedToken
-        ? "char correct"
-        : isCurrentToken && showMarker
-          ? isTypedCurrentCharacter
-            ? "char correct current"
-            : "char current"
-          : "char";
-      const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+        ? css(styles, "char correct")
+        : isTypedCurrentCharacter
+          ? css(styles, "char correct")
+          : isNextCurrentCharacter && showMarker
+            ? css(styles, "char current")
+            : css(styles, "char");
+      const flashClassName = isMistakeFlash ? cx(className, css(styles, "mistake-flash")) : className;
       const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
       elements.push(
@@ -1957,6 +2010,7 @@ function ContinuousChallengeTextStack({
   showHiraganaMarker,
   showKanjiMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   startsAtLeft,
   strictMistakeDisplayMode,
   strictMistakeInput,
@@ -1983,6 +2037,7 @@ function ContinuousChallengeTextStack({
   showHiraganaMarker: boolean;
   showKanjiMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   startsAtLeft: boolean;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
@@ -1992,7 +2047,7 @@ function ContinuousChallengeTextStack({
   const centerMarkerKey = `${centerMarkerPosition}-${input}`;
 
   return (
-    <div className="center-continuous-stack">
+    <div className={css(styles, "center-continuous-stack")}>
       {showDisplayText && hasSeparateDisplay ? (
         <CenterScrollViewport
           kind="display"
@@ -2000,7 +2055,7 @@ function ContinuousChallengeTextStack({
           markerPosition={centerMarkerPosition}
           startsAtLeft={startsAtLeft}
         >
-          <p className="display-text center-continuous-line">
+          <p className={css(styles, "display-text center-continuous-line")}>
             <PreviousCenterDisplayText
               display={previousChallengeDisplay}
               furigana={previousChallengeFurigana}
@@ -2029,9 +2084,9 @@ function ContinuousChallengeTextStack({
           markerPosition={centerMarkerPosition}
           startsAtLeft={startsAtLeft}
         >
-          <p className="reading-text center-continuous-line">
+          <p className={css(styles, "reading-text center-continuous-line")}>
             {previousChallengeReading ? (
-              <span className="center-scroll-previous-text">{previousChallengeReading}</span>
+              <span className={css(styles, "center-scroll-previous-text")}>{previousChallengeReading}</span>
             ) : null}
             {romajiTarget
               ? insertCenterMarker(
@@ -2045,7 +2100,7 @@ function ContinuousChallengeTextStack({
                 centerMarkerPosition,
               )
               : renderCenterTextWithMarker(reading, centerMarkerPosition, "")}
-            <span className="center-scroll-next-text">{nextChallengeReading}</span>
+            <span className={css(styles, "center-scroll-next-text")}>{nextChallengeReading}</span>
           </p>
         </CenterScrollViewport>
       ) : null}
@@ -2056,11 +2111,11 @@ function ContinuousChallengeTextStack({
         startsAtLeft={startsAtLeft}
       >
         <p
-          className="input-target center-continuous-line"
+          className={css(styles, "input-target center-continuous-line")}
           aria-label={hasSeparateDisplay ? "romaji input target" : "input target"}
         >
           {previousChallengeGuide ? (
-            <span className="center-scroll-previous-text">
+            <span className={css(styles, "center-scroll-previous-text")}>
               {renderGuideCharacters(previousChallengeGuide, "", null, "", "none", false)}
             </span>
           ) : null}
@@ -2072,6 +2127,7 @@ function ContinuousChallengeTextStack({
               strictMistakeInput,
               strictMistakeDisplayMode,
               showRomajiMarker,
+              romajiMarkerMode,
             )
             : renderGuideCharacters(
               guide,
@@ -2081,7 +2137,7 @@ function ContinuousChallengeTextStack({
               strictMistakeDisplayMode,
               showRomajiMarker,
             )}
-          <span className="center-scroll-next-text">
+          <span className={css(styles, "center-scroll-next-text")}>
             {renderGuideCharacters(nextChallengeGuide, "", null, "", "none", false)}
           </span>
         </p>
@@ -2112,9 +2168,15 @@ function CenterScrollViewport({
       return;
     }
 
-    const line = viewport.querySelector<HTMLElement>(".center-continuous-line");
+    const line = viewport.querySelector<HTMLElement>(cssSelector("center-continuous-line"));
     const marker = viewport.querySelector<HTMLElement>(
-      ".center-scroll-current-marker, .furigana-marker-current, .kanji-marker-current, .char.current:not(.correct), .char.current",
+      [
+        cssSelector("center-scroll-current-marker"),
+        cssSelector("furigana-marker-current"),
+        cssSelector("kanji-marker-current"),
+        `${cssSelector("char", "current")}:not(${cssSelector("correct")})`,
+        cssSelector("char", "current"),
+      ].join(", "),
     );
     if (!marker) {
       setMarkerTranslatePx(null);
@@ -2155,7 +2217,7 @@ function CenterScrollViewport({
 
   return (
     <div
-      className={`center-scroll-viewport ${kind}-center-viewport`}
+      className={css(styles, "center-scroll-viewport", `${kind}-center-viewport`)}
       ref={viewportRef}
       style={style}
     >
@@ -2186,16 +2248,16 @@ function PreviousCenterDisplayText({
   }
 
   return (
-    <span className="center-scroll-previous-text">
+    <span className={css(styles, "center-scroll-previous-text")}>
       {showFurigana && furigana.length > 0
         ? createJapaneseFuriganaParts(display, furigana).map((part, index) =>
           part.ruby ? (
-            <ruby className="display-ruby" key={`previous-display-ruby-${part.text}-${index}`}>
+            <ruby className={css(styles, "display-ruby")} key={`previous-display-ruby-${part.text}-${index}`}>
               {part.text}
               <rt>{part.ruby}</rt>
             </ruby>
           ) : (
-            <span className="display-plain" key={`previous-display-plain-${part.text}-${index}`}>
+            <span className={css(styles, "display-plain")} key={`previous-display-plain-${part.text}-${index}`}>
               {part.text}
             </span>
           ),
@@ -2220,12 +2282,12 @@ function renderCenterNextDisplayText(
 
   return createJapaneseFuriganaParts(display, furigana).map((part, index) =>
     part.ruby ? (
-      <ruby className="display-ruby" key={`next-display-ruby-${part.text}-${index}`}>
+      <ruby className={css(styles, "display-ruby")} key={`next-display-ruby-${part.text}-${index}`}>
         {part.text}
         <rt>{part.ruby}</rt>
       </ruby>
     ) : (
-      <span className="display-plain" key={`next-display-plain-${part.text}-${index}`}>
+      <span className={css(styles, "display-plain")} key={`next-display-plain-${part.text}-${index}`}>
         {part.text}
       </span>
     ),
@@ -2246,7 +2308,7 @@ function renderCenterDisplayText(
       display,
       currentTokenIndex,
       nextText,
-      `center-scroll-next-text ${showKanjiMarker ? "" : "seamless"}`.trim(),
+      css(styles, "center-scroll-next-text", showKanjiMarker ? "" : "seamless"),
     );
   }
 
@@ -2306,7 +2368,7 @@ function renderCenterDisplayText(
     }
 
     content.push(
-      <span className="display-plain" key={`center-display-plain-${part.text}-${index}`}>
+      <span className={css(styles, "display-plain")} key={`center-display-plain-${part.text}-${index}`}>
         {part.text}
       </span>,
     );
@@ -2319,7 +2381,7 @@ function renderCenterDisplayText(
   if (nextText) {
     content.push(
       <span
-        className={`center-scroll-next-text ${showKanjiMarker ? "" : "seamless"}`.trim()}
+        className={css(styles, "center-scroll-next-text", showKanjiMarker ? "" : "seamless")}
         key="center-next-text"
       >
         {nextText}
@@ -2334,7 +2396,7 @@ function renderCenterTextWithMarker(
   text: string,
   markerPosition: number,
   nextText: ReactNode,
-  nextTextClassName = "center-scroll-next-text",
+  nextTextClassName = css(styles, "center-scroll-next-text"),
 ) {
   const characters = Array.from(text);
   const markerIndex = Math.min(characters.length, Math.max(0, markerPosition));
@@ -2374,7 +2436,7 @@ function insertCenterMarker(nodes: ReactNode, markerPosition: number) {
 }
 
 function CenterScrollCurrentMarker() {
-  return <span aria-hidden="true" className="center-scroll-current-marker" />;
+  return <span aria-hidden="true" className={css(styles, "center-scroll-current-marker")} />;
 }
 
 function ChallengeTextStack({
@@ -2393,6 +2455,7 @@ function ChallengeTextStack({
   showHiraganaMarker,
   showKanjiMarker,
   showRomajiMarker,
+  romajiMarkerMode,
   strictMistakeDisplayMode,
   strictMistakeInput,
 }: {
@@ -2411,6 +2474,7 @@ function ChallengeTextStack({
   showHiraganaMarker: boolean;
   showKanjiMarker: boolean;
   showRomajiMarker: boolean;
+  romajiMarkerMode: RomajiMarkerMode;
   strictMistakeDisplayMode: StrictMistakeDisplayMode;
   strictMistakeInput: string;
 }) {
@@ -2430,7 +2494,7 @@ function ChallengeTextStack({
         />
       ) : null}
       {showHiraganaDisplay && reading ? (
-        <p className="reading-text">
+        <p className={css(styles, "reading-text")}>
           {romajiTarget && renderMarkers
             ? renderReadingGuideCharacters(
               reading,
@@ -2443,7 +2507,7 @@ function ChallengeTextStack({
         </p>
       ) : null}
       <p
-        className="input-target"
+        className={css(styles, "input-target")}
         aria-label={hasSeparateDisplay ? "romaji input target" : "input target"}
       >
         {romajiTarget
@@ -2455,6 +2519,7 @@ function ChallengeTextStack({
               strictMistakeInput,
               strictMistakeDisplayMode,
               showRomajiMarker,
+              romajiMarkerMode,
             )
             : renderGuideCharacters(guide, "", null, "", "none", false)
           : renderGuideCharacters(
@@ -2488,7 +2553,7 @@ function DisplayText({
   let tokenStart = 0;
 
   return (
-    <p className="display-text">
+    <p className={css(styles, "display-text")}>
       {showFurigana && furigana.length > 0 ? (
         createJapaneseFuriganaParts(display, furigana).map((part, index) => {
           const partTokenStart = tokenStart;
@@ -2533,7 +2598,7 @@ function DisplayText({
           }
 
           return (
-            <span className="display-plain" key={`${part.text}-${index}`}>
+            <span className={css(styles, "display-plain")} key={`${part.text}-${index}`}>
               {part.text}
             </span>
           );
@@ -2553,18 +2618,18 @@ function getDisplayMarkerClassName(
   tokenEnd: number,
 ) {
   if (!showMarker || markerProgress === null) {
-    return baseClassName;
+    return css(styles, baseClassName);
   }
 
   if (tokenEnd <= markerProgress.completedTokens) {
-    return `${baseClassName} kanji-marker-correct`;
+    return css(styles, baseClassName, "kanji-marker-correct");
   }
 
   if (tokenStart <= markerProgress.currentTokenIndex && markerProgress.currentTokenIndex < tokenEnd) {
-    return `${baseClassName} kanji-marker-current`;
+    return css(styles, baseClassName, "kanji-marker-current");
   }
 
-  return `${baseClassName} kanji-marker-pending`;
+  return css(styles, baseClassName, "kanji-marker-pending");
 }
 
 function renderFuriganaMarkerCharacters(
@@ -2607,7 +2672,7 @@ function renderDisplayMarkerCharacters(
   return createDisplayMarkerTextParts(text).map((part, partIndex) => {
     if (part.kind === "visual") {
       return (
-        <span className="display-plain" key={`${keyPrefix}-visual-${partIndex}`}>
+        <span className={css(styles, "display-plain")} key={`${keyPrefix}-visual-${partIndex}`}>
           {part.text}
         </span>
       );
@@ -2623,7 +2688,7 @@ function renderDisplayMarkerCharacters(
 
     return (
       <span
-        className={`display-plain ${className}`}
+        className={cx(css(styles, "display-plain"), className)}
         key={`${keyPrefix}-${part.tokenStart}-${part.text}-${partIndex}`}
       >
         {part.text}
@@ -2671,14 +2736,14 @@ function getTextMarkerStateClassName(
   currentTokenIndex: number,
 ) {
   if (tokenEnd <= completedTokens) {
-    return `${baseClassName}-correct`;
+    return css(styles, `${baseClassName}-correct`);
   }
 
   if (tokenStart <= currentTokenIndex && currentTokenIndex < tokenEnd) {
-    return `${baseClassName}-current`;
+    return css(styles, `${baseClassName}-current`);
   }
 
-  return `${baseClassName}-pending`;
+  return css(styles, `${baseClassName}-pending`);
 }
 
 function countJapaneseReadingTokens(reading: string) {
@@ -2701,7 +2766,7 @@ function renderReadingGuideCharacters(
   return createJapaneseReadingGuideParts(reading).map((part, partIndex) => {
     if (part.kind === "visual") {
       return (
-        <span className="visual-space" key={`reading-space-${partIndex}`} aria-hidden="true">
+        <span className={css(styles, "visual-space")} key={`reading-space-${partIndex}`} aria-hidden="true">
           {part.text}
         </span>
       );
@@ -2713,11 +2778,11 @@ function renderReadingGuideCharacters(
       progress.currentTokenIndex < part.tokenEnd;
     const isMistakeFlash = flashTokenIndex !== null && isCurrent && !isCompleted;
     const className = isCompleted
-      ? "char correct"
+      ? css(styles, "char correct")
       : isCurrent && showMarker
-        ? "char current"
-        : "char";
-    const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+        ? css(styles, "char current")
+        : css(styles, "char");
+    const flashClassName = isMistakeFlash ? cx(className, css(styles, "mistake-flash")) : className;
     const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
     return (
@@ -2738,7 +2803,19 @@ function renderRomajiGuideCharacters(
   strictMistakeInput: string,
   strictMistakeDisplayMode: StrictMistakeDisplayMode,
   showMarker: boolean,
+  markerMode: RomajiMarkerMode,
 ) {
+  if (markerMode === "token") {
+    return renderRomajiGuideTokenUnits(
+      target,
+      input,
+      mistakeFlash,
+      strictMistakeInput,
+      strictMistakeDisplayMode,
+      showMarker,
+    );
+  }
+
   const progress = getRomajiInputProgress(target, input);
   const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
   const flashCharacterIndex =
@@ -2754,7 +2831,7 @@ function renderRomajiGuideCharacters(
   target.parts.forEach((part, partIndex) => {
     if (part.kind === "visual") {
       elements.push(
-        <span className="visual-space" key={`space-${partIndex}`} aria-hidden="true">
+        <span className={css(styles, "visual-space")} key={`space-${partIndex}`} aria-hidden="true">
           {part.text}
         </span>,
       );
@@ -2785,7 +2862,7 @@ function renderRomajiGuideCharacters(
       if (overwriteMistake) {
         elements.push(
           <span
-            className="char wrong"
+            className={css(styles, "char wrong")}
             key={`romaji-overwrite-${part.tokenIndex}-${characterIndex}`}
           >
             {overwriteMistake}
@@ -2801,18 +2878,21 @@ function renderRomajiGuideCharacters(
         isCurrentToken &&
         progress.currentOption !== null &&
         characterIndex < progress.currentOptionOffset;
+      const isNextCurrentCharacter =
+        isCurrentToken &&
+        characterIndex === (progress.currentOption ? progress.currentOptionOffset : 0);
       const isMistakeFlash =
         flashTokenIndex === part.tokenIndex &&
         characterIndex === flashCharacterIndex &&
         !isTypedCurrentCharacter;
       const className = isCompletedToken
-        ? "char correct"
-        : isCurrentToken && showMarker
-          ? isTypedCurrentCharacter
-            ? "char correct current"
-            : "char current"
-          : "char";
-      const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+        ? css(styles, "char correct")
+        : isTypedCurrentCharacter
+          ? css(styles, "char correct")
+          : isNextCurrentCharacter && showMarker
+            ? css(styles, "char current")
+          : css(styles, "char");
+      const flashClassName = isMistakeFlash ? cx(className, css(styles, "mistake-flash")) : className;
       const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
       elements.push(
@@ -2843,6 +2923,191 @@ function renderRomajiGuideCharacters(
   return elements;
 }
 
+type RomajiMarkerUnit =
+  | {
+      kind: "visual";
+      text: string;
+    }
+  | {
+      characterStart: number;
+      hasVariant: boolean;
+      kind: "input";
+      text: string;
+      tokenStart: number;
+      tokenEnd: number;
+    };
+
+function renderRomajiGuideTokenUnits(
+  target: RomajiInputTarget,
+  input: string,
+  mistakeFlash: MistakeFlash | null,
+  strictMistakeInput: string,
+  strictMistakeDisplayMode: StrictMistakeDisplayMode,
+  showMarker: boolean,
+  segment?: ProductionTextSegment,
+) {
+  const progress = getRomajiInputProgress(target, input);
+  const units = createRomajiMarkerUnits(target, progress);
+  const flashTokenIndex = mistakeFlash ? progress.currentTokenIndex : null;
+  const mistakeCharacters = getVisibleStrictMistakeCharacters(
+    strictMistakeInput,
+    strictMistakeDisplayMode,
+  );
+  const elements: ReactNode[] = [];
+  let inputCharacterIndex = 0;
+  let insertedMistakes = false;
+
+  units.forEach((unit, unitIndex) => {
+    if (unit.kind === "visual") {
+      if (!segment || segment.text.includes(unit.text)) {
+        elements.push(
+          <span className={css(styles, "visual-space")} key={`romaji-token-space-${unitIndex}`} aria-hidden="true">
+            {unit.text}
+          </span>,
+        );
+      }
+      return;
+    }
+
+    const unitLength = Array.from(unit.text).length;
+    const isInSegment =
+      !segment || (unit.tokenStart < segment.tokenEnd && segment.tokenStart < unit.tokenEnd);
+
+    if (!isInSegment) {
+      inputCharacterIndex += unitLength;
+      return;
+    }
+
+    if (
+      strictMistakeDisplayMode === "insert" &&
+      !insertedMistakes &&
+      inputCharacterIndex >= input.length
+    ) {
+      elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "romaji-token-insert"));
+      insertedMistakes = true;
+    }
+
+    const overwriteMistake = getOverwriteMistakeCharacter(
+      mistakeCharacters,
+      inputCharacterIndex,
+      input.length,
+      strictMistakeDisplayMode,
+    );
+    if (overwriteMistake) {
+      elements.push(
+        <span className={css(styles, "char wrong")} key={`romaji-token-overwrite-${unitIndex}`}>
+          {overwriteMistake}
+        </span>,
+      );
+      inputCharacterIndex += unitLength;
+      return;
+    }
+
+    const isCompleted = unit.tokenEnd <= progress.completedTokens;
+    const isCurrent =
+      unit.tokenStart <= progress.currentTokenIndex &&
+      progress.currentTokenIndex < unit.tokenEnd;
+    const isStartedCurrent = isCurrent && input.length > unit.characterStart;
+    const isMistakeFlash =
+      flashTokenIndex !== null &&
+      unit.tokenStart <= flashTokenIndex &&
+      flashTokenIndex < unit.tokenEnd &&
+      !isCompleted;
+    const className = isCompleted
+      ? css(styles, "char correct")
+      : isCurrent && showMarker
+        ? isStartedCurrent
+          ? css(styles, "char correct current")
+          : css(styles, "char current")
+        : css(styles, "char");
+    const flashClassName = isMistakeFlash ? cx(className, css(styles, "mistake-flash")) : className;
+    const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
+
+    elements.push(
+      <span
+        className={flashClassName}
+        key={`romaji-token-${unit.tokenStart}-${unit.text}-${unitIndex}-${flashKey}`}
+      >
+        {unit.text}
+      </span>,
+    );
+    inputCharacterIndex += unitLength;
+  });
+
+  if (strictMistakeDisplayMode === "insert" && !insertedMistakes) {
+    elements.push(...renderStrictMistakeCharacters(mistakeCharacters, "romaji-token-insert"));
+  }
+
+  if (strictMistakeDisplayMode === "overwrite") {
+    elements.push(
+      ...renderStrictMistakeCharacters(
+        mistakeCharacters.slice(Math.max(0, inputCharacterIndex - input.length)),
+        "romaji-token-overwrite-tail",
+      ),
+    );
+  }
+
+  return elements;
+}
+
+function createRomajiMarkerUnits(
+  target: RomajiInputTarget,
+  progress: ReturnType<typeof getRomajiInputProgress>,
+) {
+  const units: RomajiMarkerUnit[] = [];
+  let inputCharacterIndex = 0;
+
+  target.parts.forEach((part) => {
+    if (part.kind === "visual") {
+      units.push({ kind: "visual", text: part.text });
+      return;
+    }
+
+    const text =
+      progress.currentTokenIndex === part.tokenIndex && progress.currentOption
+        ? progress.currentOption
+        : (progress.selectedOptions[part.tokenIndex] ?? part.text);
+    const previous = units[units.length - 1];
+
+    if (
+      previous?.kind === "input" &&
+      shouldMergeRomajiMarkerUnit(previous, text, part.variantId)
+    ) {
+      previous.text += text;
+      previous.tokenEnd = part.tokenIndex + 1;
+      previous.hasVariant = previous.hasVariant || part.variantId !== undefined;
+    } else {
+      units.push({
+        characterStart: inputCharacterIndex,
+        hasVariant: part.variantId !== undefined,
+        kind: "input",
+        text,
+        tokenStart: part.tokenIndex,
+        tokenEnd: part.tokenIndex + 1,
+      });
+    }
+
+    inputCharacterIndex += Array.from(text).length;
+  });
+
+  return units;
+}
+
+function shouldMergeRomajiMarkerUnit(
+  previous: Extract<RomajiMarkerUnit, { kind: "input" }>,
+  nextText: string,
+  nextVariantId: string | undefined,
+) {
+  if (previous.hasVariant || nextVariantId !== undefined || Array.from(nextText).length !== 1) {
+    return false;
+  }
+
+  const previousText = previous.text.toLowerCase();
+  const nextCharacter = nextText.toLowerCase();
+
+  return /^[bcdfghjklmnpqrstvwxyz]+$/.test(previousText) && /^[aeiouy]$/.test(nextCharacter);
+}
+
 function renderGuideCharacters(
   guide: string,
   input: string,
@@ -2862,7 +3127,7 @@ function renderGuideCharacters(
   Array.from(guide).forEach((character, index) => {
     if (/\s/.test(character)) {
       elements.push(
-        <span className="visual-space" key={`space-${index}`} aria-hidden="true">
+        <span className={css(styles, "visual-space")} key={`space-${index}`} aria-hidden="true">
           {character}
         </span>,
       );
@@ -2890,7 +3155,7 @@ function renderGuideCharacters(
     targetIndex += 1;
     if (overwriteMistake) {
       elements.push(
-        <span className="char wrong" key={`direct-overwrite-${index}`}>
+        <span className={css(styles, "char wrong")} key={`direct-overwrite-${index}`}>
           {overwriteMistake}
         </span>,
       );
@@ -2903,12 +3168,12 @@ function renderGuideCharacters(
     const className =
       typed === undefined
         ? currentIndex === input.length && showMarker
-          ? "char current"
-          : "char"
+          ? css(styles, "char current")
+          : css(styles, "char")
         : typed === character
-          ? "char correct"
-          : "char wrong";
-    const flashClassName = isMistakeFlash ? `${className} mistake-flash` : className;
+          ? css(styles, "char correct")
+          : css(styles, "char wrong");
+    const flashClassName = isMistakeFlash ? cx(className, css(styles, "mistake-flash")) : className;
     const flashKey = isMistakeFlash && mistakeFlash ? mistakeFlash.id : "idle";
 
     elements.push(
@@ -2957,7 +3222,7 @@ function getOverwriteMistakeCharacter(
 
 function renderStrictMistakeCharacters(mistakeCharacters: string[], keyPrefix: string) {
   return mistakeCharacters.map((character, index) => (
-    <span className="char wrong" key={`${keyPrefix}-${index}`}>
+    <span className={css(styles, "char wrong")} key={`${keyPrefix}-${index}`}>
       {character}
     </span>
   ));

@@ -306,7 +306,8 @@ export function useTypingSession({
           preset: stored.settings.romajiInputPreset,
           selections: stored.settings.romajiInputSelections,
           allowSplitYoon: stored.settings.allowSplitYoon,
-          allowSplitSpecialYoon: stored.settings.allowSplitSpecialYoon,
+          specialPreset: stored.settings.specialRomajiInputPreset,
+          specialSelections: stored.settings.specialRomajiInputSelections,
           sokuon: stored.settings.sokuonInput,
         })
       : null;
@@ -316,7 +317,8 @@ export function useTypingSession({
           preset: stored.settings.romajiInputPreset,
           selections: stored.settings.romajiInputSelections,
           allowSplitYoon: stored.settings.allowSplitYoon,
-          allowSplitSpecialYoon: stored.settings.allowSplitSpecialYoon,
+          specialPreset: stored.settings.specialRomajiInputPreset,
+          specialSelections: stored.settings.specialRomajiInputSelections,
           sokuon: stored.settings.sokuonInput,
         })
       : null;
@@ -958,6 +960,7 @@ export function useTypingSession({
       showKanjiDisplay: stored.settings.showKanjiDisplay,
       showKanjiMarker: stored.settings.showKanjiMarker,
       showRomajiMarker: stored.settings.showRomajiMarker,
+      romajiMarkerMode: stored.settings.romajiMarkerMode,
       kanjiFontSize: stored.settings.kanjiFontSize,
       furiganaFontScale: stored.settings.furiganaFontScale,
       hiraganaFontSize: stored.settings.hiraganaFontSize,

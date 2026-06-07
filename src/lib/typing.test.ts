@@ -308,6 +308,97 @@ describe("applyDirectKey", () => {
     expect(typeDirectKeys(specialPermissiveTarget, Array.from("kila")).completedPrompts).toBe(0);
   });
 
+  test("can enable wi and dhi special split yoon inputs with custom guide preferences", () => {
+    const generalOnlyTarget = createRomajiInputTarget("wikipedhia", {
+      preset: "hepburn",
+      selections: {},
+      allowSplitSpecialYoon: false,
+    });
+
+    expect(typeDirectKeys(generalOnlyTarget, Array.from("wikipedhia")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(generalOnlyTarget, Array.from("uxikipedexia")).completedPrompts).toBe(0);
+
+    const specialPermissiveTarget = createRomajiInputTarget("wikipedhia", {
+      preset: "custom",
+      selections: {},
+      specialPreset: "custom",
+      specialSelections: {
+        wi: { accepted: ["wi", "whi", "uli", "uxi"], preferred: "whi" },
+        dhi: { accepted: ["dhi", "di", "deli", "dexi"], preferred: "di" },
+      },
+    });
+
+    expect(specialPermissiveTarget.guide).toBe("whikipedia");
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("whikipedia")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("wikipedia")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("uxikipedexia")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("ulikipedelia")).completedPrompts).toBe(1);
+  });
+
+  test("can enable additional foreign katakana special split yoon inputs", () => {
+    const generalOnlyTarget = createRomajiInputTarget("wedhudwu", {
+      preset: "hepburn",
+      selections: {},
+      allowSplitSpecialYoon: false,
+    });
+
+    expect(typeDirectKeys(generalOnlyTarget, Array.from("wedhudwu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(generalOnlyTarget, Array.from("uxedexyudoxu")).completedPrompts).toBe(0);
+
+    const specialPermissiveTarget = createRomajiInputTarget("wedhudwu", {
+      preset: "custom",
+      selections: {},
+      specialPreset: "custom",
+      specialSelections: {
+        we: { accepted: ["we", "whe", "ule", "uxe"], preferred: "whe" },
+        dhu: { accepted: ["dhu", "dyu", "delyu", "dexyu"], preferred: "dyu" },
+        dwu: { accepted: ["dwu", "dolu", "doxu"], preferred: "dwu" },
+      },
+    });
+
+    expect(specialPermissiveTarget.guide).toBe("whedyudwu");
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("whedyudwu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("wedhudwu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("uxedexyudoxu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(specialPermissiveTarget, Array.from("uledelyudolu")).completedPrompts).toBe(1);
+  });
+
+  test("can configure low-frequency special yoon inputs separately from standard romaji", () => {
+    const integratedTarget = createRomajiInputTarget("vithivedhu", {
+      preset: "hepburn",
+      selections: {},
+      specialPreset: "integrated",
+    });
+
+    expect(integratedTarget.guide).toBe("vithivedhu");
+    expect(typeDirectKeys(integratedTarget, Array.from("vithivedhu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(integratedTarget, Array.from("vuxitexivuxedexyu")).completedPrompts).toBe(0);
+
+    const splitTarget = createRomajiInputTarget("vithivedhu", {
+      preset: "hepburn",
+      selections: {},
+      specialPreset: "split",
+    });
+
+    expect(splitTarget.guide).toBe("vuxitexivuxedexyu");
+    expect(typeDirectKeys(splitTarget, Array.from("vuxitexivuxedexyu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(splitTarget, Array.from("vithivedhu")).completedPrompts).toBe(0);
+
+    const customTarget = createRomajiInputTarget("vithivedhu", {
+      preset: "hepburn",
+      selections: {},
+      specialPreset: "custom",
+      specialSelections: {
+        thi: { accepted: ["texi"], preferred: "texi" },
+        ve: { accepted: ["ve", "vuxe"], preferred: "vuxe" },
+      },
+    });
+
+    expect(customTarget.guide).toBe("vitexivuxedhu");
+    expect(typeDirectKeys(customTarget, Array.from("vitexivuxedhu")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(customTarget, Array.from("vithivuxedhu")).completedPrompts).toBe(0);
+  });
+
   test("can allow only selected split sokuon inputs before consonants", () => {
     const target = createRomajiInputTarget("ke^ka", {
       preset: "hepburn",

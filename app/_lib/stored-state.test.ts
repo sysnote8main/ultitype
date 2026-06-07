@@ -142,16 +142,54 @@ describe("stored state persistence", () => {
     expect(stored.settings.showRomajiMarker).toBe(true);
   });
 
+  test("fills the romaji marker mode when loading older stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        romajiMarkerMode: undefined,
+      },
+    });
+
+    expect(stored.settings.romajiMarkerMode).toBe("character");
+  });
+
+  test("keeps the token romaji marker mode from stored state", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        romajiMarkerMode: "token",
+      },
+    });
+
+    expect(stored.settings.romajiMarkerMode).toBe("token");
+  });
+
   test("fills special split yoon setting when loading older stored state", () => {
     const stored = normalizeStoredState({
       settings: {
         ...initialStoredState.settings,
         allowSplitSpecialYoon: undefined,
+        specialRomajiInputPreset: undefined,
+        specialRomajiInputSelections: undefined,
       },
     });
 
     expect(stored.settings.allowSplitYoon).toBe(true);
     expect(stored.settings.allowSplitSpecialYoon).toBe(false);
+    expect(stored.settings.specialRomajiInputPreset).toBe("integrated");
+    expect(stored.settings.specialRomajiInputSelections).toEqual({});
+  });
+
+  test("migrates legacy special split yoon setting to the split special romaji preset", () => {
+    const stored = normalizeStoredState({
+      settings: {
+        ...initialStoredState.settings,
+        allowSplitSpecialYoon: true,
+        specialRomajiInputPreset: undefined,
+      },
+    });
+
+    expect(stored.settings.specialRomajiInputPreset).toBe("split");
   });
 
   test("fills input screen font sizes when loading older stored state", () => {

@@ -2,18 +2,20 @@
 
 import { ArrowLeft, UserRound } from "lucide-react";
 import { modes } from "@/src/lib/typing";
+import { css } from "../_lib/css-module";
 import { AppShell } from "../_components/AppShell";
 import { RankBadgeCanvas } from "../_components/RankBadgeCanvas";
 import { SelectSoundLink } from "../_components/SelectSoundLink";
+import styles from "./UserPage.module.css";
 
 export default function UserPage() {
   return (
-    <AppShell className="shell user-page">
+    <AppShell className={css(styles, "user-page")}>
       {(session) => (
         <>
-          <header className="user-page-head">
+          <header className={css(styles, "user-page-head")}>
             <div>
-              <div className="panel-heading">
+              <div className={css(styles, "panel-heading")}>
                 <UserRound size={18} />
                 <span>User</span>
               </div>
@@ -21,7 +23,7 @@ export default function UserPage() {
               <p>Keybase連携は未設定です。</p>
             </div>
             <SelectSoundLink
-              className="icon-link"
+              className={css(styles, "icon-link")}
               href="/"
               aria-label="戻る"
               soundKind="back"
@@ -31,11 +33,11 @@ export default function UserPage() {
             </SelectSoundLink>
           </header>
 
-          <section className="user-summary" aria-label="ユーザー概要">
+          <section className={css(styles, "user-summary")} aria-label="ユーザー概要">
             <div>
               <span>仮ランク</span>
               <RankBadgeCanvas
-                className="user-summary-rank-canvas"
+                className={css(styles, "user-summary-rank-canvas")}
                 rank={session.bestPracticeRank.label}
               />
               <strong>{Math.round(session.bestPracticeScore).toLocaleString()}</strong>
@@ -43,26 +45,26 @@ export default function UserPage() {
             <div>
               <span>本番ランク</span>
               <RankBadgeCanvas
-                className="user-summary-rank-canvas"
+                className={css(styles, "user-summary-rank-canvas")}
                 rank={session.bestProductionRank.label}
               />
               <strong>{Math.round(session.bestProductionScore).toLocaleString()}</strong>
             </div>
           </section>
 
-          <section className="user-sessions-panel">
-            <div className="panel-heading">
+          <section className={css(styles, "user-sessions-panel")}>
+            <div className={css(styles, "panel-heading")}>
               <UserRound size={18} />
               <span>Recent Sessions</span>
             </div>
             {session.sessions.length === 0 ? (
-              <p className="empty">まだ保存されたセッションはありません。</p>
+              <p className={css(styles, "empty")}>まだ保存されたセッションはありません。</p>
             ) : (
-              <ol className="user-session-list">
+              <ol className={css(styles, "user-session-list")}>
                 {session.sessions.map((storedSession) => (
                   <li key={`${storedSession.createdAt}-${storedSession.modeId}`}>
                     <RankBadgeCanvas
-                      className="history-rank-canvas"
+                      className={css(styles, "history-rank-canvas")}
                       height={32}
                       rank={storedSession.rank}
                       width={68}

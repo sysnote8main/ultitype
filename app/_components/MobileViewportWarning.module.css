@@ -1,0 +1,80 @@
+.mobileViewportWarning {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 100;
+  display: grid;
+  width: min(420px, calc(100vw - 28px));
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border: 1px solid color-mix(in srgb, var(--warn) 58%, var(--line));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--warn) 14%, transparent), transparent 72%),
+    var(--panel);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+  padding: 13px;
+}
+
+.mobileViewportWarningIcon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--warn) 58%, var(--line));
+  background: var(--surface-deep);
+  color: var(--warn);
+}
+
+.mobileViewportWarningCopy {
+  min-width: 0;
+}
+
+.mobileViewportWarningCopy strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.mobileViewportWarningCopy p {
+  margin: 6px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.mobileViewportWarningCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.mobileViewportWarningCheck input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent-2);
+}
+
+.mobileViewportWarningClose {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+}
+
+.mobileViewportWarningClose:hover,
+.mobileViewportWarningClose:focus-visible {
+  border-color: var(--warn);
+  color: var(--warn);
+  outline: none;
+}

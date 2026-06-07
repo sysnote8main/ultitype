@@ -2,10 +2,12 @@
 
 import { Settings, Star, UserRound } from "lucide-react";
 import type { Rank } from "@/src/lib/typing";
+import { css } from "../_lib/css-module";
 import type { SoundSettings } from "../_lib/typing-sounds";
 import { APP_VERSION_LABEL } from "../_lib/version";
 import { RankBadgeCanvas } from "./RankBadgeCanvas";
 import { SelectSoundLink } from "./SelectSoundLink";
+import styles from "./AppHeader.module.css";
 
 type AppHeaderProps = {
   bestPracticeRank: Rank;
@@ -26,30 +28,30 @@ export function AppHeader({
     bestProductionScore > bestPracticeScore ? bestProductionRank : bestPracticeRank;
 
   return (
-    <header className="app-header" aria-label="UltiType header">
-      <div className="brand-block">
-        <div className="brand-title">
+    <header className={css(styles, "app-header")} aria-label="UltiType header">
+      <div className={css(styles, "brand-block")}>
+        <div className={css(styles, "brand-title")}>
           <h1>UltiType</h1>
-          <span className="app-version">{APP_VERSION_LABEL}</span>
+          <span className={css(styles, "app-version")}>{APP_VERSION_LABEL}</span>
         </div>
         <p>Typing practice and rating</p>
       </div>
-      <div className="header-status">
-        <div className="rank-strip" aria-label="saved ratings">
+      <div className={css(styles, "header-status")}>
+        <div className={css(styles, "rank-strip")} aria-label="saved ratings">
           <RankBadge label="仮" rank={bestPracticeRank.label} score={bestPracticeScore} />
           <RankBadge label="本" rank={bestProductionRank.label} score={bestProductionScore} />
         </div>
-        <div className="header-actions" aria-label="settings">
+        <div className={css(styles, "header-actions")} aria-label="settings">
           <SelectSoundLink
             aria-label={`ランクガイド（現在 ${bestOverallRank.label}）`}
-            className="rank-guide-link"
+            className={css(styles, "rank-guide-link")}
             href="/ranks"
             soundSettings={soundSettings}
             title="ランクガイド"
           >
             <Star size={18} fill="currentColor" />
             <RankBadgeCanvas
-              className="rank-link-canvas"
+              className={css(styles, "rank-link-canvas")}
               height={28}
               rank={bestOverallRank.label}
               width={58}
@@ -57,7 +59,7 @@ export function AppHeader({
           </SelectSoundLink>
           <SelectSoundLink
             aria-label="ユーザー"
-            className="settings-button"
+            className={css(styles, "settings-button")}
             href="/user"
             soundSettings={soundSettings}
             title="ユーザー"
@@ -66,7 +68,7 @@ export function AppHeader({
           </SelectSoundLink>
           <SelectSoundLink
             aria-label="設定"
-            className="settings-button"
+            className={css(styles, "settings-button")}
             href="/settings"
             soundSettings={soundSettings}
             title="設定"
@@ -81,9 +83,9 @@ export function AppHeader({
 
 function RankBadge({ label, rank, score }: { label: string; rank: string; score: number }) {
   return (
-    <div className="rank-badge">
+    <div className={css(styles, "rank-badge")}>
       <span>{label}</span>
-      <RankBadgeCanvas className="rank-badge-canvas" rank={rank} />
+      <RankBadgeCanvas className={css(styles, "rank-badge-canvas")} rank={rank} />
       <small>{Math.round(score).toLocaleString()}</small>
     </div>
   );

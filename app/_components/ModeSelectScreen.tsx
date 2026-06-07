@@ -4,6 +4,7 @@ import { Crosshair, Gauge, Keyboard, Languages, Lock, Waves, Zap } from "lucide-
 import Link from "next/link";
 import { modes, type ModeId, type TypingMode } from "@/src/lib/typing";
 import { challengeLanguages } from "../_lib/constants";
+import { css } from "../_lib/css-module";
 import { getModePath } from "../_lib/mode-routes";
 import {
   ALPHA_PRODUCTION_LOCK_MESSAGE,
@@ -12,6 +13,7 @@ import {
 } from "../_lib/release-gates";
 import { type SoundSettings, useTypingSounds } from "../_lib/typing-sounds";
 import type { ChallengeLanguage, ProductionDuration } from "../_lib/types";
+import styles from "./ModeSelectScreen.module.css";
 
 const modeIcons = {
   "practice-accuracy": Crosshair,
@@ -67,27 +69,27 @@ export function ModeSelectScreen({
   );
 
   return (
-    <section className="mode-select-screen" aria-label="mode selection">
-      <div className="mode-select-intro">
-      <div className="mode-select-language">
-        <span className="language-switch-label">Text</span>
-        <div className="language-switch" aria-label="challenge language">
+    <section className={css(styles, "mode-select-screen")} aria-label="mode selection">
+      <div className={css(styles, "mode-select-intro")}>
+      <div className={css(styles, "mode-select-language")}>
+        <span className={css(styles, "language-switch-label")}>Text</span>
+        <div className={css(styles, "language-switch")} aria-label="challenge language">
           {challengeLanguages.map((language) => (
             <button
               aria-pressed={challengeLanguage === language.id}
-              className={challengeLanguage === language.id ? "selected" : ""}
+              className={challengeLanguage === language.id ? css(styles, "selected") : ""}
               key={language.id}
               onClick={() => handleLanguageChange(language.id)}
               type="button"
             >
-              <img className="flag-icon" src={language.flagSrc} alt="" aria-hidden="true" />
+              <img className={css(styles, "flag-icon")} src={language.flagSrc} alt="" aria-hidden="true" />
               {language.label}
             </button>
           ))}
         </div>
       </div>
-      <div className="mode-select-heading">
-        <div className="panel-heading">
+      <div className={css(styles, "mode-select-heading")}>
+        <div className={css(styles, "panel-heading")}>
           <Gauge size={18} />
           <span>Modes</span>
         </div>
@@ -96,13 +98,13 @@ export function ModeSelectScreen({
 
       </div>
 
-      <div className="mode-select-group">
-        <div className="mode-select-section">
-          <div className="mode-select-section-heading">
+      <div className={css(styles, "mode-select-group")}>
+        <div className={css(styles, "mode-select-section")}>
+          <div className={css(styles, "mode-select-section-heading")}>
             <span>Practice</span>
             <small>練習モード</small>
           </div>
-          <div className="mode-select-grid practice-modes">
+          <div className={css(styles, "mode-select-grid practice-modes")}>
             {modes
               .filter((item) => item.group === "practice")
               .map((item) => (
@@ -116,19 +118,19 @@ export function ModeSelectScreen({
           </div>
         </div>
 
-        <div className="mode-select-section production-section">
-          <div className="mode-select-section-heading">
+        <div className={css(styles, "mode-select-section production-section")}>
+          <div className={css(styles, "mode-select-section-heading")}>
             <span>Rating</span>
             <small>本番モード</small>
           </div>
           {!hasPlayableProductionMode ? (
-            <p className="alpha-lock-note">{ALPHA_PRODUCTION_LOCK_MESSAGE}</p>
+            <p className={css(styles, "alpha-lock-note")}>{ALPHA_PRODUCTION_LOCK_MESSAGE}</p>
           ) : null}
-          <div className="duration-block mode-select-duration">
-            <div className="segmented">
+          <div className={css(styles, "duration-block mode-select-duration")}>
+            <div className={css(styles, "segmented")}>
               {productionDurations.map((duration) => (
                 <button
-                  className={productionDuration === duration ? "selected" : ""}
+                  className={productionDuration === duration ? css(styles, "selected") : ""}
                   disabled={!hasPlayableProductionMode}
                   key={duration}
                   onClick={() => onProductionDurationChange(duration)}
@@ -140,7 +142,7 @@ export function ModeSelectScreen({
               ))}
             </div>
           </div>
-          <div className="mode-select-grid production-modes">
+          <div className={css(styles, "mode-select-grid production-modes")}>
             {productionModes.map((item) => {
               const productionPlayable = productionPlayableModes[item.id];
 
@@ -182,18 +184,18 @@ function ModeSelectCard({
   const ModeIcon = modeIcons[mode.id];
   const cardContents = (
     <>
-      <div className="mode-card-top">
-        <span className="mode-icon" aria-hidden="true">
+      <div className={css(styles, "mode-card-top")}>
+        <span className={css(styles, "mode-icon")} aria-hidden="true">
           <ModeIcon size={26} strokeWidth={2.2} />
         </span>
-        <span className="mode-code">{mode.shortLabel}</span>
+        <span className={css(styles, "mode-code")}>{mode.shortLabel}</span>
       </div>
-      <div className="mode-card-copy">
+      <div className={css(styles, "mode-card-copy")}>
         <strong>{mode.label}</strong>
         <small>{mode.description}</small>
       </div>
       {locked ? (
-        <span className="mode-lock">
+        <span className={css(styles, "mode-lock")}>
           <Lock size={15} />
           {lockLabel}
         </span>
@@ -204,7 +206,7 @@ function ModeSelectCard({
   if (!locked) {
     return (
       <Link
-        className="mode-select-card"
+        className={css(styles, "mode-select-card")}
         href={getModePath(mode.id)}
         onClick={onSelect}
         title={mode.description}
@@ -216,7 +218,7 @@ function ModeSelectCard({
 
   return (
     <button
-      className="mode-select-card locked"
+      className={css(styles, "mode-select-card locked")}
       disabled
       title={lockReason}
       type="button"

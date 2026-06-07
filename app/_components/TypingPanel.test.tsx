@@ -60,6 +60,7 @@ function renderTypingPanel(overrides: Partial<TypingPanelProps> = {}) {
     showKanjiDisplay: true,
     showKanjiMarker: false,
     showRomajiMarker: true,
+    romajiMarkerMode: "character",
     kanjiFontSize: initialSettings.kanjiFontSize,
     furiganaFontScale: initialSettings.furiganaFontScale,
     hiraganaFontSize: initialSettings.hiraganaFontSize,
@@ -236,7 +237,7 @@ describe("TypingPanel", () => {
       remainingSeconds: 108,
     });
 
-    expect(actualMarkup).toContain('<span class="session-rank-value ">A0</span>');
+    expect(actualMarkup).toContain('<span class="session-rank-value">A0</span>');
     expect(actualMarkup).not.toContain("concealed");
     expect(projectedMarkup).toContain(">A?</span>");
   });
@@ -774,9 +775,9 @@ describe("TypingPanel", () => {
   });
 
   test("does not animate center scroll text on each typed key", () => {
-    const css = readFileSync("app/globals.css", "utf8");
+    const css = readFileSync("app/_components/TypingPanel.module.css", "utf8");
     const centerScrollRule = css.match(
-      /\.center-scroll \.display-text,[\s\S]+?\.center-scroll \.input-target \{(?<body>[\s\S]+?)\n\}/,
+      /\.centerScroll \.displayText,[\s\S]+?\.centerScroll \.inputTarget \{(?<body>[\s\S]+?)\n\}/,
     );
 
     expect(centerScrollRule?.groups?.body).toContain("transition: none");
@@ -792,18 +793,18 @@ describe("TypingPanel", () => {
   });
 
   test("clips and fades the production long body at the configured line count", () => {
-    const css = readFileSync("app/globals.css", "utf8");
+    const css = readFileSync("app/_components/TypingPanel.module.css", "utf8");
     const longBodyRule = css.match(
-      /\.production-long-body \{(?<body>[\s\S]+?)\n\}/,
+      /\.productionLongBody \{(?<body>[\s\S]+?)\n\}/,
     );
     const longBodyFadeRule = css.match(
-      /\.production-long-body::after \{(?<body>[\s\S]+?)\n\}/,
+      /\.productionLongBody::after \{(?<body>[\s\S]+?)\n\}/,
     );
     const longBodyContentRule = css.match(
-      /\.production-long-scroll-content \{(?<body>[\s\S]+?)\n\}/,
+      /\.productionLongScrollContent \{(?<body>[\s\S]+?)\n\}/,
     );
     const nextSpacerRule = css.match(
-      /\.production-long-next-spacer \{(?<body>[\s\S]+?)\n\}/,
+      /\.productionLongNextSpacer \{(?<body>[\s\S]+?)\n\}/,
     );
     const markup = renderTypingPanel({
       challengeLanguage: "ja",
@@ -821,7 +822,7 @@ describe("TypingPanel", () => {
     expect(longBodyContentRule?.groups?.body).toContain(
       "transform: translateY(calc(-1 * var(--production-long-scroll-lines, 0) * var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45)))",
     );
-    expect(css).not.toContain(".production-long-scroll-marker");
+    expect(css).not.toContain(".productionLongScrollMarker");
     expect(nextSpacerRule?.groups?.body).toContain(
       "margin-top: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * 0.5)",
     );
@@ -914,6 +915,63 @@ describe("TypingPanel", () => {
     });
 
     expect(markup).toContain('<span class="char current mistake-flash">h</span>');
+  });
+
+  test("can highlight romaji by character inside a multi-character token", () => {
+    const romajiTarget = createRomajiInputTarget("shi", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "shi",
+      currentGuide: romajiTarget.guide,
+      currentRomajiTarget: romajiTarget,
+      input: "s",
+      romajiMarkerMode: "character",
+    });
+
+    expect(markup).toContain(
+      '<span class="char correct">s</span><span class="char current">h</span><span class="char">i</span>',
+    );
+  });
+
+  test("keeps only one romaji character current in character marker mode before typing a multi-character token", () => {
+    const romajiTarget = createRomajiInputTarget("tsu", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "tsu",
+      currentGuide: romajiTarget.guide,
+      currentRomajiTarget: romajiTarget,
+      input: "",
+      romajiMarkerMode: "character",
+    });
+
+    expect(markup).toContain(
+      '<span class="char current">t</span><span class="char">s</span><span class="char">u</span>',
+    );
+  });
+
+  test("can highlight romaji by token across regular kana tokens", () => {
+    const romajiTarget = createRomajiInputTarget("sushi", {
+      allowSplitYoon: true,
+      preset: "hepburn",
+      selections: {},
+    });
+    const markup = renderTypingPanel({
+      currentDisplay: "sushi",
+      currentGuide: romajiTarget.guide,
+      currentRomajiTarget: romajiTarget,
+      input: "s",
+      romajiMarkerMode: "token",
+    });
+
+    expect(markup).toContain(
+      '<span class="char correct current">su</span><span class="char">shi</span>',
+    );
   });
 
   test("overwrites the next direct guide character with strict mistake input", () => {

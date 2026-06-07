@@ -1,19 +1,25 @@
 import { ChevronDown, ChevronUp, Lock, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  romajiVariantOptions,
+  specialRomajiVariantOptions,
+  standardRomajiVariantOptions,
   sokuonInputOptions,
-  type RomajiVariantOption,
+  type SpecialRomajiInputPreset,
   type SokuonInputId,
 } from "@/src/lib/typing";
+import { css } from "../_lib/css-module";
 import { initialSettings, topDisplayMetricOptions } from "../_lib/constants";
 import { clampInteger } from "../_lib/challenge-utils";
 import type { AppSettings, NextChallengePreviewMode } from "../_lib/types";
+import styles from "./SettingsScreen.module.css";
 
 type InputSettingsSectionsProps = {
   settings: AppSettings;
   onChange: (settings: Partial<AppSettings>) => void;
 };
+
+type StandardRomajiOption = (typeof standardRomajiVariantOptions)[number];
+type SpecialRomajiOption = (typeof specialRomajiVariantOptions)[number];
 
 type FontSizeSettingKey =
   | "kanjiFontSize"
@@ -91,9 +97,9 @@ function NumericSettingRow({
   lockLabel,
 }: NumericSettingRowProps) {
   return (
-    <section className="settings-row" aria-labelledby={id}>
+    <section className={css(styles, "settings-row")} aria-labelledby={id}>
       <div>
-        <h4 className="font-size-setting" id={id}>
+        <h4 className={css(styles, "font-size-setting")} id={id}>
           {label}
         </h4>
         <p>{description}</p>
@@ -181,7 +187,7 @@ function NumberControl({
   }
 
   return (
-    <div className={`number-control ${disabled ? "locked" : ""}`}>
+    <div className={css(styles, "number-control", disabled ? "locked" : "")}>
       <input
         aria-label={ariaLabel}
         disabled={disabled}
@@ -196,13 +202,13 @@ function NumberControl({
       />
       <span>{unit}</span>
       {disabled && lockLabel ? (
-        <b className="number-lock-icon" aria-label={lockLabel}>
+        <b className={css(styles, "number-lock-icon")} aria-label={lockLabel}>
           <Lock aria-hidden="true" size={15} strokeWidth={2.6} />
         </b>
       ) : null}
       <button
         aria-label={`${ariaLabel} を初期値に戻す`}
-        className="number-reset-button"
+        className={css(styles, "number-reset-button")}
         disabled={!canReset}
         onClick={resetToDefault}
         title="初期値に戻す"
@@ -210,7 +216,7 @@ function NumberControl({
       >
         <RotateCcw aria-hidden="true" size={14} />
       </button>
-      <div className="number-stepper" aria-label={`${ariaLabel} を調整`}>
+      <div className={css(styles, "number-stepper")} aria-label={`${ariaLabel} を調整`}>
         <button
           aria-label={`${ariaLabel} を増やす`}
           disabled={!canIncrease}
@@ -399,7 +405,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
   const showFuriganaMarker = showFuriganaDisplay && settings.showFuriganaMarker;
   const showHiraganaMarker = settings.showHiraganaDisplay && settings.showHiraganaMarker;
 
-  function getRomajiSelection(option: RomajiVariantOption) {
+  function getRomajiSelection(option: StandardRomajiOption) {
     return (
       settings.romajiInputSelections[option.id] ?? {
         accepted: option.alternatives,
@@ -409,7 +415,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
   }
 
   function updateRomajiSelection(
-    option: RomajiVariantOption,
+    option: StandardRomajiOption,
     selection: { accepted: string[]; preferred: string },
   ) {
     onChange({
@@ -420,7 +426,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
     });
   }
 
-  function toggleRomajiAccepted(option: RomajiVariantOption, value: string, checked: boolean) {
+  function toggleRomajiAccepted(option: StandardRomajiOption, value: string, checked: boolean) {
     const selection = getRomajiSelection(option);
     const accepted = checked
       ? Array.from(new Set([...selection.accepted, value]))
@@ -436,13 +442,71 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
     });
   }
 
-  function preferRomaji(option: RomajiVariantOption, preferred: string) {
+  function preferRomaji(option: StandardRomajiOption, preferred: string) {
     const selection = getRomajiSelection(option);
     updateRomajiSelection(option, {
       accepted: selection.accepted.includes(preferred)
         ? selection.accepted
         : [...selection.accepted, preferred],
       preferred,
+    });
+  }
+
+  function getSpecialRomajiSelection(option: SpecialRomajiOption) {
+    return (
+      settings.specialRomajiInputSelections[option.id] ?? {
+        accepted: option.alternatives,
+        preferred: option.hepburn,
+      }
+    );
+  }
+
+  function updateSpecialRomajiSelection(
+    option: SpecialRomajiOption,
+    selection: { accepted: string[]; preferred: string },
+  ) {
+    onChange({
+      specialRomajiInputSelections: {
+        ...settings.specialRomajiInputSelections,
+        [option.id]: selection,
+      },
+    });
+  }
+
+  function toggleSpecialRomajiAccepted(
+    option: SpecialRomajiOption,
+    value: string,
+    checked: boolean,
+  ) {
+    const selection = getSpecialRomajiSelection(option);
+    const accepted = checked
+      ? Array.from(new Set([...selection.accepted, value]))
+      : selection.accepted.filter((candidate) => candidate !== value);
+
+    if (accepted.length === 0) {
+      return;
+    }
+
+    updateSpecialRomajiSelection(option, {
+      accepted,
+      preferred: accepted.includes(selection.preferred) ? selection.preferred : accepted[0],
+    });
+  }
+
+  function preferSpecialRomaji(option: SpecialRomajiOption, preferred: string) {
+    const selection = getSpecialRomajiSelection(option);
+    updateSpecialRomajiSelection(option, {
+      accepted: selection.accepted.includes(preferred)
+        ? selection.accepted
+        : [...selection.accepted, preferred],
+      preferred,
+    });
+  }
+
+  function updateSpecialRomajiPreset(preset: SpecialRomajiInputPreset) {
+    onChange({
+      allowSplitSpecialYoon: preset === "split",
+      specialRomajiInputPreset: preset,
     });
   }
 
@@ -524,19 +588,19 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
 
   return (
     <>
-      <section className="settings-category" aria-labelledby="top-display-settings">
-        <h3 className="settings-category-title" id="top-display-settings">
+      <section className={css(styles, "settings-category")} aria-labelledby="top-display-settings">
+        <h3 className={css(styles, "settings-category-title")} id="top-display-settings">
           上部表示情報
         </h3>
-        <div className="settings-category-list">
-          <section className="settings-row top-display-settings-row" aria-labelledby="top-display-setting">
+        <div className={css(styles, "settings-category-list")}>
+          <section className={css(styles, "settings-row top-display-settings-row")} aria-labelledby="top-display-setting">
             <div>
               <h4 id="top-display-setting">表示する情報</h4>
               <p>残り時間を外しても、残り時間バーは表示されます。</p>
             </div>
-            <div className="top-display-setting-controls" aria-label="上部表示情報">
+            <div className={css(styles, "top-display-setting-controls")} aria-label="上部表示情報">
               {topDisplayMetricOptions.map((option) => (
-                <label className="top-display-option" key={option.id}>
+                <label className={css(styles, "top-display-option")} key={option.id}>
                   <input
                     checked={settings.topDisplayMetricIds.includes(option.id)}
                     onChange={(event) =>
@@ -552,24 +616,24 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
         </div>
       </section>
 
-      <section className="settings-category" aria-labelledby="input-settings">
-        <h3 className="settings-category-title" id="input-settings">
+      <section className={css(styles, "settings-category")} aria-labelledby="input-settings">
+        <h3 className={css(styles, "settings-category-title")} id="input-settings">
           入力方式
         </h3>
-        <div className="settings-category-list">
+        <div className={css(styles, "settings-category-list")}>
           <section
-            className="settings-row romaji-method-row"
+            className={css(styles, "settings-row romaji-method-row")}
             aria-labelledby="romaji-method-setting"
           >
             <div>
               <h4 id="romaji-method-setting">ローマ字入力法</h4>
               <p>許容する派生と、ガイドで優先表示する表記を選ぶ</p>
             </div>
-            <div className="romaji-method-controls">
-              <div className="romaji-preset-segmented" role="group" aria-label="ローマ字入力法">
+            <div className={css(styles, "romaji-method-controls")}>
+              <div className={css(styles, "romaji-preset-segmented")} role="group" aria-label="ローマ字入力法">
                 <button
                   aria-pressed={settings.romajiInputPreset === "hepburn"}
-                  className={settings.romajiInputPreset === "hepburn" ? "selected" : ""}
+                  className={settings.romajiInputPreset === "hepburn" ? css(styles, "selected") : ""}
                   onClick={() => onChange({ romajiInputPreset: "hepburn" })}
                   type="button"
                 >
@@ -577,7 +641,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                 </button>
                 <button
                   aria-pressed={settings.romajiInputPreset === "shortest"}
-                  className={settings.romajiInputPreset === "shortest" ? "selected" : ""}
+                  className={settings.romajiInputPreset === "shortest" ? css(styles, "selected") : ""}
                   onClick={() => onChange({ romajiInputPreset: "shortest" })}
                   type="button"
                 >
@@ -585,7 +649,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                 </button>
                 <button
                   aria-pressed={settings.romajiInputPreset === "custom"}
-                  className={settings.romajiInputPreset === "custom" ? "selected" : ""}
+                  className={settings.romajiInputPreset === "custom" ? css(styles, "selected") : ""}
                   onClick={() => onChange({ romajiInputPreset: "custom" })}
                   type="button"
                 >
@@ -594,14 +658,14 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
               </div>
 
               {settings.romajiInputPreset === "custom" ? (
-                <div className="romaji-custom-list">
-                  {romajiVariantOptions.map((option) => {
+                <div className={css(styles, "romaji-custom-list")}>
+                  {standardRomajiVariantOptions.map((option) => {
                     const selection = getRomajiSelection(option);
 
                     return (
-                      <div className="romaji-custom-item" key={option.id}>
+                      <div className={css(styles, "romaji-custom-item")} key={option.id}>
                         <span>{option.label}</span>
-                        <div className="romaji-choice-list">
+                        <div className={css(styles, "romaji-choice-list")}>
                           {option.alternatives.map((alternative) => (
                             <label key={alternative}>
                               <input
@@ -619,7 +683,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                             </label>
                           ))}
                         </div>
-                        <label className="romaji-preferred-select">
+                        <label className={css(styles, "romaji-preferred-select")}>
                           <span>表示</span>
                           <select
                             onChange={(event) => preferRomaji(option, event.currentTarget.value)}
@@ -640,15 +704,15 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
             </div>
           </section>
 
-          <section className="settings-row sokuon-method-row" aria-labelledby="sokuon-setting">
+          <section className={css(styles, "settings-row sokuon-method-row")} aria-labelledby="sokuon-setting">
             <div>
               <h4 id="sokuon-setting">促音入力</h4>
               <p>「っ」の子音重複と ltsu / xtsu / ltu / xtu の扱いを選ぶ</p>
             </div>
-            <div className="sokuon-setting-controls">
-              <label className="sokuon-split-toggle">
+            <div className={css(styles, "sokuon-setting-controls")}>
+              <label className={css(styles, "sokuon-split-toggle")}>
                 <span>促音分割を許可</span>
-                <span className="toggle-control">
+                <span className={css(styles, "toggle-control")}>
                   <input
                     checked={settings.sokuonInput.allowSplit}
                     onChange={(event) =>
@@ -664,7 +728,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   <span aria-hidden="true" />
                 </span>
               </label>
-              <div className="romaji-choice-list" aria-label="促音入力候補">
+              <div className={css(styles, "romaji-choice-list")} aria-label="促音入力候補">
                 {sokuonInputOptions.map((option) => (
                   <label key={option}>
                     <input
@@ -676,7 +740,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   </label>
                 ))}
               </div>
-              <label className="romaji-preferred-select">
+              <label className={css(styles, "romaji-preferred-select")}>
                 <span>表示</span>
                 <select
                   onChange={(event) => preferSokuon(event.currentTarget.value as SokuonInputId)}
@@ -692,12 +756,12 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
             </div>
           </section>
 
-          <section className="settings-row" aria-labelledby="split-yoon-setting">
+          <section className={css(styles, "settings-row")} aria-labelledby="split-yoon-setting">
             <div>
               <h4 id="split-yoon-setting">一般拗音分割入力</h4>
               <p>「きゃ」を kya だけでなく kila / kixa でも入力できるようにする</p>
             </div>
-            <label className="toggle-control">
+            <label className={css(styles, "toggle-control")}>
               <input
                 checked={settings.allowSplitYoon}
                 onChange={(event) => onChange({ allowSplitYoon: event.currentTarget.checked })}
@@ -707,41 +771,106 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
             </label>
           </section>
 
-          <section className="settings-row" aria-labelledby="special-split-yoon-setting">
+          <section className={css(styles, "settings-row")} aria-labelledby="special-yoon-method-setting">
             <div>
-              <h4 id="special-split-yoon-setting">特殊拗音分割入力</h4>
-              <p>「ヴァ」「てぃ」を va / thi だけでなく vula / texi でも入力できるようにする</p>
+              <h4 id="special-yoon-method-setting">特殊拗音入力法</h4>
+              <p>出現頻度の低い外来語カナを統合形で打つか、分割形で打つかを選ぶ</p>
             </div>
-            <label className="toggle-control">
-              <input
-                checked={settings.allowSplitSpecialYoon}
-                onChange={(event) =>
-                  onChange({ allowSplitSpecialYoon: event.currentTarget.checked })
-                }
-                type="checkbox"
-              />
-              <span aria-hidden="true" />
-            </label>
+            <div className={css(styles, "romaji-method-controls")}>
+              <div className={css(styles, "romaji-preset-segmented")} role="group" aria-label="特殊拗音入力法">
+                <button
+                  aria-pressed={settings.specialRomajiInputPreset === "split"}
+                  className={settings.specialRomajiInputPreset === "split" ? css(styles, "selected") : ""}
+                  onClick={() => updateSpecialRomajiPreset("split")}
+                  type="button"
+                >
+                  すべて分割
+                </button>
+                <button
+                  aria-pressed={settings.specialRomajiInputPreset === "integrated"}
+                  className={settings.specialRomajiInputPreset === "integrated" ? css(styles, "selected") : ""}
+                  onClick={() => updateSpecialRomajiPreset("integrated")}
+                  type="button"
+                >
+                  すべて統合
+                </button>
+                <button
+                  aria-pressed={settings.specialRomajiInputPreset === "custom"}
+                  className={settings.specialRomajiInputPreset === "custom" ? css(styles, "selected") : ""}
+                  onClick={() => updateSpecialRomajiPreset("custom")}
+                  type="button"
+                >
+                  個別設定
+                </button>
+              </div>
+
+              {settings.specialRomajiInputPreset === "custom" ? (
+                <div className={css(styles, "romaji-custom-list")}>
+                  {specialRomajiVariantOptions.map((option) => {
+                    const selection = getSpecialRomajiSelection(option);
+
+                    return (
+                      <div className={css(styles, "romaji-custom-item")} key={option.id}>
+                        <span>{option.label}</span>
+                        <div className={css(styles, "romaji-choice-list")}>
+                          {option.alternatives.map((alternative) => (
+                            <label key={alternative}>
+                              <input
+                                checked={selection.accepted.includes(alternative)}
+                                onChange={(event) =>
+                                  toggleSpecialRomajiAccepted(
+                                    option,
+                                    alternative,
+                                    event.currentTarget.checked,
+                                  )
+                                }
+                                type="checkbox"
+                              />
+                              {alternative}
+                            </label>
+                          ))}
+                        </div>
+                        <label className={css(styles, "romaji-preferred-select")}>
+                          <span>表示</span>
+                          <select
+                            onChange={(event) =>
+                              preferSpecialRomaji(option, event.currentTarget.value)
+                            }
+                            value={selection.preferred}
+                          >
+                            {option.alternatives.map((alternative) => (
+                              <option key={alternative} value={alternative}>
+                                {alternative}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
           </section>
         </div>
       </section>
 
-      <section className="settings-category" aria-labelledby="input-screen-settings">
-        <h3 className="settings-category-title" id="input-screen-settings">
+      <section className={css(styles, "settings-category")} aria-labelledby="input-screen-settings">
+        <h3 className={css(styles, "settings-category-title")} id="input-screen-settings">
           入力画面
         </h3>
-        <div className="settings-category-list input-screen-category-list">
-          <section className="settings-subcategory" aria-labelledby="kanji-input-screen-settings">
-            <h4 className="settings-subcategory-title" id="kanji-input-screen-settings">
+        <div className={css(styles, "settings-category-list input-screen-category-list")}>
+          <section className={css(styles, "settings-subcategory")} aria-labelledby="kanji-input-screen-settings">
+            <h4 className={css(styles, "settings-subcategory-title")} id="kanji-input-screen-settings">
               漢字
             </h4>
-            <div className="settings-subcategory-list">
-              <section className="settings-row" aria-labelledby="kanji-display-setting">
+            <div className={css(styles, "settings-subcategory-list")}>
+              <section className={css(styles, "settings-row")} aria-labelledby="kanji-display-setting">
                 <div>
                   <h4 id="kanji-display-setting">漢字表示</h4>
                   <p>入力画面に漢字混じりの課題文を表示する</p>
                 </div>
-                <label className="toggle-control" aria-label="漢字表示">
+                <label className={css(styles, "toggle-control")} aria-label="漢字表示">
                   <input
                     checked={settings.showKanjiDisplay}
                     onChange={(event) =>
@@ -791,13 +920,13 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                 onBottomSpacingChange={updateMarginBottom}
                 onLineHeightChange={updateLineHeight}
               />
-              <section className="settings-row" aria-labelledby="kanji-marker-setting">
+              <section className={css(styles, "settings-row")} aria-labelledby="kanji-marker-setting">
                 <div>
                   <h4 id="kanji-marker-setting">漢字マーカー</h4>
                   <p>入力中の位置を漢字表示に下線で表示する</p>
                 </div>
                 <label
-                  className={`toggle-control ${settings.showKanjiDisplay ? "" : "locked"}`}
+                  className={css(styles, "toggle-control", settings.showKanjiDisplay ? "" : "locked")}
                   aria-label="漢字マーカー"
                 >
                   <input
@@ -810,7 +939,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   />
                   <span aria-hidden="true" />
                   {!settings.showKanjiDisplay ? (
-                    <b className="toggle-lock-icon" aria-label="漢字表示オフのためロック">
+                    <b className={css(styles, "toggle-lock-icon")} aria-label="漢字表示オフのためロック">
                       <Lock aria-hidden="true" size={15} strokeWidth={2.6} />
                     </b>
                   ) : null}
@@ -820,20 +949,20 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
           </section>
 
           <section
-            className="settings-subcategory"
+            className={css(styles, "settings-subcategory")}
             aria-labelledby="furigana-input-screen-settings"
           >
-            <h4 className="settings-subcategory-title" id="furigana-input-screen-settings">
+            <h4 className={css(styles, "settings-subcategory-title")} id="furigana-input-screen-settings">
               ふりがな
             </h4>
-            <div className="settings-subcategory-list">
-              <section className="settings-row" aria-labelledby="furigana-display-setting">
+            <div className={css(styles, "settings-subcategory-list")}>
+              <section className={css(styles, "settings-row")} aria-labelledby="furigana-display-setting">
                 <div>
                   <h4 id="furigana-display-setting">ふりがな表示</h4>
                   <p>漢字混じりの課題文の上にふりがなを表示する</p>
                 </div>
                 <label
-                  className={`toggle-control ${settings.showKanjiDisplay ? "" : "locked"}`}
+                  className={css(styles, "toggle-control", settings.showKanjiDisplay ? "" : "locked")}
                   aria-label="ふりがな表示"
                 >
                   <input
@@ -851,7 +980,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   />
                   <span aria-hidden="true" />
                   {!settings.showKanjiDisplay ? (
-                    <b className="toggle-lock-icon" aria-label="漢字表示オフのためロック">
+                    <b className={css(styles, "toggle-lock-icon")} aria-label="漢字表示オフのためロック">
                       <Lock aria-hidden="true" size={15} strokeWidth={2.6} />
                     </b>
                   ) : null}
@@ -880,13 +1009,13 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                 onBottomSpacingChange={updateMarginBottom}
                 onLineHeightChange={updateLineHeight}
               />
-              <section className="settings-row" aria-labelledby="furigana-marker-setting">
+              <section className={css(styles, "settings-row")} aria-labelledby="furigana-marker-setting">
                 <div>
                   <h4 id="furigana-marker-setting">ふりがなマーカー</h4>
                   <p>入力中の位置をふりがな表示に下線で表示する</p>
                 </div>
                 <label
-                  className={`toggle-control ${showFuriganaDisplay ? "" : "locked"}`}
+                  className={css(styles, "toggle-control", showFuriganaDisplay ? "" : "locked")}
                   aria-label="ふりがなマーカー"
                 >
                   <input
@@ -899,7 +1028,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   />
                   <span aria-hidden="true" />
                   {!showFuriganaDisplay ? (
-                    <b className="toggle-lock-icon" aria-label="ふりがな表示オフのためロック">
+                    <b className={css(styles, "toggle-lock-icon")} aria-label="ふりがな表示オフのためロック">
                       <Lock aria-hidden="true" size={15} strokeWidth={2.6} />
                     </b>
                   ) : null}
@@ -909,19 +1038,19 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
           </section>
 
           <section
-            className="settings-subcategory"
+            className={css(styles, "settings-subcategory")}
             aria-labelledby="hiragana-input-screen-settings"
           >
-            <h4 className="settings-subcategory-title" id="hiragana-input-screen-settings">
+            <h4 className={css(styles, "settings-subcategory-title")} id="hiragana-input-screen-settings">
               ひらがな
             </h4>
-            <div className="settings-subcategory-list">
-              <section className="settings-row" aria-labelledby="hiragana-display-setting">
+            <div className={css(styles, "settings-subcategory-list")}>
+              <section className={css(styles, "settings-row")} aria-labelledby="hiragana-display-setting">
                 <div>
                   <h4 id="hiragana-display-setting">ひらがな表示</h4>
                   <p>入力画面にひらがなの読みを表示する</p>
                 </div>
-                <label className="toggle-control" aria-label="ひらがな表示">
+                <label className={css(styles, "toggle-control")} aria-label="ひらがな表示">
                   <input
                     checked={settings.showHiraganaDisplay}
                     onChange={(event) =>
@@ -965,13 +1094,13 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                 onBottomSpacingChange={updateMarginBottom}
                 onLineHeightChange={updateLineHeight}
               />
-              <section className="settings-row" aria-labelledby="hiragana-marker-setting">
+              <section className={css(styles, "settings-row")} aria-labelledby="hiragana-marker-setting">
                 <div>
                   <h4 id="hiragana-marker-setting">ひらがなマーカー</h4>
                   <p>入力中の位置をひらがな表示に下線で表示する</p>
                 </div>
                 <label
-                  className={`toggle-control ${settings.showHiraganaDisplay ? "" : "locked"}`}
+                  className={css(styles, "toggle-control", settings.showHiraganaDisplay ? "" : "locked")}
                   aria-label="ひらがなマーカー"
                 >
                   <input
@@ -984,7 +1113,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   />
                   <span aria-hidden="true" />
                   {!settings.showHiraganaDisplay ? (
-                    <b className="toggle-lock-icon" aria-label="ひらがな表示オフのためロック">
+                    <b className={css(styles, "toggle-lock-icon")} aria-label="ひらがな表示オフのためロック">
                       <Lock aria-hidden="true" size={15} strokeWidth={2.6} />
                     </b>
                   ) : null}
@@ -993,17 +1122,17 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
             </div>
           </section>
 
-          <section className="settings-subcategory" aria-labelledby="romaji-input-screen-settings">
-            <h4 className="settings-subcategory-title" id="romaji-input-screen-settings">
+          <section className={css(styles, "settings-subcategory")} aria-labelledby="romaji-input-screen-settings">
+            <h4 className={css(styles, "settings-subcategory-title")} id="romaji-input-screen-settings">
               ローマ字
             </h4>
-            <div className="settings-subcategory-list">
-              <section className="settings-row" aria-labelledby="romaji-marker-setting">
+            <div className={css(styles, "settings-subcategory-list")}>
+              <section className={css(styles, "settings-row")} aria-labelledby="romaji-marker-setting">
                 <div>
                   <h4 id="romaji-marker-setting">ローマ字マーカー</h4>
                   <p>入力中の位置をローマ字表示に下線で表示する。ON推奨</p>
                 </div>
-                <label className="toggle-control" aria-label="ローマ字マーカー">
+                <label className={css(styles, "toggle-control")} aria-label="ローマ字マーカー">
                   <input
                     checked={settings.showRomajiMarker}
                     onChange={(event) =>
@@ -1013,6 +1142,36 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   />
                   <span aria-hidden="true" />
                 </label>
+              </section>
+              <section className={css(styles, "settings-row")} aria-labelledby="romaji-marker-mode-setting">
+                <div>
+                  <h4 className={css(styles, "font-size-setting")} id="romaji-marker-mode-setting">
+                    ローマ字マーカー単位
+                  </h4>
+                  <p>ローマ字の現在位置を1文字ずつ表示するか、su や shi などの発音単位で表示するかを選ぶ</p>
+                </div>
+                <div
+                  className={css(styles, "romaji-preset-segmented")}
+                  role="group"
+                  aria-label="romaji marker mode"
+                >
+                  <button
+                    aria-pressed={settings.romajiMarkerMode === "character"}
+                    className={settings.romajiMarkerMode === "character" ? css(styles, "selected") : ""}
+                    onClick={() => onChange({ romajiMarkerMode: "character" })}
+                    type="button"
+                  >
+                    文字単位
+                  </button>
+                  <button
+                    aria-pressed={settings.romajiMarkerMode === "token"}
+                    className={settings.romajiMarkerMode === "token" ? css(styles, "selected") : ""}
+                    onClick={() => onChange({ romajiMarkerMode: "token" })}
+                    type="button"
+                  >
+                    発音単位
+                  </button>
+                </div>
               </section>
               <FontSizeSettingRow
                 ariaLabel="romaji font size"
@@ -1045,25 +1204,25 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
             </div>
           </section>
 
-          <section className="settings-subcategory" aria-labelledby="other-input-screen-settings">
-            <h4 className="settings-subcategory-title" id="other-input-screen-settings">
+          <section className={css(styles, "settings-subcategory")} aria-labelledby="other-input-screen-settings">
+            <h4 className={css(styles, "settings-subcategory-title")} id="other-input-screen-settings">
               その他の設定
             </h4>
-            <div className="settings-subcategory-list">
-              <section className="settings-row" aria-labelledby="next-challenge-preview-mode-setting">
+            <div className={css(styles, "settings-subcategory-list")}>
+              <section className={css(styles, "settings-row")} aria-labelledby="next-challenge-preview-mode-setting">
                 <div>
                   <h4 id="next-challenge-preview-mode-setting">次の課題の表示方式</h4>
                   <p>短文練習で次の課題をどう見せるかを選ぶ</p>
                 </div>
                 <div
-                  className="preview-mode-segmented"
+                  className={css(styles, "preview-mode-segmented")}
                   role="group"
                   aria-label="次の課題の表示方式"
                 >
                   {nextChallengePreviewModeOptions.map((option) => (
                     <button
                       aria-pressed={settings.nextChallengePreviewMode === option.id}
-                      className={settings.nextChallengePreviewMode === option.id ? "selected" : ""}
+                      className={settings.nextChallengePreviewMode === option.id ? css(styles, "selected") : ""}
                       key={option.id}
                       onClick={() => onChange({ nextChallengePreviewMode: option.id })}
                       title={option.description}
@@ -1087,19 +1246,19 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                 unit="行"
                 value={settings.productionLongTextLineCount}
               />
-              <section className="settings-row" aria-labelledby="strict-mistake-display-setting">
+              <section className={css(styles, "settings-row")} aria-labelledby="strict-mistake-display-setting">
                 <div>
                   <h4 id="strict-mistake-display-setting">正確無比の誤入力表示</h4>
                   <p>誤入力した文字を課題文ローマ字上に表示する方法を選ぶ</p>
                 </div>
                 <div
-                  className="romaji-preset-segmented"
+                  className={css(styles, "romaji-preset-segmented")}
                   role="group"
                   aria-label="正確無比の誤入力表示"
                 >
                   <button
                     aria-pressed={settings.strictMistakeDisplayMode === "overwrite"}
-                    className={settings.strictMistakeDisplayMode === "overwrite" ? "selected" : ""}
+                    className={settings.strictMistakeDisplayMode === "overwrite" ? css(styles, "selected") : ""}
                     onClick={() => onChange({ strictMistakeDisplayMode: "overwrite" })}
                     type="button"
                   >
@@ -1107,7 +1266,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   </button>
                   <button
                     aria-pressed={settings.strictMistakeDisplayMode === "insert"}
-                    className={settings.strictMistakeDisplayMode === "insert" ? "selected" : ""}
+                    className={settings.strictMistakeDisplayMode === "insert" ? css(styles, "selected") : ""}
                     onClick={() => onChange({ strictMistakeDisplayMode: "insert" })}
                     type="button"
                   >
@@ -1115,7 +1274,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   </button>
                   <button
                     aria-pressed={settings.strictMistakeDisplayMode === "none"}
-                    className={settings.strictMistakeDisplayMode === "none" ? "selected" : ""}
+                    className={settings.strictMistakeDisplayMode === "none" ? css(styles, "selected") : ""}
                     onClick={() => onChange({ strictMistakeDisplayMode: "none" })}
                     type="button"
                   >
@@ -1123,19 +1282,19 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   </button>
                 </div>
               </section>
-              <section className="settings-row" aria-labelledby="rank-calculation-mode-setting">
+              <section className={css(styles, "settings-row")} aria-labelledby="rank-calculation-mode-setting">
                 <div>
                   <h4 id="rank-calculation-mode-setting">ランク算出方式</h4>
                   <p>タイピング中のランク表示に使うスコアの算出方式を選びます。</p>
                 </div>
                 <div
-                  className="rank-calculation-segmented"
+                  className={css(styles, "rank-calculation-segmented")}
                   role="group"
                   aria-label="ランク算出方式"
                 >
                   <button
                     aria-pressed={settings.rankCalculationMode === "projected"}
-                    className={settings.rankCalculationMode === "projected" ? "selected" : ""}
+                    className={settings.rankCalculationMode === "projected" ? css(styles, "selected") : ""}
                     onClick={() => onChange({ rankCalculationMode: "projected" })}
                     type="button"
                   >
@@ -1143,7 +1302,7 @@ export function InputSettingsSections({ settings, onChange }: InputSettingsSecti
                   </button>
                   <button
                     aria-pressed={settings.rankCalculationMode === "actual"}
-                    className={settings.rankCalculationMode === "actual" ? "selected" : ""}
+                    className={settings.rankCalculationMode === "actual" ? css(styles, "selected") : ""}
                     onClick={() => onChange({ rankCalculationMode: "actual" })}
                     type="button"
                   >

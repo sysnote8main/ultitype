@@ -1,0 +1,249 @@
+.rankBadgeCanvas,
+.rankLinkCanvas,
+.rankGuideCurrentCanvas,
+.rankGuideBandCanvas,
+.historyRankCanvas {
+  display: block;
+}
+
+.rankGuide {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 36px;
+}
+
+.scoreGuide {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) 1.5fr;
+  gap: 10px;
+}
+
+.scoreFormula,
+.practiceScoreMode {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.scoreFormula {
+  padding: 16px;
+}
+
+.scoreFormula span,
+.practiceScoreMode span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.scoreFormula strong {
+  display: block;
+  margin-top: 12px;
+  color: var(--gold);
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.25;
+}
+
+.scoreFormula p,
+.practiceScoreMode p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.practiceScoreModes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.practiceScoreMode {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+}
+
+.practiceScoreMode strong {
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.practiceScoreMode dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.practiceScoreMode dl div {
+  border: 1px solid var(--line);
+  background: var(--surface-deep);
+  padding: 8px;
+}
+
+.practiceScoreMode dt {
+  font-size: 11px;
+}
+
+.practiceScoreMode dd {
+  margin-top: 5px;
+  font-size: 16px;
+}
+
+.rankGuideSummary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 8px;
+}
+
+.rankGuideSummary div {
+  min-height: 92px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 14px;
+}
+
+.rankGuideSummary span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rankGuideSummary strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--text);
+  font-size: clamp(22px, 4vw, 36px);
+  line-height: 1;
+}
+
+.rankGuideCurrentCanvas {
+  margin-top: 12px;
+}
+
+.rankGuideColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.rankGuideColumn {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rankGuideColumn h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.rankGuideTableHead,
+.rankGuideRow {
+  display: grid;
+  grid-template-columns: minmax(112px, 1fr) 104px 108px;
+  gap: 8px;
+  align-items: center;
+}
+
+.rankGuideTableHead {
+  padding: 8px 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rankGuideList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rankGuideRow {
+  min-height: 52px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 9px 12px;
+}
+
+.rankGuideRow.reached {
+  border-color: rgba(86, 214, 164, 0.34);
+}
+
+.rankGuideRow.current {
+  border-color: var(--gold);
+  background: var(--surface-active);
+}
+
+.rankGuideBand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.rankGuideBand small {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rankGuideScore,
+.rankGuideState {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.rankGuideScore {
+  color: var(--text);
+  text-align: right;
+}
+
+.rankGuideState {
+  color: var(--muted);
+  text-align: right;
+}
+
+.rankGuideRow.reached .rankGuideState {
+  color: var(--accent-2);
+}
+
+.rankGuideRow.current .rankGuideState {
+  color: var(--gold);
+}
+
+@media (max-width: 720px) {
+  .rankGuideSummary {
+      grid-template-columns: 1fr;
+    }
+
+  .scoreGuide,
+    .practiceScoreModes,
+    .rankGuideColumns {
+      grid-template-columns: 1fr;
+    }
+
+  .rankGuideTableHead {
+      display: none;
+    }
+
+  .rankGuideRow {
+      grid-template-columns: minmax(88px, 1fr) 94px;
+    }
+
+  .rankGuideState {
+      grid-column: 1 / -1;
+      text-align: left;
+    }
+}

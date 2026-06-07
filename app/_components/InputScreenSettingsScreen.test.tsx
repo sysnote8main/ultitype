@@ -19,8 +19,8 @@ function renderInputScreenSettingsScreen(settings = initialSettings) {
   );
 }
 
-function readGlobalCss() {
-  return readFileSync("app/globals.css", "utf8");
+function readTypingPanelCss() {
+  return readFileSync("app/_components/TypingPanel.module.css", "utf8");
 }
 
 function getCategoryMarkup(markup: string, categoryId: string) {
@@ -194,13 +194,13 @@ describe("InputScreenSettingsScreen", () => {
   test("shows a prohibited marker when hovering the mock back button", () => {
     const markup = renderInputScreenSettingsScreen();
     const previewMarkup = getPreviewMarkup(markup);
-    const css = readGlobalCss();
+    const css = readTypingPanelCss();
 
     expect(previewMarkup).toContain('<div class="actions"><button class="icon-button"');
     expect(css).toContain(
-      ".input-screen-settings-preview .actions .icon-button:first-child:hover::after",
+      ".previewPanel .actions .iconButton:first-child:hover::after",
     );
-    expect(css).toContain('content: "🚫";');
+    expect(css).toContain('content: "X";');
   });
 
   test("groups migrated settings under input method and input screen categories", () => {
@@ -212,7 +212,7 @@ describe("InputScreenSettingsScreen", () => {
       "ローマ字入力法",
       "促音入力",
       "一般拗音分割入力",
-      "特殊拗音分割入力",
+      "特殊拗音入力法",
     ]);
     expect(getCategoryItemLabels(markup, "input-screen-settings")).toEqual([
       "漢字表示",
@@ -225,6 +225,38 @@ describe("InputScreenSettingsScreen", () => {
       "次の課題の表示方式",
       "正確無比の誤入力表示",
     ]);
+  });
+
+  test("shows custom foreign katakana romaji preferences under the special yoon setting", () => {
+    const markup = renderInputScreenSettingsScreen({
+      ...initialSettings,
+      romajiInputPreset: "custom",
+      specialRomajiInputPreset: "custom",
+    });
+    const inputMethodMarkup = getCategoryMarkup(markup, "input-settings");
+    const romajiMethodMarkup = getSettingRowMarkup(inputMethodMarkup, "romaji-method-setting");
+    const specialYoonMarkup = getSettingRowMarkup(inputMethodMarkup, "special-yoon-method-setting");
+
+    expect(romajiMethodMarkup).not.toContain("てぃ");
+    expect(romajiMethodMarkup).not.toContain("ゔぃ");
+    expect(specialYoonMarkup).toContain("すべて分割");
+    expect(specialYoonMarkup).toContain("すべて統合");
+    expect(specialYoonMarkup).toContain("個別設定");
+    expect(specialYoonMarkup).toContain("うぃ");
+    expect(specialYoonMarkup).toContain("wi");
+    expect(specialYoonMarkup).toContain("whi");
+    expect(specialYoonMarkup).toContain("てぃ");
+    expect(specialYoonMarkup).toContain("thi");
+    expect(specialYoonMarkup).toContain("texi");
+    expect(specialYoonMarkup).toContain("ゔぃ");
+    expect(specialYoonMarkup).toContain("vi");
+    expect(specialYoonMarkup).toContain("vuxi");
+    expect(specialYoonMarkup).toContain("ゔぇ");
+    expect(specialYoonMarkup).toContain("ve");
+    expect(specialYoonMarkup).toContain("vuxe");
+    expect(specialYoonMarkup).toContain("でゅ");
+    expect(specialYoonMarkup).toContain("dhu");
+    expect(specialYoonMarkup).toContain("dexyu");
   });
 
   test("splits input screen settings into kanji, furigana, hiragana, and romaji groups", () => {
@@ -485,6 +517,22 @@ describe("InputScreenSettingsScreen", () => {
     expect(getSettingRowMarkup(inputScreenMarkup, "romaji-marker-setting")).toContain(
       'checked=""',
     );
+  });
+
+  test("shows romaji marker mode choices under the romaji input screen group", () => {
+    const markup = renderInputScreenSettingsScreen();
+    const inputScreenMarkup = getCategoryMarkup(markup, "input-screen-settings");
+    const romajiMarkup = inputScreenMarkup.slice(
+      inputScreenMarkup.indexOf('id="romaji-input-screen-settings"'),
+      inputScreenMarkup.indexOf('id="other-input-screen-settings"'),
+    );
+    const rowMarkup = getSettingRowMarkup(romajiMarkup, "romaji-marker-mode-setting");
+
+    expect(rowMarkup).toContain("ローマ字マーカー単位");
+    expect(rowMarkup).toContain('aria-label="romaji marker mode"');
+    expect(rowMarkup).toContain("文字単位");
+    expect(rowMarkup).toContain("発音単位");
+    expect(rowMarkup).toContain('aria-pressed="true"');
   });
 
   test("locks marker toggles when matching display targets are hidden", () => {

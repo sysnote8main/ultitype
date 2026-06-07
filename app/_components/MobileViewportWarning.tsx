@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
+import { css } from "../_lib/css-module";
+import styles from "./MobileViewportWarning.module.css";
 
 export const mobileViewportWarningStorageKey = "ultitype:mobile-viewport-warning-dismissed";
 export const mobileViewportWarningMediaQuery = "(max-width: 519px)";
@@ -52,16 +54,16 @@ export function MobileViewportWarning() {
   }
 
   return (
-    <aside className="mobile-viewport-warning" role="status" aria-live="polite">
-      <div className="mobile-viewport-warning-icon" aria-hidden="true">
+    <aside className={css(styles, "mobile-viewport-warning")} role="status" aria-live="polite">
+      <div className={css(styles, "mobile-viewport-warning-icon")} aria-hidden="true">
         <AlertTriangle size={20} />
       </div>
-      <div className="mobile-viewport-warning-copy">
+      <div className={css(styles, "mobile-viewport-warning-copy")}>
         <strong>この画面幅はサポート対象外です</strong>
         <p>
           UltiType は 520px 以上のデスクトップ画面向けです。現在の表示ではデスクトップ向けレイアウトを維持します。
         </p>
-        <label className="mobile-viewport-warning-check">
+        <label className={css(styles, "mobile-viewport-warning-check")}>
           <input
             checked={dismissOnClose}
             type="checkbox"
@@ -71,7 +73,7 @@ export function MobileViewportWarning() {
         </label>
       </div>
       <button
-        className="mobile-viewport-warning-close"
+        className={css(styles, "mobile-viewport-warning-close")}
         type="button"
         aria-label="警告を閉じる"
         onClick={closeWarning}

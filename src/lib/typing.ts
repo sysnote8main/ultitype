@@ -113,8 +113,9 @@ export type DirectTypingState = {
 };
 
 export type RomajiInputPreset = "custom" | "shortest" | "hepburn";
+export type SpecialRomajiInputPreset = "split" | "integrated" | "custom";
 
-export type RomajiVariantId =
+export type StandardRomajiVariantId =
   | "syllabicN"
   | "syllabicNBeforeVowel"
   | "syllabicNBeforeNaRow"
@@ -133,6 +134,53 @@ export type RomajiVariantId =
   | "ju"
   | "jo";
 
+export type SpecialRomajiVariantId =
+  | "ye"
+  | "wha"
+  | "wi"
+  | "we"
+  | "who"
+  | "kwi"
+  | "kwe"
+  | "kwo"
+  | "gwa"
+  | "gwi"
+  | "gwe"
+  | "gwo"
+  | "she"
+  | "je"
+  | "che"
+  | "swi"
+  | "zwi"
+  | "tsa"
+  | "tsi"
+  | "tse"
+  | "tso"
+  | "tha"
+  | "thi"
+  | "thu"
+  | "the"
+  | "tho"
+  | "dha"
+  | "dhi"
+  | "dhu"
+  | "dhe"
+  | "dho"
+  | "twu"
+  | "dwu"
+  | "fa"
+  | "fi"
+  | "fyu"
+  | "fe"
+  | "fo"
+  | "va"
+  | "vi"
+  | "vyu"
+  | "ve"
+  | "vo";
+
+export type RomajiVariantId = StandardRomajiVariantId | SpecialRomajiVariantId;
+
 export type RomajiVariantSelection = {
   accepted: string[];
   preferred: string;
@@ -148,9 +196,11 @@ export type SokuonInputSelection = {
 
 export type RomajiInputConfig = {
   preset: RomajiInputPreset;
-  selections: Partial<Record<RomajiVariantId, RomajiVariantSelection>>;
+  selections: Partial<Record<StandardRomajiVariantId, RomajiVariantSelection>>;
   allowSplitYoon?: boolean;
   allowSplitSpecialYoon?: boolean;
+  specialPreset?: SpecialRomajiInputPreset;
+  specialSelections?: Partial<Record<SpecialRomajiVariantId, RomajiVariantSelection>>;
   sokuon?: SokuonInputSelection;
 };
 
@@ -160,6 +210,17 @@ export type RomajiVariantOption = {
   alternatives: string[];
   shortest: string;
   hepburn: string;
+};
+
+type StandardRomajiVariantOption = RomajiVariantOption & {
+  id: StandardRomajiVariantId;
+};
+
+type SpecialRomajiVariantOption = RomajiVariantOption & {
+  id: SpecialRomajiVariantId;
+  integratedAlternatives: string[];
+  pattern: string;
+  splitAlternatives: string[];
 };
 
 type RomajiInputToken = {
@@ -200,7 +261,7 @@ export type DirectKeyResult = {
   scoredKeystrokes: number;
 };
 
-export const romajiVariantOptions: RomajiVariantOption[] = [
+export const standardRomajiVariantOptions: StandardRomajiVariantOption[] = [
   {
     id: "syllabicN",
     label: "ん",
@@ -238,6 +299,86 @@ export const romajiVariantOptions: RomajiVariantOption[] = [
   { id: "jo", label: "じょ", alternatives: ["jo", "zyo"], shortest: "zyo", hepburn: "jo" },
 ];
 
+export const specialRomajiVariantOptions: SpecialRomajiVariantOption[] = [
+  createSpecialRomajiVariantOption({ id: "ye", label: "いぇ", integrated: ["ye"], splitPrefix: "i" }),
+  createSpecialRomajiVariantOption({ id: "wha", label: "うぁ", integrated: ["wha"], splitPrefix: "u", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "wi", label: "うぃ", integrated: ["wi", "whi"], splitPrefix: "u" }),
+  createSpecialRomajiVariantOption({ id: "we", label: "うぇ", integrated: ["we", "whe"], splitPrefix: "u" }),
+  createSpecialRomajiVariantOption({ id: "who", label: "うぉ", integrated: ["who", "wo"], splitPrefix: "u", splitSuffix: "o" }),
+  createSpecialRomajiVariantOption({ id: "kwi", label: "くぃ", integrated: ["kwi"], splitPrefix: "ku" }),
+  createSpecialRomajiVariantOption({ id: "kwe", label: "くぇ", integrated: ["kwe"], splitPrefix: "ku" }),
+  createSpecialRomajiVariantOption({ id: "kwo", label: "くぉ", integrated: ["kwo"], splitPrefix: "ku", splitSuffix: "o" }),
+  createSpecialRomajiVariantOption({ id: "gwa", label: "ぐぁ", integrated: ["gwa"], splitPrefix: "gu", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "gwi", label: "ぐぃ", integrated: ["gwi"], splitPrefix: "gu" }),
+  createSpecialRomajiVariantOption({ id: "gwe", label: "ぐぇ", integrated: ["gwe"], splitPrefix: "gu" }),
+  createSpecialRomajiVariantOption({ id: "gwo", label: "ぐぉ", integrated: ["gwo"], splitPrefix: "gu", splitSuffix: "o" }),
+  createSpecialRomajiVariantOption({ id: "she", label: "しぇ", integrated: ["she", "sye"], splitPrefix: "shi" }),
+  createSpecialRomajiVariantOption({ id: "je", label: "じぇ", integrated: ["je", "jye", "zye"], splitPrefix: "ji" }),
+  createSpecialRomajiVariantOption({ id: "che", label: "ちぇ", integrated: ["che", "tye", "cye"], splitPrefix: "chi" }),
+  createSpecialRomajiVariantOption({ id: "swi", label: "すぃ", integrated: ["swi"], splitPrefix: "su" }),
+  createSpecialRomajiVariantOption({ id: "zwi", label: "ずぃ", integrated: ["zwi"], splitPrefix: "zu" }),
+  createSpecialRomajiVariantOption({ id: "tsa", label: "つぁ", integrated: ["tsa"], splitPrefix: "tsu", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "tsi", label: "つぃ", integrated: ["tsi"], splitPrefix: "tsu" }),
+  createSpecialRomajiVariantOption({ id: "tse", label: "つぇ", integrated: ["tse"], splitPrefix: "tsu" }),
+  createSpecialRomajiVariantOption({ id: "tso", label: "つぉ", integrated: ["tso"], splitPrefix: "tsu", splitSuffix: "o" }),
+  createSpecialRomajiVariantOption({ id: "tha", label: "てぁ", integrated: ["tha"], splitPrefix: "te", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "thi", label: "てぃ", integrated: ["thi"], splitPrefix: "te" }),
+  createSpecialRomajiVariantOption({ id: "thu", label: "てゅ", integrated: ["thu"], splitPrefix: "te", splitSuffix: "yu" }),
+  createSpecialRomajiVariantOption({ id: "the", label: "てぇ", integrated: ["the"], splitPrefix: "te" }),
+  createSpecialRomajiVariantOption({ id: "tho", label: "てょ", integrated: ["tho"], splitPrefix: "te", splitSuffix: "yo" }),
+  createSpecialRomajiVariantOption({ id: "dha", label: "でぁ", integrated: ["dha"], splitPrefix: "de", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "dhi", label: "でぃ", integrated: ["dhi", "di"], splitPrefix: "de" }),
+  createSpecialRomajiVariantOption({ id: "dhu", label: "でゅ", integrated: ["dhu", "dyu"], splitPrefix: "de", splitSuffix: "yu" }),
+  createSpecialRomajiVariantOption({ id: "dhe", label: "でぇ", integrated: ["dhe"], splitPrefix: "de" }),
+  createSpecialRomajiVariantOption({ id: "dho", label: "でょ", integrated: ["dho"], splitPrefix: "de", splitSuffix: "yo" }),
+  createSpecialRomajiVariantOption({ id: "twu", label: "とぅ", integrated: ["twu"], splitPrefix: "to" }),
+  createSpecialRomajiVariantOption({ id: "dwu", label: "どぅ", integrated: ["dwu"], splitPrefix: "do" }),
+  createSpecialRomajiVariantOption({ id: "fa", label: "ふぁ", integrated: ["fa"], splitPrefix: "fu", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "fi", label: "ふぃ", integrated: ["fi"], splitPrefix: "fu" }),
+  createSpecialRomajiVariantOption({ id: "fyu", label: "ふゅ", integrated: ["fyu"], splitPrefix: "fu", splitSuffix: "yu" }),
+  createSpecialRomajiVariantOption({ id: "fe", label: "ふぇ", integrated: ["fe"], splitPrefix: "fu" }),
+  createSpecialRomajiVariantOption({ id: "fo", label: "ふぉ", integrated: ["fo"], splitPrefix: "fu", splitSuffix: "o" }),
+  createSpecialRomajiVariantOption({ id: "va", label: "ゔぁ", integrated: ["va"], splitPrefix: "vu", splitSuffix: "a" }),
+  createSpecialRomajiVariantOption({ id: "vi", label: "ゔぃ", integrated: ["vi"], splitPrefix: "vu" }),
+  createSpecialRomajiVariantOption({ id: "vyu", label: "ゔゅ", integrated: ["vyu"], splitPrefix: "vu", splitSuffix: "yu" }),
+  createSpecialRomajiVariantOption({ id: "ve", label: "ゔぇ", integrated: ["ve"], splitPrefix: "vu" }),
+  createSpecialRomajiVariantOption({ id: "vo", label: "ゔぉ", integrated: ["vo"], splitPrefix: "vu", splitSuffix: "o" }),
+];
+
+export const romajiVariantOptions: RomajiVariantOption[] = [
+  ...standardRomajiVariantOptions,
+  ...specialRomajiVariantOptions,
+];
+
+function createSpecialRomajiVariantOption({
+  id,
+  integrated,
+  label,
+  splitPrefix,
+  splitSuffix,
+}: {
+  id: SpecialRomajiVariantId;
+  integrated: string[];
+  label: string;
+  splitPrefix: string;
+  splitSuffix?: string;
+}): SpecialRomajiVariantOption {
+  const hepburn = integrated[0] ?? "";
+  const suffix = splitSuffix ?? hepburn.at(-1) ?? "";
+  const splitAlternatives = [`${splitPrefix}l${suffix}`, `${splitPrefix}x${suffix}`];
+
+  return {
+    id,
+    alternatives: uniqueStrings([...integrated, ...splitAlternatives]),
+    hepburn,
+    integratedAlternatives: integrated,
+    label,
+    pattern: hepburn,
+    shortest: integrated.at(-1) ?? hepburn,
+    splitAlternatives,
+  };
+}
+
 export const sokuonInputOptions = ["ltsu", "xtsu", "ltu", "xtu"] as const satisfies readonly SokuonInputId[];
 
 const sokuonSourceMarker = "^";
@@ -248,7 +389,7 @@ const defaultSokuonInputSelection: SokuonInputSelection = {
   preferred: "xtu",
 };
 
-const romajiVariantPatterns = romajiVariantOptions
+const romajiVariantPatterns = standardRomajiVariantOptions
   .filter(
     (option) =>
       option.id !== "syllabicN" &&
@@ -257,6 +398,15 @@ const romajiVariantPatterns = romajiVariantOptions
   )
   .flatMap((option) =>
     option.alternatives.map((pattern) => ({
+      pattern,
+      option,
+    })),
+  )
+  .sort((left, right) => right.pattern.length - left.pattern.length);
+
+const specialRomajiVariantPatterns = specialRomajiVariantOptions
+  .flatMap((option) =>
+    option.integratedAlternatives.map((pattern) => ({
       pattern,
       option,
     })),
@@ -288,21 +438,6 @@ const standardSplitYoonPatterns = [
   { pattern: "rya", splitPrefix: "ri" },
   { pattern: "ryu", splitPrefix: "ri" },
   { pattern: "ryo", splitPrefix: "ri" },
-].map(({ pattern, splitPrefix }) => ({
-  pattern,
-  splitAlternatives: [`${splitPrefix}l${pattern.at(-1)}`, `${splitPrefix}x${pattern.at(-1)}`],
-}));
-
-const specialSplitYoonPatterns = [
-  { pattern: "va", splitPrefix: "vu" },
-  { pattern: "vi", splitPrefix: "vu" },
-  { pattern: "ve", splitPrefix: "vu" },
-  { pattern: "vo", splitPrefix: "vu" },
-  { pattern: "tha", splitPrefix: "te" },
-  { pattern: "thi", splitPrefix: "te" },
-  { pattern: "thu", splitPrefix: "te" },
-  { pattern: "the", splitPrefix: "te" },
-  { pattern: "tho", splitPrefix: "te" },
 ].map(({ pattern, splitPrefix }) => ({
   pattern,
   splitAlternatives: [`${splitPrefix}l${pattern.at(-1)}`, `${splitPrefix}x${pattern.at(-1)}`],
@@ -600,7 +735,7 @@ function readSyllabicN(
 
     return {
       ...resolveRomajiSelection(
-        romajiVariantOptions.find((option) => option.id === variantId)!,
+        standardRomajiVariantOptions.find((option) => option.id === variantId)!,
         config,
       ),
       consumed: 2,
@@ -613,7 +748,7 @@ function readSyllabicN(
 
   return {
     ...resolveRomajiSelection(
-      romajiVariantOptions.find((option) => option.id === "syllabicN")!,
+      standardRomajiVariantOptions.find((option) => option.id === "syllabicN")!,
       config,
     ),
     consumed: 1,
@@ -701,17 +836,17 @@ function readSplitYoon(
     };
   }
 
-  const specialMatch = specialSplitYoonPatterns.find(({ pattern }) =>
+  const specialMatch = specialRomajiVariantPatterns.find(({ pattern }) =>
     source.startsWith(pattern, index),
   );
   if (specialMatch) {
+    const selection = resolveSpecialRomajiSelection(specialMatch.option, config);
+
     return {
-      accepted:
-        config.allowSplitSpecialYoon === true
-          ? [specialMatch.pattern, ...specialMatch.splitAlternatives]
-          : [specialMatch.pattern],
+      accepted: selection.accepted,
       consumed: specialMatch.pattern.length,
-      preferred: specialMatch.pattern,
+      preferred: selection.preferred,
+      variantId: selection.variantId,
     };
   }
 
@@ -740,7 +875,7 @@ function resolveSokuonSelection(config: RomajiInputConfig): SokuonInputSelection
 }
 
 function resolveRomajiSelection(
-  option: RomajiVariantOption,
+  option: StandardRomajiVariantOption,
   config: RomajiInputConfig,
 ): RomajiInputToken {
   const presetPreferred = config.preset === "shortest" ? option.shortest : option.hepburn;
@@ -761,6 +896,64 @@ function resolveRomajiSelection(
     preferred: acceptedWithPreferred.includes(preferred)
       ? preferred
       : (acceptedWithPreferred[0] ?? option.alternatives[0] ?? ""),
+    variantId: option.id,
+  };
+}
+
+function resolveSpecialRomajiSelection(
+  option: SpecialRomajiVariantOption,
+  config: RomajiInputConfig,
+): RomajiInputToken {
+  if (config.specialPreset === "split") {
+    return {
+      accepted: option.splitAlternatives,
+      preferred: option.splitAlternatives.at(-1) ?? option.splitAlternatives[0] ?? option.hepburn,
+      variantId: option.id,
+    };
+  }
+
+  if (config.specialPreset === "custom") {
+    return resolveCustomSpecialRomajiSelection(option, config.specialSelections?.[option.id]);
+  }
+
+  if (config.specialPreset === "integrated") {
+    return {
+      accepted: option.integratedAlternatives,
+      preferred: option.hepburn,
+      variantId: option.id,
+    };
+  }
+
+  return {
+    accepted:
+      config.allowSplitSpecialYoon === true
+        ? uniqueStrings([...option.integratedAlternatives, ...option.splitAlternatives])
+        : option.integratedAlternatives,
+    preferred: option.hepburn,
+    variantId: option.id,
+  };
+}
+
+function resolveCustomSpecialRomajiSelection(
+  option: SpecialRomajiVariantOption,
+  selection: RomajiVariantSelection | undefined,
+): RomajiInputToken {
+  const validAccepted = new Set(option.alternatives);
+  const accepted = (selection?.accepted.length ? selection.accepted : option.integratedAlternatives).filter(
+    (candidate) => validAccepted.has(candidate),
+  );
+  const preferred = validAccepted.has(selection?.preferred ?? "")
+    ? (selection?.preferred ?? option.hepburn)
+    : (accepted[0] ?? option.hepburn);
+  const acceptedWithPreferred = accepted.includes(preferred)
+    ? accepted
+    : [...accepted, preferred].filter((candidate) => validAccepted.has(candidate));
+
+  return {
+    accepted: acceptedWithPreferred.length > 0 ? acceptedWithPreferred : option.integratedAlternatives,
+    preferred: acceptedWithPreferred.includes(preferred)
+      ? preferred
+      : (acceptedWithPreferred[0] ?? option.hepburn),
     variantId: option.id,
   };
 }

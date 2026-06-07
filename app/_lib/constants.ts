@@ -83,6 +83,7 @@ export const initialSettings: AppSettings = {
   showFuriganaMarker: false,
   showHiraganaMarker: true,
   showRomajiMarker: true,
+  romajiMarkerMode: "character",
   kanjiFontSize: 32,
   furiganaFontScale: 0.42,
   hiraganaFontSize: 24,
@@ -100,6 +101,8 @@ export const initialSettings: AppSettings = {
   romajiInputSelections: {},
   allowSplitYoon: true,
   allowSplitSpecialYoon: false,
+  specialRomajiInputPreset: "integrated",
+  specialRomajiInputSelections: {},
   sokuonInput: {
     allowSplit: true,
     accepted: ["ltsu", "xtsu", "ltu", "xtu"],
