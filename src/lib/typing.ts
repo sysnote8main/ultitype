@@ -140,9 +140,13 @@ export type SpecialRomajiVariantId =
   | "wi"
   | "we"
   | "who"
+  | "kwa"
   | "kwi"
+  | "kwu"
   | "kwe"
   | "kwo"
+  | "kye"
+  | "kyi"
   | "gwa"
   | "gwi"
   | "gwe"
@@ -305,7 +309,11 @@ export const specialRomajiVariantOptions: SpecialRomajiVariantOption[] = [
   createSpecialRomajiVariantOption({ id: "wi", label: "うぃ", integrated: ["wi", "whi"], splitPrefix: "u" }),
   createSpecialRomajiVariantOption({ id: "we", label: "うぇ", integrated: ["we", "whe"], splitPrefix: "u" }),
   createSpecialRomajiVariantOption({ id: "who", label: "うぉ", integrated: ["who", "wo"], splitPrefix: "u", splitSuffix: "o" }),
+  createSpecialRomajiVariantOption({ id: "kyi", label: "きぃ", integrated: ["kyi"], splitPrefix: "ki" }),
+  createSpecialRomajiVariantOption({ id: "kye", label: "きぇ", integrated: ["kye"], splitPrefix: "ki" }),
+  createSpecialRomajiVariantOption({ id: "kwa", label: "くぁ", integrated: ["kwa"], splitPrefix: "ku", splitSuffix: "a" }),
   createSpecialRomajiVariantOption({ id: "kwi", label: "くぃ", integrated: ["kwi"], splitPrefix: "ku" }),
+  createSpecialRomajiVariantOption({ id: "kwu", label: "くぅ", integrated: ["kwu"], splitPrefix: "ku" }),
   createSpecialRomajiVariantOption({ id: "kwe", label: "くぇ", integrated: ["kwe"], splitPrefix: "ku" }),
   createSpecialRomajiVariantOption({ id: "kwo", label: "くぉ", integrated: ["kwo"], splitPrefix: "ku", splitSuffix: "o" }),
   createSpecialRomajiVariantOption({ id: "gwa", label: "ぐぁ", integrated: ["gwa"], splitPrefix: "gu", splitSuffix: "a" }),
@@ -313,10 +321,10 @@ export const specialRomajiVariantOptions: SpecialRomajiVariantOption[] = [
   createSpecialRomajiVariantOption({ id: "gwe", label: "ぐぇ", integrated: ["gwe"], splitPrefix: "gu" }),
   createSpecialRomajiVariantOption({ id: "gwo", label: "ぐぉ", integrated: ["gwo"], splitPrefix: "gu", splitSuffix: "o" }),
   createSpecialRomajiVariantOption({ id: "she", label: "しぇ", integrated: ["she", "sye"], splitPrefix: "shi" }),
-  createSpecialRomajiVariantOption({ id: "je", label: "じぇ", integrated: ["je", "jye", "zye"], splitPrefix: "ji" }),
-  createSpecialRomajiVariantOption({ id: "che", label: "ちぇ", integrated: ["che", "tye", "cye"], splitPrefix: "chi" }),
   createSpecialRomajiVariantOption({ id: "swi", label: "すぃ", integrated: ["swi"], splitPrefix: "su" }),
+  createSpecialRomajiVariantOption({ id: "je", label: "じぇ", integrated: ["je", "jye", "zye"], splitPrefix: "ji" }),
   createSpecialRomajiVariantOption({ id: "zwi", label: "ずぃ", integrated: ["zwi"], splitPrefix: "zu" }),
+  createSpecialRomajiVariantOption({ id: "che", label: "ちぇ", integrated: ["che", "tye", "cye"], splitPrefix: "chi" }),
   createSpecialRomajiVariantOption({ id: "tsa", label: "つぁ", integrated: ["tsa"], splitPrefix: "tsu", splitSuffix: "a" }),
   createSpecialRomajiVariantOption({ id: "tsi", label: "つぃ", integrated: ["tsi"], splitPrefix: "tsu" }),
   createSpecialRomajiVariantOption({ id: "tse", label: "つぇ", integrated: ["tse"], splitPrefix: "tsu" }),
@@ -326,12 +334,12 @@ export const specialRomajiVariantOptions: SpecialRomajiVariantOption[] = [
   createSpecialRomajiVariantOption({ id: "thu", label: "てゅ", integrated: ["thu"], splitPrefix: "te", splitSuffix: "yu" }),
   createSpecialRomajiVariantOption({ id: "the", label: "てぇ", integrated: ["the"], splitPrefix: "te" }),
   createSpecialRomajiVariantOption({ id: "tho", label: "てょ", integrated: ["tho"], splitPrefix: "te", splitSuffix: "yo" }),
+  createSpecialRomajiVariantOption({ id: "twu", label: "とぅ", integrated: ["twu"], splitPrefix: "to" }),
   createSpecialRomajiVariantOption({ id: "dha", label: "でぁ", integrated: ["dha"], splitPrefix: "de", splitSuffix: "a" }),
   createSpecialRomajiVariantOption({ id: "dhi", label: "でぃ", integrated: ["dhi", "di"], splitPrefix: "de" }),
   createSpecialRomajiVariantOption({ id: "dhu", label: "でゅ", integrated: ["dhu", "dyu"], splitPrefix: "de", splitSuffix: "yu" }),
   createSpecialRomajiVariantOption({ id: "dhe", label: "でぇ", integrated: ["dhe"], splitPrefix: "de" }),
   createSpecialRomajiVariantOption({ id: "dho", label: "でょ", integrated: ["dho"], splitPrefix: "de", splitSuffix: "yo" }),
-  createSpecialRomajiVariantOption({ id: "twu", label: "とぅ", integrated: ["twu"], splitPrefix: "to" }),
   createSpecialRomajiVariantOption({ id: "dwu", label: "どぅ", integrated: ["dwu"], splitPrefix: "do" }),
   createSpecialRomajiVariantOption({ id: "fa", label: "ふぁ", integrated: ["fa"], splitPrefix: "fu", splitSuffix: "a" }),
   createSpecialRomajiVariantOption({ id: "fi", label: "ふぃ", integrated: ["fi"], splitPrefix: "fu" }),
