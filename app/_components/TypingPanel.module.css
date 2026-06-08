@@ -450,9 +450,17 @@
   overflow: visible;
   text-align: left;
   text-overflow: clip;
-  transform: translateX(var(--center-marker-translate, 0px));
   transition: none;
   white-space: nowrap;
+}
+
+.centerScroll .displayText {
+  transform: translateX(calc(var(--center-marker-translate, 0px) - var(--target-kanji-font-size, 32px) * 0.5 * var(--center-marker-hiragana-count, 1)));
+}
+
+.centerScroll .readingText,
+.centerScroll .inputTarget {
+  transform: translateX(var(--center-marker-translate, 0px));
 }
 
 .centerScrollNextText {

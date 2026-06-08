@@ -2046,8 +2046,31 @@ function ContinuousChallengeTextStack({
   const centerMarkerPosition = getCenterMarkerPosition(romajiTarget, input);
   const centerMarkerKey = `${centerMarkerPosition}-${input}`;
 
+  const markerHiraganaCount = (() => {
+    if (!reading) {
+      return 1;
+    }
+
+    const parts = createJapaneseReadingGuideParts(reading);
+
+    for (const part of parts) {
+      if (
+        part.kind === "reading" &&
+        part.tokenStart <= centerMarkerPosition &&
+        centerMarkerPosition < part.tokenEnd
+      ) {
+        return Array.from(part.text).length;
+      }
+    }
+
+    return 1;
+  })();
+
   return (
-    <div className={css(styles, "center-continuous-stack")}>
+    <div
+      className={css(styles, "center-continuous-stack")}
+      style={{ "--center-marker-hiragana-count": markerHiraganaCount } as CSSProperties}
+    >
       {showDisplayText && hasSeparateDisplay ? (
         <CenterScrollViewport
           kind="display"
