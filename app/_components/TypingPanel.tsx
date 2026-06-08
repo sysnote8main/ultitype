@@ -35,6 +35,7 @@ import {
   createJapaneseFuriganaParts,
   type JapaneseFuriganaEntry,
   createJapaneseReadingGuideParts,
+  type JapaneseReadingGuidePart,
 } from "@/src/lib/challenges";
 import { css, cx } from "../_lib/css-module";
 import { topDisplayMetricOptions } from "../_lib/constants";
@@ -1385,42 +1386,80 @@ function ProductionLongDisplayText({
         const tokenCount = countJapaneseReadingTokens(part.ruby ?? part.text);
         const tokenEnd = tokenStart + tokenCount;
         tokenStart = tokenEnd;
+
+        if (part.ruby) {
+          const subRubies = splitRubyPart(part.text, part.ruby, partTokenStart);
+          return subRubies.map((subRuby, subIndex) => {
+            const isScrollTarget = shouldPlaceProductionLongScrollTarget(
+              scrollMarkerProgress,
+              subRuby.tokenStart,
+              subRuby.tokenEnd,
+            );
+
+            if (showFurigana) {
+              const rubyClassName = getDisplayMarkerClassName(
+                "display-ruby",
+                showKanjiMarker,
+                markerProgress,
+                subRuby.tokenStart,
+                subRuby.tokenEnd,
+              );
+              const rubyText =
+                showFuriganaMarker && markerProgress !== null
+                  ? renderFuriganaMarkerCharacters(
+                    subRuby.ruby,
+                    subRuby.tokenStart,
+                    markerProgress.completedTokens,
+                    markerProgress.currentTokenIndex,
+                  )
+                  : subRuby.ruby;
+
+              return (
+                <span
+                  className={isScrollTarget ? css(styles, "production-long-scroll-target") : undefined}
+                  key={`production-display-ruby-wrapper-${part.text}-${index}-${subIndex}`}
+                >
+                  <ruby className={rubyClassName}>
+                    {subRuby.kanji}
+                    <rt>{rubyText}</rt>
+                  </ruby>
+                </span>
+              );
+            }
+
+            if (showKanjiMarker && markerProgress !== null) {
+              return (
+                <span
+                  className={isScrollTarget ? css(styles, "production-long-scroll-target") : undefined}
+                  key={`production-display-marker-wrapper-${part.text}-${index}-${subIndex}`}
+                >
+                  {renderDisplayMarkerCharacters(
+                    subRuby.kanji,
+                    subRuby.tokenStart,
+                    markerProgress.completedTokens,
+                    markerProgress.currentTokenIndex,
+                    `production-display-${index}-${subIndex}`,
+                  )}
+                </span>
+              );
+            }
+
+            return (
+              <span
+                className={css(styles, "display-plain", isScrollTarget ? "production-long-scroll-target" : "")}
+                key={`production-display-plain-${part.text}-${index}-${subIndex}`}
+              >
+                {subRuby.kanji}
+              </span>
+            );
+          });
+        }
+
         const isScrollTarget = shouldPlaceProductionLongScrollTarget(
           scrollMarkerProgress,
           partTokenStart,
           tokenEnd,
         );
-
-        if (part.ruby && showFurigana) {
-          const rubyClassName = getDisplayMarkerClassName(
-            "display-ruby",
-            showKanjiMarker,
-            markerProgress,
-            partTokenStart,
-            tokenEnd,
-          );
-          const rubyText =
-            showFuriganaMarker && markerProgress !== null
-              ? renderFuriganaMarkerCharacters(
-                part.ruby,
-                partTokenStart,
-                markerProgress.completedTokens,
-                markerProgress.currentTokenIndex,
-              )
-              : part.ruby;
-
-          return (
-            <span
-              className={isScrollTarget ? css(styles, "production-long-scroll-target") : undefined}
-              key={`production-display-ruby-wrapper-${part.text}-${index}`}
-            >
-              <ruby className={rubyClassName}>
-                {part.text}
-                <rt>{rubyText}</rt>
-              </ruby>
-            </span>
-          );
-        }
 
         if (showKanjiMarker && markerProgress !== null) {
           return (
@@ -2257,6 +2296,83 @@ function getCenterMarkerPosition(target: RomajiInputTarget | null, input: string
   return getRomajiInputProgress(target, input).currentTokenIndex;
 }
 
+type SplitRubyPart = {
+  kanji: string;
+  ruby: string;
+  tokenStart: number;
+  tokenEnd: number;
+};
+
+function splitRubyPart(
+  kanji: string,
+  ruby: string,
+  partTokenStart: number
+): SplitRubyPart[] {
+  const kanjiChars = Array.from(kanji);
+  const K = kanjiChars.length;
+  if (K === 0) return [];
+
+  const readingParts = createJapaneseReadingGuideParts(ruby);
+  const M = readingParts.length;
+
+  if (M === 0) {
+    return kanjiChars.map((char) => ({
+      kanji: char,
+      ruby: "",
+      tokenStart: partTokenStart,
+      tokenEnd: partTokenStart,
+    }));
+  }
+
+  const groupedParts: JapaneseReadingGuidePart[][] = Array.from({ length: K }, () => []);
+  readingParts.forEach((part, index) => {
+    const kanjiIndex = Math.min(K - 1, Math.floor((index * K) / M));
+    groupedParts[kanjiIndex]?.push(part);
+  });
+
+  return kanjiChars.map((char, j) => {
+    const partsForKanji = groupedParts[j] || [];
+    const subRuby = partsForKanji.map((p) => p.text).join("");
+
+    let subRubyTokenStart = partTokenStart;
+    let subRubyTokenEnd = partTokenStart;
+
+    if (partsForKanji.length > 0) {
+      const starts = partsForKanji
+        .filter((p) => p.kind === "reading")
+        .map((p) => p.tokenStart);
+      const ends = partsForKanji
+        .filter((p) => p.kind === "reading")
+        .map((p) => p.tokenEnd);
+
+      const relStart = starts.length > 0 ? Math.min(...starts) : 0;
+      const relEnd = ends.length > 0 ? Math.max(...ends) : 0;
+
+      subRubyTokenStart = partTokenStart + relStart;
+      subRubyTokenEnd = partTokenStart + relEnd;
+    } else {
+      let prevEnd = 0;
+      for (let prevIdx = j - 1; prevIdx >= 0; prevIdx--) {
+        const prevParts = groupedParts[prevIdx] || [];
+        const prevEnds = prevParts.filter((p) => p.kind === "reading").map((p) => p.tokenEnd);
+        if (prevEnds.length > 0) {
+          prevEnd = Math.max(...prevEnds);
+          break;
+        }
+      }
+      subRubyTokenStart = partTokenStart + prevEnd;
+      subRubyTokenEnd = partTokenStart + prevEnd;
+    }
+
+    return {
+      kanji: char,
+      ruby: subRuby,
+      tokenStart: subRubyTokenStart,
+      tokenEnd: subRubyTokenEnd,
+    };
+  });
+}
+
 function PreviousCenterDisplayText({
   display,
   furigana,
@@ -2273,16 +2389,20 @@ function PreviousCenterDisplayText({
   return (
     <span className={css(styles, "center-scroll-previous-text")}>
       {showFurigana && furigana.length > 0
-        ? createJapaneseFuriganaParts(display, furigana).map((part, index) =>
+        ? createJapaneseFuriganaParts(display, furigana).flatMap((part, index) =>
           part.ruby ? (
-            <ruby className={css(styles, "display-ruby")} key={`previous-display-ruby-${part.text}-${index}`}>
-              {part.text}
-              <rt>{part.ruby}</rt>
-            </ruby>
+            splitRubyPart(part.text, part.ruby, 0).map((subRuby, subIndex) => (
+              <ruby className={css(styles, "display-ruby")} key={`previous-display-ruby-${part.text}-${index}-${subIndex}`}>
+                {subRuby.kanji}
+                <rt>{subRuby.ruby}</rt>
+              </ruby>
+            ))
           ) : (
-            <span className={css(styles, "display-plain")} key={`previous-display-plain-${part.text}-${index}`}>
-              {part.text}
-            </span>
+            [
+              <span className={css(styles, "display-plain")} key={`previous-display-plain-${part.text}-${index}`}>
+                {part.text}
+              </span>,
+            ]
           ),
         )
         : display}
@@ -2303,16 +2423,20 @@ function renderCenterNextDisplayText(
     return display;
   }
 
-  return createJapaneseFuriganaParts(display, furigana).map((part, index) =>
+  return createJapaneseFuriganaParts(display, furigana).flatMap((part, index) =>
     part.ruby ? (
-      <ruby className={css(styles, "display-ruby")} key={`next-display-ruby-${part.text}-${index}`}>
-        {part.text}
-        <rt>{part.ruby}</rt>
-      </ruby>
+      splitRubyPart(part.text, part.ruby, 0).map((subRuby, subIndex) => (
+        <ruby className={css(styles, "display-ruby")} key={`next-display-ruby-${part.text}-${index}-${subIndex}`}>
+          {subRuby.kanji}
+          <rt>{subRuby.ruby}</rt>
+        </ruby>
+      ))
     ) : (
-      <span className={css(styles, "display-plain")} key={`next-display-plain-${part.text}-${index}`}>
-        {part.text}
-      </span>
+      [
+        <span className={css(styles, "display-plain")} key={`next-display-plain-${part.text}-${index}`}>
+          {part.text}
+        </span>,
+      ]
     ),
   );
 }
@@ -2343,60 +2467,59 @@ function renderCenterDisplayText(
     const partTokenStart = tokenStart;
 
     if (part.ruby) {
-      const tokenCount = countJapaneseReadingTokens(part.ruby);
-      const tokenEnd = tokenStart + tokenCount;
-      const isCurrent = partTokenStart <= currentTokenIndex && currentTokenIndex < tokenEnd;
-      tokenStart = tokenEnd;
+      const subRubies = splitRubyPart(part.text, part.ruby, partTokenStart);
+      const parentTokenEnd = partTokenStart + countJapaneseReadingTokens(part.ruby);
+      tokenStart = parentTokenEnd;
 
-      if (!insertedMarker && isCurrent) {
-        content.push(<CenterScrollCurrentMarker key="center-display-marker" />);
-        insertedMarker = true;
-      }
+      subRubies.forEach((subRuby, subIndex) => {
+        const isCurrent = subRuby.tokenStart <= currentTokenIndex && currentTokenIndex < subRuby.tokenEnd;
 
-      if (showFurigana) {
-        const rubyClassName = getDisplayMarkerClassName(
-          "display-ruby",
-          showKanjiMarker,
-          { completedTokens: currentTokenIndex, currentTokenIndex },
-          partTokenStart,
-          tokenEnd,
-        );
-        const rubyText = showFuriganaMarker
-          ? renderFuriganaMarkerCharacters(
-            part.ruby,
-            partTokenStart,
-            currentTokenIndex,
-            currentTokenIndex,
-          )
-          : part.ruby;
+        if (!insertedMarker && isCurrent) {
+          content.push(<CenterScrollCurrentMarker key={`center-display-marker-${index}-${subIndex}`} />);
+          insertedMarker = true;
+        }
 
-        content.push(
-          <ruby className={rubyClassName} key={`center-display-ruby-${part.text}-${index}`}>
-            {part.text}
-            <rt>{rubyText}</rt>
-          </ruby>,
-        );
-        return;
-      }
+        if (showFurigana) {
+          const rubyClassName = getDisplayMarkerClassName(
+            "display-ruby",
+            showKanjiMarker,
+            { completedTokens: currentTokenIndex, currentTokenIndex },
+            subRuby.tokenStart,
+            subRuby.tokenEnd,
+          );
+          const rubyText = showFuriganaMarker
+            ? renderFuriganaMarkerCharacters(
+              subRuby.ruby,
+              subRuby.tokenStart,
+              currentTokenIndex,
+              currentTokenIndex,
+            )
+            : subRuby.ruby;
 
-      if (showKanjiMarker) {
-        content.push(
-          ...renderDisplayMarkerCharacters(
-            part.text,
-            partTokenStart,
-            currentTokenIndex,
-            currentTokenIndex,
-            `center-display-${index}`,
-          ),
-        );
-        return;
-      }
-
-      content.push(
-        <span className={css(styles, "display-plain")} key={`center-display-plain-${part.text}-${index}`}>
-          {part.text}
-        </span>,
-      );
+          content.push(
+            <ruby className={rubyClassName} key={`center-display-ruby-${part.text}-${index}-${subIndex}`}>
+              {subRuby.kanji}
+              <rt>{rubyText}</rt>
+            </ruby>,
+          );
+        } else if (showKanjiMarker) {
+          content.push(
+            ...renderDisplayMarkerCharacters(
+              subRuby.kanji,
+              subRuby.tokenStart,
+              currentTokenIndex,
+              currentTokenIndex,
+              `center-display-${index}-${subIndex}`,
+            ),
+          );
+        } else {
+          content.push(
+            <span className={css(styles, "display-plain")} key={`center-display-plain-${part.text}-${index}-${subIndex}`}>
+              {subRuby.kanji}
+            </span>,
+          );
+        }
+      });
       return;
     }
 
@@ -2630,36 +2753,57 @@ function DisplayText({
   return (
     <p className={css(styles, "display-text")}>
       {showFurigana && furigana.length > 0 ? (
-        createJapaneseFuriganaParts(display, furigana).map((part, index) => {
+        createJapaneseFuriganaParts(display, furigana).flatMap((part, index) => {
           const partTokenStart = tokenStart;
           const tokenCount = countJapaneseReadingTokens(part.ruby ?? part.text);
           const tokenEnd = tokenStart + tokenCount;
           tokenStart = tokenEnd;
 
           if (part.ruby) {
-            const rubyClassName = getDisplayMarkerClassName(
-              "display-ruby",
-              showKanjiMarker,
-              markerProgress,
-              partTokenStart,
-              tokenEnd,
-            );
-            const rubyText =
-              showFuriganaMarker && markerProgress !== null
-                ? renderFuriganaMarkerCharacters(
-                  part.ruby,
-                  partTokenStart,
+            const subRubies = splitRubyPart(part.text, part.ruby, partTokenStart);
+            return subRubies.map((subRuby, subIndex) => {
+              if (showFurigana) {
+                const rubyClassName = getDisplayMarkerClassName(
+                  "display-ruby",
+                  showKanjiMarker,
+                  markerProgress,
+                  subRuby.tokenStart,
+                  subRuby.tokenEnd,
+                );
+                const rubyText =
+                  showFuriganaMarker && markerProgress !== null
+                    ? renderFuriganaMarkerCharacters(
+                      subRuby.ruby,
+                      subRuby.tokenStart,
+                      markerProgress.completedTokens,
+                      markerProgress.currentTokenIndex,
+                    )
+                    : subRuby.ruby;
+
+                return (
+                  <ruby className={rubyClassName} key={`${part.text}-${index}-${subIndex}`}>
+                    {subRuby.kanji}
+                    <rt>{rubyText}</rt>
+                  </ruby>
+                );
+              }
+
+              if (showKanjiMarker && markerProgress !== null) {
+                return renderDisplayMarkerCharacters(
+                  subRuby.kanji,
+                  subRuby.tokenStart,
                   markerProgress.completedTokens,
                   markerProgress.currentTokenIndex,
-                )
-                : part.ruby;
+                  `display-${index}-${subIndex}`,
+                );
+              }
 
-            return (
-              <ruby className={rubyClassName} key={`${part.text}-${index}`}>
-                {part.text}
-                <rt>{rubyText}</rt>
-              </ruby>
-            );
+              return (
+                <span className={css(styles, "display-plain")} key={`${part.text}-${index}-${subIndex}`}>
+                  {subRuby.kanji}
+                </span>
+              );
+            });
           }
 
           if (showKanjiMarker && markerProgress !== null) {
@@ -2672,11 +2816,11 @@ function DisplayText({
             );
           }
 
-          return (
+          return [
             <span className={css(styles, "display-plain")} key={`${part.text}-${index}`}>
               {part.text}
-            </span>
-          );
+            </span>,
+          ];
         })
       ) : (
         display

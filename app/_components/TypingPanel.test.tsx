@@ -588,7 +588,8 @@ describe("TypingPanel", () => {
       nextChallengeRomajiTarget: createTestRomajiTarget("asu"),
     });
 
-    expect(markup).toContain('<ruby class="display-ruby">今日<rt>きょう</rt></ruby>');
+    expect(markup).toContain('<ruby class="display-ruby">今<rt>きょ</rt></ruby>');
+    expect(markup).toContain('<ruby class="display-ruby">日<rt>う</rt></ruby>');
     expect(markup).toContain(
       '<span aria-hidden="true" class="center-scroll-current-marker"></span><ruby',
     );
