@@ -62,7 +62,7 @@ export const modes: TypingMode[] = [
     accuracyExponent: 3,
     lockMistakes: false,
     requiresIme: false,
-    description: "5分/10分の本番測定。変換なしで長文を連続処理する。",
+    description: "時間を決めて行う本番測定。変換なしで長文を連続処理する。",
   },
   {
     id: "production-ime-on",
