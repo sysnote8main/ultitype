@@ -2085,31 +2085,8 @@ function ContinuousChallengeTextStack({
   const centerMarkerPosition = getCenterMarkerPosition(romajiTarget, input);
   const centerMarkerKey = `${centerMarkerPosition}-${input}`;
 
-  const markerHiraganaCount = (() => {
-    if (!reading) {
-      return 1;
-    }
-
-    const parts = createJapaneseReadingGuideParts(reading);
-
-    for (const part of parts) {
-      if (
-        part.kind === "reading" &&
-        part.tokenStart <= centerMarkerPosition &&
-        centerMarkerPosition < part.tokenEnd
-      ) {
-        return Array.from(part.text).length;
-      }
-    }
-
-    return 1;
-  })();
-
   return (
-    <div
-      className={css(styles, "center-continuous-stack")}
-      style={{ "--center-marker-hiragana-count": markerHiraganaCount } as CSSProperties}
-    >
+    <div className={css(styles, "center-continuous-stack")}>
       {showDisplayText && hasSeparateDisplay ? (
         <CenterScrollViewport
           kind="display"
@@ -2254,10 +2231,30 @@ function CenterScrollViewport({
 
     const viewportRect = viewport.getBoundingClientRect();
     const markerRect = marker.getBoundingClientRect();
-    const markerCenter = markerRect.left - viewportRect.left + markerRect.width / 2;
+    let targetCenter = markerRect.left - viewportRect.left + markerRect.width / 2;
+
+    // The kanji/display line carries furigana, so a single kanji can be far
+    // narrower than its reading. Center the current display unit (the element
+    // right after the zero-width marker) by its own geometry instead of the
+    // marker's left edge, so the cursor stays under the kanji regardless of how
+    // wide its reading is. Measuring here (rather than a fixed CSS offset) keeps
+    // the first challenge flush-left under startsAtLeft instead of bleeding off
+    // the left edge.
+    if (kind === "display") {
+      const unit = marker.nextElementSibling as HTMLElement | null;
+      const isNextChallengeText =
+        unit?.classList.contains(css(styles, "center-scroll-next-text")) ?? false;
+      if (unit && !isNextChallengeText) {
+        const unitRect = unit.getBoundingClientRect();
+        if (unitRect.width > 0) {
+          targetCenter = unitRect.left - viewportRect.left + unitRect.width / 2;
+        }
+      }
+    }
+
     const viewportCenter = viewportRect.width / 2;
     const nextTranslate =
-      startsAtLeft && markerCenter <= viewportCenter ? 0 : viewportCenter - markerCenter;
+      startsAtLeft && targetCenter <= viewportCenter ? 0 : viewportCenter - targetCenter;
 
     if (line) {
       line.style.transition = previousLineTransition;
@@ -2265,7 +2262,7 @@ function CenterScrollViewport({
     }
 
     setMarkerTranslatePx(Math.round(nextTranslate * 10) / 10);
-  }, [markerKey, markerPosition, startsAtLeft]);
+  }, [kind, markerKey, markerPosition, startsAtLeft]);
 
   const style = {
     "--center-marker-position": `${markerPosition}ch`,
