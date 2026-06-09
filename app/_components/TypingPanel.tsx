@@ -2136,7 +2136,7 @@ function ContinuousChallengeTextStack({
                   mistakeFlash,
                   showHiraganaMarker,
                 ),
-                centerMarkerPosition,
+                getReadingMarkerNodeIndex(reading, centerMarkerPosition),
               )
               : renderCenterTextWithMarker(reading, centerMarkerPosition, "")}
             <span className={css(styles, "center-scroll-next-text")}>{nextChallengeReading}</span>
@@ -2233,14 +2233,16 @@ function CenterScrollViewport({
     const markerRect = marker.getBoundingClientRect();
     let targetCenter = markerRect.left - viewportRect.left + markerRect.width / 2;
 
-    // The kanji/display line carries furigana, so a single kanji can be far
-    // narrower than its reading. Center the current display unit (the element
-    // right after the zero-width marker) by its own geometry instead of the
-    // marker's left edge, so the cursor stays under the kanji regardless of how
-    // wide its reading is. Measuring here (rather than a fixed CSS offset) keeps
-    // the first challenge flush-left under startsAtLeft instead of bleeding off
-    // the left edge.
-    if (kind === "display") {
+    // The display (kanji) and reading (kana) lines anchor on a zero-width marker
+    // placed right before the unit currently being typed. Centering that marker
+    // would put the unit's LEFT EDGE on the center line, leaving the glyph half a
+    // character to the right and breaking vertical alignment with the romaji line
+    // (which centers the current character's midpoint). Instead, center the unit
+    // itself (the element right after the marker) by its measured midpoint, so the
+    // current kanji / current kana / current romaji char all stack in one column.
+    // Measuring here (vs a fixed CSS offset) also keeps the first challenge flush
+    // left under startsAtLeft instead of bleeding off the left edge.
+    if (kind === "display" || kind === "reading") {
       const unit = marker.nextElementSibling as HTMLElement | null;
       const isNextChallengeText =
         unit?.classList.contains(css(styles, "center-scroll-next-text")) ?? false;
@@ -2617,6 +2619,22 @@ function renderCenterTextWithMarker(
   }
 
   return content;
+}
+
+function getReadingMarkerNodeIndex(reading: string, tokenPosition: number) {
+  // renderReadingGuideCharacters emits one node per reading-guide part, but a
+  // single kana can span multiple romaji tokens, so the token index is not the
+  // node-array index. Map the token position to the node that owns it (the same
+  // rule the visible current-char highlight uses) so the zero-width marker lines
+  // up with the kana actually being typed instead of drifting right.
+  const parts = createJapaneseReadingGuideParts(reading);
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    if (part.kind === "reading" && tokenPosition < part.tokenEnd) {
+      return index;
+    }
+  }
+  return parts.length;
 }
 
 function insertCenterMarker(nodes: ReactNode, markerPosition: number) {
