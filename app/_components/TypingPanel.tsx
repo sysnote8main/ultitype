@@ -2186,6 +2186,8 @@ function ContinuousChallengeTextStack({
               display={previousChallengeDisplay}
               furigana={previousChallengeFurigana}
               showFurigana={showFuriganaDisplay}
+              showFuriganaMarker={showFuriganaMarker}
+              showKanjiMarker={showKanjiMarker}
             />
             {renderCenterDisplayText(
               display,
@@ -2212,7 +2214,11 @@ function ContinuousChallengeTextStack({
         >
           <p className={css(styles, "reading-text center-continuous-line")}>
             {previousChallengeReading ? (
-              <span className={css(styles, "center-scroll-previous-text")}>{previousChallengeReading}</span>
+              <span className={css(styles, "center-scroll-previous-text")}>
+                {showHiraganaMarker
+                  ? renderCompletedReadingCharacters(previousChallengeReading)
+                  : previousChallengeReading}
+              </span>
             ) : null}
             {romajiTarget
               ? insertCenterMarker(
@@ -2242,7 +2248,14 @@ function ContinuousChallengeTextStack({
         >
           {previousChallengeGuide ? (
             <span className={css(styles, "center-scroll-previous-text")}>
-              {renderGuideCharacters(previousChallengeGuide, "", null, "", "none", false)}
+              {renderGuideCharacters(
+                previousChallengeGuide,
+                getCompletedGuideInput(previousChallengeGuide),
+                null,
+                "",
+                "none",
+                false,
+              )}
             </span>
           ) : null}
           {romajiTarget
@@ -2374,6 +2387,12 @@ function CenterScrollViewport({
   );
 }
 
+function getCompletedGuideInput(guide: string) {
+  return Array.from(guide)
+    .filter((character) => !/\s/.test(character))
+    .join("");
+}
+
 function getCenterMarkerPosition(target: RomajiInputTarget | null, input: string) {
   if (!target) {
     return Array.from(input).length;
@@ -2463,35 +2482,109 @@ function PreviousCenterDisplayText({
   display,
   furigana,
   showFurigana,
+  showFuriganaMarker,
+  showKanjiMarker,
 }: {
   display: string;
   furigana: JapaneseFuriganaEntry[];
   showFurigana: boolean;
+  showFuriganaMarker: boolean;
+  showKanjiMarker: boolean;
 }) {
   if (!display) {
     return null;
   }
 
+  if (furigana.length === 0) {
+    return (
+      <span className={css(styles, "center-scroll-previous-text")}>
+        {showKanjiMarker
+          ? renderDisplayMarkerCharacters(
+            display,
+            0,
+            Number.MAX_SAFE_INTEGER,
+            Number.MAX_SAFE_INTEGER,
+            "previous-display",
+          )
+          : display}
+      </span>
+    );
+  }
+
+  let tokenStart = 0;
+
   return (
     <span className={css(styles, "center-scroll-previous-text")}>
-      {showFurigana && furigana.length > 0
-        ? createJapaneseFuriganaParts(display, furigana).flatMap((part, index) =>
-          part.ruby ? (
-            splitRubyPart(part.text, part.ruby, 0).map((subRuby, subIndex) => (
-              <ruby className={css(styles, "display-ruby")} key={`previous-display-ruby-${part.text}-${index}-${subIndex}`}>
+      {createJapaneseFuriganaParts(display, furigana).flatMap((part, index) => {
+        const partTokenStart = tokenStart;
+        const tokenCount = countJapaneseReadingTokens(part.ruby ?? part.text);
+        const tokenEnd = tokenStart + tokenCount;
+        tokenStart = tokenEnd;
+
+        if (part.ruby) {
+          return splitRubyPart(part.text, part.ruby, partTokenStart).map((subRuby, subIndex) => {
+            if (showFurigana) {
+              const rubyClassName = getDisplayMarkerClassName(
+                "display-ruby",
+                showKanjiMarker,
+                {
+                  completedTokens: Number.MAX_SAFE_INTEGER,
+                  currentTokenIndex: Number.MAX_SAFE_INTEGER,
+                },
+                subRuby.tokenStart,
+                subRuby.tokenEnd,
+              );
+              const rubyText = showFuriganaMarker
+                ? renderFuriganaMarkerCharacters(
+                  subRuby.ruby,
+                  subRuby.tokenStart,
+                  Number.MAX_SAFE_INTEGER,
+                  Number.MAX_SAFE_INTEGER,
+                )
+                : subRuby.ruby;
+
+              return (
+                <ruby className={rubyClassName} key={`previous-display-ruby-${part.text}-${index}-${subIndex}`}>
+                  {subRuby.kanji}
+                  <rt>{rubyText}</rt>
+                </ruby>
+              );
+            }
+
+            if (showKanjiMarker) {
+              return renderDisplayMarkerCharacters(
+                subRuby.kanji,
+                subRuby.tokenStart,
+                Number.MAX_SAFE_INTEGER,
+                Number.MAX_SAFE_INTEGER,
+                `previous-display-${index}-${subIndex}`,
+              );
+            }
+
+            return (
+              <span className={css(styles, "display-plain")} key={`previous-display-plain-${part.text}-${index}-${subIndex}`}>
                 {subRuby.kanji}
-                <rt>{subRuby.ruby}</rt>
-              </ruby>
-            ))
-          ) : (
-            [
-              <span className={css(styles, "display-plain")} key={`previous-display-plain-${part.text}-${index}`}>
-                {part.text}
-              </span>,
-            ]
-          ),
-        )
-        : display}
+              </span>
+            );
+          });
+        }
+
+        if (showKanjiMarker) {
+          return renderDisplayMarkerCharacters(
+            part.text,
+            partTokenStart,
+            Number.MAX_SAFE_INTEGER,
+            Number.MAX_SAFE_INTEGER,
+            `previous-display-${index}`,
+          );
+        }
+
+        return [
+          <span className={css(styles, "display-plain")} key={`previous-display-plain-${part.text}-${index}`}>
+            {part.text}
+          </span>,
+        ];
+      })}
     </span>
   );
 }
@@ -3122,6 +3215,24 @@ function renderReadingGuideCharacters(
         className={flashClassName}
         key={`reading-${part.tokenStart}-${part.text}-${partIndex}-${flashKey}`}
       >
+        {part.text}
+      </span>
+    );
+  });
+}
+
+function renderCompletedReadingCharacters(reading: string) {
+  return createJapaneseReadingGuideParts(reading).map((part, partIndex) => {
+    if (part.kind === "visual") {
+      return (
+        <span className={css(styles, "visual-space")} key={`previous-reading-space-${partIndex}`} aria-hidden="true">
+          {part.text}
+        </span>
+      );
+    }
+
+    return (
+      <span className={css(styles, "char correct")} key={`previous-reading-${part.tokenStart}-${part.text}-${partIndex}`}>
         {part.text}
       </span>
     );

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRomajiInputTarget, getRank, modes } from "@/src/lib/typing";
 import { initialSettings, initialStats } from "../_lib/constants";
+import { postSessionTips, preSessionTips } from "../_lib/challenge-tips";
 import {
   TypingPanel,
   calculateProductionLongScrollLines,
@@ -456,9 +457,11 @@ describe("TypingPanel", () => {
     expect(markup).not.toContain(
       "--center-marker-translate:calc(-1 * max(0ch, var(--center-marker-position) - 8ch))",
     );
-    expect(markup).toContain('class="center-scroll-previous-text">まえ。</span>');
     expect(markup).toContain(
-      'class="center-scroll-previous-text"><span class="char">m</span><span class="char">a</span><span class="char">e</span><span class="char">.</span></span>',
+      'class="center-scroll-previous-text"><span class="char correct">ま</span><span class="char correct">え</span><span class="char correct">。</span></span>',
+    );
+    expect(markup).toContain(
+      'class="center-scroll-previous-text"><span class="char correct">m</span><span class="char correct">a</span><span class="char correct">e</span><span class="char correct">.</span></span>',
     );
   });
 
@@ -737,11 +740,86 @@ describe("TypingPanel", () => {
 
     expect(markup).toContain('class="center-scroll-previous-text"');
     expect(markup).toContain('<ruby class="display-ruby">前<rt>まえ</rt></ruby>');
-    expect(markup).toContain('class="center-scroll-previous-text">まえ</span>');
     expect(markup).toContain(
-      'class="center-scroll-previous-text"><span class="char">m</span><span class="char">a</span><span class="char">e</span></span>',
+      'class="center-scroll-previous-text"><span class="char correct">ま</span><span class="char correct">え</span></span>',
+    );
+    expect(markup).toContain(
+      'class="center-scroll-previous-text"><span class="char correct">m</span><span class="char correct">a</span><span class="char correct">e</span></span>',
     );
     expect(markup.indexOf("前")).toBeLessThan(markup.indexOf("今"));
+  });
+
+  test("keeps the previous center scroll input target marked correct after advancing", () => {
+    const currentRomajiTarget = createTestRomajiTarget("now");
+    const markup = renderTypingPanel({
+      challengeLanguage: "en",
+      currentDisplay: "now",
+      currentGuide: currentRomajiTarget.guide,
+      currentRomajiTarget,
+      nextChallengeDisplay: "next",
+      nextChallengeGuide: "next",
+      nextChallengePreview: "next",
+      nextChallengePreviewMode: "center-scroll",
+      nextChallengeRomajiTarget: createTestRomajiTarget("next"),
+      previousChallengeDisplay: "done",
+      previousChallengeGuide: "done",
+      stats: {
+        ...initialStats,
+        completedPrompts: 1,
+      },
+    });
+    const inputLine = markup.slice(
+      markup.indexOf('class="input-target center-continuous-line"'),
+      markup.indexOf("</p>", markup.indexOf('class="input-target center-continuous-line"')),
+    );
+
+    expect(inputLine).toContain(
+      'class="center-scroll-previous-text"><span class="char correct">d</span><span class="char correct">o</span><span class="char correct">n</span><span class="char correct">e</span></span>',
+    );
+  });
+
+  test("keeps previous center scroll Japanese markers correct after advancing", () => {
+    const currentRomajiTarget = createTestRomajiTarget("ima");
+    const markup = renderTypingPanel({
+      challengeLanguage: "ja",
+      currentDisplay: "今",
+      currentFurigana: [{ text: "今", ruby: "いま" }],
+      currentGuide: currentRomajiTarget.guide,
+      currentReading: "いま",
+      currentRomajiTarget,
+      nextChallengeDisplay: "次",
+      nextChallengeGuide: "tsugi",
+      nextChallengePreview: "次",
+      nextChallengePreviewMode: "center-scroll",
+      nextChallengeReading: "つぎ",
+      nextChallengeRomajiTarget: createTestRomajiTarget("tsugi"),
+      previousChallengeDisplay: "前",
+      previousChallengeFurigana: [{ text: "前", ruby: "まえ" }],
+      previousChallengeGuide: "mae",
+      previousChallengeReading: "まえ",
+      showFuriganaMarker: true,
+      showHiraganaMarker: true,
+      showKanjiMarker: true,
+      stats: {
+        ...initialStats,
+        completedPrompts: 1,
+      },
+    });
+    const displayLine = markup.slice(
+      markup.indexOf('class="display-text center-continuous-line"'),
+      markup.indexOf("</p>", markup.indexOf('class="display-text center-continuous-line"')),
+    );
+    const readingLine = markup.slice(
+      markup.indexOf('class="reading-text center-continuous-line"'),
+      markup.indexOf("</p>", markup.indexOf('class="reading-text center-continuous-line"')),
+    );
+
+    expect(displayLine).toContain(
+      '<ruby class="display-ruby kanji-marker-correct">前<rt><span class="furigana-marker-correct">ま</span><span class="furigana-marker-correct">え</span></rt></ruby>',
+    );
+    expect(readingLine).toContain(
+      'class="center-scroll-previous-text"><span class="char correct">ま</span><span class="char correct">え</span></span>',
+    );
   });
 
   test("centers the center scroll marker from the start after the first challenge", () => {
@@ -847,6 +925,19 @@ describe("TypingPanel", () => {
       "margin-top: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * 0.5)",
     );
     expect(markup).toContain("--target-production-long-lines:7");
+  });
+
+  test("does not gray out the next production long challenge text", () => {
+    const css = readFileSync("app/_components/TypingPanel.module.css", "utf8");
+    const nextSpacerRule = css.match(
+      /\.productionLongNextSpacer \{(?<body>[\s\S]+?)\n\}/,
+    );
+    const nextSpacerDisplayRule = css.match(
+      /\.productionLongNextSpacer \.displayText \{(?<body>[\s\S]+?)\n\}/,
+    );
+
+    expect(nextSpacerRule?.groups?.body).not.toContain("var(--soft)");
+    expect(nextSpacerDisplayRule?.groups?.body ?? "").not.toContain("var(--soft)");
   });
 
   test("uses the full next challenge in center scroll instead of the preview length", () => {
@@ -1100,8 +1191,8 @@ describe("TypingPanel", () => {
     });
 
     expect(markup).toContain('class="challenge-tip" aria-label="post-session tip"');
-    expect(markup).toContain("肩と手首の力を抜き");
-    expect(markup).not.toContain("本番モードは開始後の入力だけを採点します。");
+    expect(postSessionTips.some((tip) => markup.includes(tip))).toBe(true);
+    expect(markup).not.toContain(preSessionTips[0]);
   });
 
   test("shows furigana above the Japanese display text by default", () => {

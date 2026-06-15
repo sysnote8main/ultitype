@@ -387,11 +387,7 @@
 
 .productionLongNextSpacer {
   margin-top: calc(var(--target-kanji-font-size, 32px) * var(--target-kanji-line-height, 1.45) * 0.5);
-  color: var(--soft);
-}
-
-.productionLongNextSpacer .displayText {
-  color: var(--soft);
+  color: var(--text);
 }
 
 .productionDirectInputs {
