@@ -335,6 +335,21 @@ describe("applyDirectKey", () => {
     expect(typeDirectKeys(specialPermissiveTarget, Array.from("ulikipedelia")).completedPrompts).toBe(1);
   });
 
+  test("keeps wo as a standalone を source instead of treating it as ウォ", () => {
+    const target = createRomajiInputTarget("wo", {
+      preset: "custom",
+      selections: {},
+      specialPreset: "custom",
+      specialSelections: {
+        who: { accepted: ["ulo"], preferred: "ulo" },
+      },
+    });
+
+    expect(target.guide).toBe("wo");
+    expect(typeDirectKeys(target, Array.from("wo")).completedPrompts).toBe(1);
+    expect(typeDirectKeys(target, Array.from("ulo")).completedPrompts).toBe(0);
+  });
+
   test("can enable additional foreign katakana special split yoon inputs", () => {
     const generalOnlyTarget = createRomajiInputTarget("wedhudwu", {
       preset: "hepburn",

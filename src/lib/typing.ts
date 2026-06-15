@@ -413,12 +413,10 @@ const romajiVariantPatterns = standardRomajiVariantOptions
   .sort((left, right) => right.pattern.length - left.pattern.length);
 
 const specialRomajiVariantPatterns = specialRomajiVariantOptions
-  .flatMap((option) =>
-    option.integratedAlternatives.map((pattern) => ({
-      pattern,
-      option,
-    })),
-  )
+  .map((option) => ({
+    pattern: option.pattern,
+    option,
+  }))
   .sort((left, right) => right.pattern.length - left.pattern.length);
 
 const standardSplitYoonPatterns = [
